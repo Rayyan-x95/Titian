@@ -59,7 +59,7 @@ export function TaskItem({ task, onEdit, onToggleStatus, onDelete }: TaskItemPro
     task.status === 'todo' ? 'Start' : task.status === 'doing' ? 'Complete' : 'Reset';
 
   return (
-    <article className="rounded-3xl border border-border bg-card p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+    <article className="rounded-3xl border border-border bg-card p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 space-y-2">
           <div className="flex flex-wrap items-center gap-2">

@@ -17,6 +17,9 @@ const FinancePage = lazy(() =>
 const SettingsPage = lazy(() =>
   import('@/modules/settings/SettingsPage').then((module) => ({ default: module.SettingsPage })),
 );
+const ShareTargetPage = lazy(() =>
+  import('@/modules/share/ShareTargetPage').then((module) => ({ default: module.ShareTargetPage })),
+);
 
 export default function App() {
   return (
@@ -34,6 +37,7 @@ export default function App() {
           <Route path="notes" element={<NotesPage />} />
           <Route path="finance" element={<FinancePage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="share" element={<ShareTargetPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

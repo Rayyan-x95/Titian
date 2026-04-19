@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
+import { DatePicker } from '@/components/ui/DatePicker';
+import { Dropdown } from '@/components/ui/Dropdown';
 import type { Task, TaskStatus } from '@/core/store/types';
 
 interface TaskFormValues {
@@ -117,29 +119,31 @@ export function TaskForm({
             />
           </label>
 
-          <label className="block space-y-2">
+          <div className="space-y-2">
             <span className="text-sm font-medium text-foreground">Due date</span>
-            <input
-              type="date"
-              value={values.dueDate}
-              onChange={(event) => setValues((current) => ({ ...current, dueDate: event.target.value }))}
-              className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground outline-none transition-colors focus:border-primary"
+            <DatePicker
+              value={values.dueDate || undefined}
+              onChange={(date) => setValues((current) => ({ ...current, dueDate: date ?? '' }))}
+              placeholder="Select due date"
+              clearable
             />
-          </label>
+          </div>
 
           <label className="block space-y-2">
             <span className="text-sm font-medium text-foreground">Status</span>
-            <select
+            <Dropdown
+              label="Status"
               value={values.status}
-              onChange={(event) =>
-                setValues((current) => ({ ...current, status: event.target.value as TaskStatus }))
+              onChange={(value) =>
+                setValues((current) => ({ ...current, status: value as TaskStatus }))
               }
-              className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground outline-none transition-colors focus:border-primary"
-            >
-              <option value="todo">Todo</option>
-              <option value="doing">Doing</option>
-              <option value="done">Done</option>
-            </select>
+              options={[
+                { label: 'Todo', value: 'todo' },
+                { label: 'Doing', value: 'doing' },
+                { label: 'Done', value: 'done' },
+              ]}
+              className="w-full"
+            />
           </label>
         </div>
 

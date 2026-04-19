@@ -72,7 +72,7 @@ export function Dropdown<T extends string>({ label, value, options, onChange, cl
       <button
         ref={buttonRef}
         type="button"
-        className="ui-button ui-button-secondary h-11 min-w-44 justify-between rounded-xl px-4"
+        className="ui-button ui-button-secondary h-12 w-full min-w-44 flex items-center justify-between rounded-xl px-4"
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
@@ -83,11 +83,11 @@ export function Dropdown<T extends string>({ label, value, options, onChange, cl
           }
         }}
       >
-        <span className="flex flex-col items-start">
+        <span className="flex flex-col items-start text-left">
           <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{label}</span>
-          <span className="text-sm text-foreground">{selected?.label ?? ''}</span>
+          <span className="text-sm font-semibold text-foreground">{selected?.label ?? ''}</span>
         </span>
-        <ChevronDown className={cn('h-4 w-4 transition-transform duration-200', open && 'rotate-180')} />
+        <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform duration-200', open && 'rotate-180')} />
       </button>
 
       <AnimatePresence>

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
+import { DatePicker } from '@/components/ui/DatePicker';
+import { Dropdown } from '@/components/ui/Dropdown';
 import type { Expense, Task } from '@/core/store/types';
 
 export interface ExpenseFormValues {
@@ -191,41 +193,38 @@ export function ExpenseForm({
             </datalist>
           </label>
 
-          <label className="block space-y-2">
+          <div className="space-y-2">
             <span className="text-sm font-medium text-foreground">Date</span>
-            <input
-              type="date"
-              required
-              value={values.date}
-              onChange={(event) =>
+            <DatePicker
+              value={values.date || undefined}
+              onChange={(date) =>
                 setValues((current) => ({
                   ...current,
-                  date: event.target.value,
+                  date: date ?? toInputDateString(new Date()),
                 }))
               }
-              className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground outline-none transition-colors focus:border-primary"
+              placeholder="Select expense date"
+              clearable={false}
             />
-          </label>
+          </div>
 
           <label className="block space-y-2">
             <span className="text-sm font-medium text-foreground">Link to task (optional)</span>
-            <select
+            <Dropdown
+              label="Select task"
               value={values.linkedTaskId ?? ''}
-              onChange={(event) =>
+              onChange={(value) =>
                 setValues((current) => ({
                   ...current,
-                  linkedTaskId: event.target.value || undefined,
+                  linkedTaskId: value || undefined,
                 }))
               }
-              className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground outline-none transition-colors focus:border-primary"
-            >
-              <option value="">No task</option>
-              {sortedTasks.map((task) => (
-                <option key={task.id} value={task.id}>
-                  {task.title}
-                </option>
-              ))}
-            </select>
+              options={[
+                { label: 'No task', value: '' },
+                ...sortedTasks.map((task) => ({ label: task.title, value: task.id }))
+              ]}
+              className="w-full"
+            />
           </label>
         </div>
 

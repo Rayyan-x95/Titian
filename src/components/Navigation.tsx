@@ -14,9 +14,9 @@ export function Navigation() {
   return (
     <nav
       aria-label="Primary navigation"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75"
+      className="fixed inset-x-0 bottom-6 z-50 mx-auto max-w-[min(90vw,400px)] pointer-events-none"
     >
-      <div className="mx-auto grid max-w-5xl grid-cols-5 gap-1 px-2 py-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] sm:px-4 lg:px-8">
+      <div className="pointer-events-auto grid grid-cols-5 gap-1 rounded-[2rem] border border-border/40 bg-background/50 p-2 backdrop-blur-xl shadow-glass">
         {items.map((item) => {
           const Icon = item.icon;
 
@@ -27,15 +27,22 @@ export function Navigation() {
               end={item.to === '/'}
               className={({ isActive }) =>
                 cn(
-                  'flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[11px] font-medium transition-colors',
+                  'relative flex flex-col items-center justify-center gap-1 rounded-full p-2 text-[10px] font-semibold transition-all duration-300',
                   isActive
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground hover:bg-secondary/70 hover:text-foreground',
+                    ? 'text-white'
+                    : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground',
                 )
               }
             >
-              <Icon className="h-5 w-5" />
-              <span>{item.label}</span>
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-primary to-accent shadow-glow -z-10" />
+                  )}
+                  <Icon className={cn("h-5 w-5 transition-transform duration-300", isActive && "scale-110 drop-shadow-md")} />
+                  <span className="hidden sm:block">{item.label}</span>
+                </>
+              )}
             </NavLink>
           );
         })}

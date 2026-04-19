@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { PageShell } from '@/components/PageShell';
 import { Dropdown } from '@/components/ui/Dropdown';
 import { toDollars, useStore } from '@/core/store';
+import { useSettings, formatMoney } from '@/core/settings';
 import type { Note, Task } from '@/core/store/types';
 import { useSeo } from '@/seo';
 import { DashboardCard } from './DashboardCard';
@@ -100,6 +101,7 @@ export function DashboardPage() {
   const tasks = useStore((state) => state.tasks);
   const notes = useStore((state) => state.notes);
   const expenses = useStore((state) => state.expenses);
+  const { currency } = useSettings();
 
   const dueTodayTasks = useMemo(() => getDueTodayTasks(tasks), [tasks]);
   const pendingTasks = useMemo(() => getPendingTasks(tasks), [tasks]);
@@ -145,14 +147,10 @@ export function DashboardPage() {
     }
 
     return {
-      totalFormatted: new Intl.NumberFormat(undefined, {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 2,
-      }).format(toDollars(totalCents)),
+      totalFormatted: formatMoney(totalCents, currency),
       transactions,
     };
-  }, [expenses]);
+  }, [expenses, currency]);
 
   const continueItem = useMemo(() => getContinueItem(tasks, notes), [notes, tasks]);
 
@@ -163,7 +161,7 @@ export function DashboardPage() {
     >
       <QuickActions />
 
-      <div className="ui-page-transition grid gap-4 lg:grid-cols-2">
+      <div className="ui-page-transition grid gap-8 lg:grid-cols-2 mt-6">
         <DashboardCard
           title="Today tasks"
           subtitle={`${dueTodayTasks.length} due today · ${pendingTasks.length} pending`}

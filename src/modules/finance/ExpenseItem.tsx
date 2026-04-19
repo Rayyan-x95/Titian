@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { PencilLine, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { toDollars } from '@/core/store';
+import { useSettings, formatMoney } from '@/core/settings';
 import type { Expense, Task } from '@/core/store/types';
 
 interface ExpenseItemProps {
@@ -11,14 +11,9 @@ interface ExpenseItemProps {
   onDelete: () => Promise<void>;
 }
 
-const currencyFormatter = new Intl.NumberFormat(undefined, {
-  style: 'currency',
-  currency: 'USD',
-  minimumFractionDigits: 2,
-});
-
 export function ExpenseItem({ expense, linkedTask, onEdit, onDelete }: ExpenseItemProps) {
-  const amountFormatted = useMemo(() => currencyFormatter.format(toDollars(expense.amount)), [expense.amount]);
+  const { currency } = useSettings();
+  const amountFormatted = useMemo(() => formatMoney(expense.amount, currency), [expense.amount, currency]);
 
   const createdAtFormatted = useMemo(() => {
     const date = new Date(expense.createdAt);

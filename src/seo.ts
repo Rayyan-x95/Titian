@@ -5,7 +5,7 @@ const defaultDescription =
   'Titan is an installable, offline-first productivity app that unifies Tasks, Notes, and Finance.';
 const defaultKeywords =
   'Titan, productivity app, tasks, notes, finance, offline-first, pwa, personal organization';
-const defaultImage = '/icons/icon-512.png';
+const defaultImage = '/Opengraph.png';
 
 interface SeoConfig {
   title: string;
@@ -45,7 +45,9 @@ export function useSeo({ title, description, path, image, keywords }: SeoConfig)
     const resolvedDescription = description ?? defaultDescription;
     const resolvedImage = image ?? defaultImage;
     const resolvedKeywords = keywords ?? defaultKeywords;
-    const resolvedUrl = new URL(path ?? window.location.pathname, window.location.origin).toString();
+    const publicBase = import.meta.env.VITE_PUBLIC_URL || window.location.origin;
+    const resolvedPath = path ?? window.location.pathname;
+    const resolvedUrl = new URL(resolvedPath, publicBase).toString();
 
     document.title = pageTitle;
 

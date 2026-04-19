@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { PageShell } from '@/components/PageShell';
 import { Button } from '@/components/ui/Button';
-import { fromDollars, toDollars, useStore } from '@/core/store';
+import { fromDollars, useStore } from '@/core/store';
+import { useSettings, formatMoney } from '@/core/settings';
 import type { Expense } from '@/core/store/types';
 import { useSeo } from '@/seo';
 import { ExpenseForm, type ExpenseFormValues } from './ExpenseForm';
@@ -40,6 +41,7 @@ export function FinancePage() {
   const addExpense = useStore((state) => state.addExpense);
   const updateExpense = useStore((state) => state.updateExpense);
   const deleteExpense = useStore((state) => state.deleteExpense);
+  const { currency } = useSettings();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
@@ -75,12 +77,8 @@ export function FinancePage() {
       return toInputDateString(expenseDate) === today ? sum + expense.amount : sum;
     }, 0);
 
-    return new Intl.NumberFormat(undefined, {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-    }).format(toDollars(cents));
-  }, [expenses]);
+    return formatMoney(cents, currency);
+  }, [expenses, currency]);
 
   const openCreateForm = () => {
     setEditingExpense(null);
@@ -174,7 +172,7 @@ export function FinancePage() {
           </p>
         </article>
       ) : (
-        <section className="space-y-3">
+        <section className="space-y-5">
           {sortedExpenses.map((expense) => (
             <ExpenseItem
               key={expense.id}

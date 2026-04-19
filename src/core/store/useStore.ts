@@ -26,6 +26,8 @@ interface CoreStoreState {
   expenses: Expense[];
   hydrated: boolean;
   hydrate: () => Promise<void>;
+  clearAll: () => Promise<void>;
+  importBackup: (payload: unknown) => Promise<void>;
   addTask: (task: TaskInput) => Promise<Task>;
   updateTask: (id: string, updates: TaskUpdate) => Promise<Task | undefined>;
   deleteTask: (id: string) => Promise<void>;
@@ -78,6 +80,67 @@ async function hydrateFromDatabase() {
   return { tasks: reconciled.tasks, notes: reconciled.notes, expenses };
 }
 
+type ExportedBackup = {
+  exportedAt?: string;
+  version?: string;
+  tasks?: unknown;
+  notes?: unknown;
+  expenses?: unknown;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object';
+}
+
+function asString(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : undefined;
+}
+
+function asStringArray(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  if (!value.every((item) => typeof item === 'string')) return undefined;
+  return value;
+}
+
+function parseTask(value: unknown): Task | null {
+  if (!isRecord(value)) return null;
+  const id = asString(value.id);
+  const title = asString(value.title);
+  const status = asString(value.status) as Task['status'] | undefined;
+  const createdAt = asString(value.createdAt);
+  const dueDate = asString(value.dueDate);
+  const noteId = asString(value.noteId);
+
+  if (!id || !title || !status || !createdAt) return null;
+  if (status !== 'todo' && status !== 'doing' && status !== 'done') return null;
+  return { id, title, status, createdAt, dueDate, noteId };
+}
+
+function parseNote(value: unknown): Note | null {
+  if (!isRecord(value)) return null;
+  const id = asString(value.id);
+  const content = asString(value.content);
+  const createdAt = asString(value.createdAt);
+  const tags = asStringArray(value.tags) ?? [];
+  const linkedTaskIds = asStringArray(value.linkedTaskIds) ?? [];
+
+  if (!id || !content || !createdAt) return null;
+  return { id, content, createdAt, tags, linkedTaskIds };
+}
+
+function parseExpense(value: unknown): Expense | null {
+  if (!isRecord(value)) return null;
+  const id = asString(value.id);
+  const createdAt = asString(value.createdAt);
+  const category = asString(value.category) ?? '';
+  const linkedTaskId = asString(value.linkedTaskId);
+  const amount = value.amount;
+
+  if (!id || !createdAt) return null;
+  if (typeof amount !== 'number' || Number.isNaN(amount)) return null;
+  return { id, amount, category, linkedTaskId, createdAt };
+}
+
 export const useStore = create<CoreStoreState>((set, get) => ({
   tasks: [],
   notes: [],
@@ -87,6 +150,46 @@ export const useStore = create<CoreStoreState>((set, get) => ({
   hydrate: async () => {
     const { tasks, notes, expenses } = await hydrateFromDatabase();
     set({ tasks, notes, expenses, hydrated: true });
+  },
+
+  clearAll: async () => {
+    await db.transaction('rw', db.tasks, db.notes, db.expenses, async () => {
+      await Promise.all([db.tasks.clear(), db.notes.clear(), db.expenses.clear()]);
+    });
+    set({ tasks: [], notes: [], expenses: [], hydrated: true });
+  },
+
+  importBackup: async (payload) => {
+    if (!isRecord(payload)) {
+      throw new Error('Invalid backup format.');
+    }
+
+    const typed = payload as ExportedBackup;
+    const taskValues = Array.isArray(typed.tasks) ? typed.tasks : [];
+    const noteValues = Array.isArray(typed.notes) ? typed.notes : [];
+    const expenseValues = Array.isArray(typed.expenses) ? typed.expenses : [];
+
+    const tasks = taskValues.map(parseTask).filter(Boolean) as Task[];
+    const notes = noteValues.map(parseNote).filter(Boolean) as Note[];
+    const expenses = expenseValues.map(parseExpense).filter(Boolean) as Expense[];
+
+    const reconciled = reconcileTaskNoteReferences(tasks, notes);
+
+    await db.transaction('rw', db.tasks, db.notes, db.expenses, async () => {
+      await Promise.all([db.tasks.clear(), db.notes.clear(), db.expenses.clear()]);
+      await Promise.all([
+        db.tasks.bulkPut(reconciled.tasks),
+        db.notes.bulkPut(reconciled.notes),
+        db.expenses.bulkPut(expenses),
+      ]);
+    });
+
+    set({
+      tasks: reconciled.tasks,
+      notes: reconciled.notes,
+      expenses,
+      hydrated: true,
+    });
   },
 
   addTask: async (taskInput) => {

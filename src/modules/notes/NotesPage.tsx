@@ -227,7 +227,7 @@ export function NotesPage() {
           </p>
         </article>
       ) : (
-        <section className="space-y-3">
+        <section className="space-y-5">
           {visibleNotes.map((note) => (
             <NoteItem
               key={note.id}

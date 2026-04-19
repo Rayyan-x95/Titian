@@ -1,15 +1,15 @@
 :root,
 [data-theme='dark'] {
-  --ui-bg: hsl(222 47% 5%);
-  --ui-surface: hsl(222 40% 10% / 0.72);
-  --ui-surface-solid: hsl(222 35% 10%);
-  --ui-text: hsl(210 40% 96%);
-  --ui-muted: hsl(215 18% 68%);
-  --ui-primary: hsl(167 85% 61%);
-  --ui-primary-strong: hsl(167 86% 54%);
-  --ui-secondary: hsl(219 34% 17%);
-  --ui-border: hsl(220 31% 22% / 0.68);
-  --ui-error: hsl(0 86% 67%);
+  --ui-bg: hsl(240 10% 4%);
+  --ui-surface: hsl(240 10% 8% / 0.6);
+  --ui-surface-solid: hsl(240 10% 8%);
+  --ui-text: hsl(210 40% 98%);
+  --ui-muted: hsl(215 20% 65%);
+  --ui-primary: hsl(262 80% 65%);
+  --ui-primary-strong: hsl(262 80% 75%);
+  --ui-secondary: hsl(240 5% 15%);
+  --ui-border: hsl(240 10% 20% / 0.5);
+  --ui-error: hsl(0 84% 60%);
 
   --ui-space-1: 4px;
   --ui-space-2: 8px;
@@ -18,72 +18,97 @@
   --ui-space-5: 24px;
   --ui-space-6: 32px;
 
-  --ui-radius-sm: 10px;
-  --ui-radius-md: 14px;
-  --ui-radius-lg: 20px;
+  --ui-radius-sm: 12px;
+  --ui-radius-md: 16px;
+  --ui-radius-lg: 24px;
 
-  --ui-shadow-soft: 0 8px 24px hsl(220 72% 2% / 0.28);
-  --ui-shadow-glow: 0 0 0 1px hsl(167 85% 61% / 0.14), 0 10px 32px hsl(167 85% 61% / 0.13);
+  --ui-shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --ui-shadow-glow: 0 0 15px hsl(262 80% 65% / 0.4), 0 8px 20px hsl(262 80% 65% / 0.2);
 }
 
 [data-theme='light'] {
   --ui-bg: hsl(210 40% 98%);
-  --ui-surface: hsl(0 0% 100% / 0.86);
+  --ui-surface: hsl(0 0% 100% / 0.7);
   --ui-surface-solid: hsl(0 0% 100%);
-  --ui-text: hsl(222 47% 11%);
+  --ui-text: hsl(240 10% 4%);
   --ui-muted: hsl(215 16% 45%);
-  --ui-primary: hsl(167 79% 36%);
-  --ui-primary-strong: hsl(167 74% 31%);
+  --ui-primary: hsl(262 80% 50%);
+  --ui-primary-strong: hsl(262 80% 45%);
   --ui-secondary: hsl(210 40% 94%);
-  --ui-border: hsl(214 32% 86% / 0.82);
-  --ui-error: hsl(0 72% 46%);
+  --ui-border: hsl(214 32% 91% / 0.8);
+  --ui-error: hsl(0 84% 55%);
 
-  --ui-shadow-soft: 0 6px 18px hsl(220 16% 22% / 0.1);
-  --ui-shadow-glow: 0 0 0 1px hsl(167 79% 36% / 0.18), 0 8px 24px hsl(167 79% 36% / 0.16);
+  --ui-shadow-soft: 0 8px 32px rgba(31, 38, 135, 0.1);
+  --ui-shadow-glow: 0 0 15px hsl(262 80% 50% / 0.3), 0 8px 20px hsl(262 80% 50% / 0.15);
 }
 
 .ui-surface {
-  background: linear-gradient(145deg, hsl(var(--background) / 0.56), var(--ui-surface));
+  background: linear-gradient(145deg, hsl(var(--background) / 0.6), var(--ui-surface));
   box-shadow: var(--ui-shadow-soft);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 .ui-card {
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius-lg);
-  background: linear-gradient(130deg, hsl(var(--card) / 0.72), var(--ui-surface));
+  background: linear-gradient(135deg, hsl(var(--card) / 0.5), hsl(var(--background) / 0.2));
   box-shadow: var(--ui-shadow-soft);
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.ui-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--ui-shadow-glow);
+  border-color: hsl(var(--primary) / 0.5);
 }
 
 .ui-button {
   position: relative;
   overflow: hidden;
-  transition: transform 180ms cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 220ms cubic-bezier(0.22, 0.61, 0.36, 1), background-color 220ms ease;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  border-radius: var(--ui-radius-md);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1.25rem;
 }
 
 .ui-button::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% 0%, hsl(0 0% 100% / 0.26), transparent 68%);
+  background: radial-gradient(circle at center, hsl(0 0% 100% / 0.2) 0%, transparent 70%);
   opacity: 0;
-  transition: opacity 180ms ease;
+  transform: scale(0.5);
+  transition: all 0.3s ease;
 }
 
 .ui-button:hover::after {
   opacity: 1;
+  transform: scale(1.5);
 }
 
 .ui-button-primary {
   color: hsl(var(--primary-foreground));
-  background: linear-gradient(140deg, var(--ui-primary), var(--ui-primary-strong));
+  background: linear-gradient(135deg, var(--ui-primary), hsl(var(--accent)));
   box-shadow: var(--ui-shadow-glow);
+  border: none;
+}
+
+.ui-button-primary:hover {
+  box-shadow: 0 0 25px hsl(var(--primary) / 0.6);
 }
 
 .ui-button-secondary {
   color: hsl(var(--foreground));
-  background: hsl(var(--secondary) / 0.92);
+  background: hsl(var(--secondary) / 0.8);
   border: 1px solid var(--ui-border);
+  backdrop-filter: blur(8px);
 }
 
 .ui-button-ghost {
@@ -93,7 +118,7 @@
 }
 
 .ui-button-ghost:hover {
-  background: hsl(var(--secondary) / 0.62);
+  background: hsl(var(--secondary) / 0.5);
 }
 
 .ui-input-wrap {
@@ -103,40 +128,43 @@
 
 .ui-input {
   width: 100%;
-  height: 48px;
+  height: 52px;
   border-radius: var(--ui-radius-md);
   border: 1px solid var(--ui-border);
-  background: hsl(var(--background) / 0.88);
+  background: hsl(var(--background) / 0.6);
+  backdrop-filter: blur(12px);
   color: hsl(var(--foreground));
-  padding: 20px 14px 8px;
-  font-size: 14px;
+  padding: 22px 16px 8px;
+  font-size: 15px;
   outline: none;
-  transition: border-color 180ms ease, box-shadow 220ms ease;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
 }
 
 .ui-input:focus {
   border-color: hsl(var(--primary));
-  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.24);
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.2);
+  background: hsl(var(--background) / 0.8);
 }
 
 .ui-input-label {
   position: absolute;
-  left: 14px;
+  left: 16px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--ui-muted);
   pointer-events: none;
-  transition: transform 160ms ease, font-size 160ms ease, color 160ms ease;
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), font-size 0.2s ease, color 0.2s ease;
 }
 
 .ui-input:focus + .ui-input-label,
 .ui-input:not(:placeholder-shown) + .ui-input-label {
-  transform: translateY(-16px);
-  font-size: 10px;
+  transform: translateY(-18px);
+  font-size: 11px;
   color: hsl(var(--primary));
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
+  font-weight: 600;
 }
 
 .ui-input-error {
