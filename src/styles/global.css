@@ -7,48 +7,48 @@
 
 :root,
 [data-theme='dark'] {
-  --background: 240 10% 4%;
-  --foreground: 210 40% 98%;
-  --card: 240 10% 6%;
-  --card-foreground: 210 40% 98%;
-  --popover: 240 10% 6%;
-  --popover-foreground: 210 40% 98%;
-  --primary: 262 80% 65%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 240 5% 15%;
-  --secondary-foreground: 210 40% 98%;
-  --muted: 240 5% 15%;
-  --muted-foreground: 215 20% 65%;
-  --accent: 280 80% 65%;
-  --accent-foreground: 210 40% 98%;
+  --background: 222 20% 5%;
+  --foreground: 210 40% 97%;
+  --card: 220 18% 8%;
+  --card-foreground: 210 40% 97%;
+  --popover: 220 18% 8%;
+  --popover-foreground: 210 40% 97%;
+  --primary: 213 90% 58%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 14% 14%;
+  --secondary-foreground: 210 40% 97%;
+  --muted: 220 14% 14%;
+  --muted-foreground: 215 20% 62%;
+  --accent: 199 95% 60%;
+  --accent-foreground: 0 0% 100%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 210 40% 98%;
-  --border: 240 10% 12%;
-  --input: 240 10% 12%;
-  --ring: 262 80% 65%;
+  --border: 220 15% 14%;
+  --input: 220 15% 14%;
+  --ring: 213 90% 58%;
   --radius: 1.5rem;
 }
 
 [data-theme='light'] {
-  --background: 210 40% 98%;
-  --foreground: 240 10% 4%;
+  --background: 210 50% 98%;
+  --foreground: 222 30% 8%;
   --card: 0 0% 100%;
-  --card-foreground: 240 10% 4%;
+  --card-foreground: 222 30% 8%;
   --popover: 0 0% 100%;
-  --popover-foreground: 240 10% 4%;
-  --primary: 262 80% 50%;
+  --popover-foreground: 222 30% 8%;
+  --primary: 213 90% 50%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 210 40% 94%;
-  --secondary-foreground: 240 10% 4%;
-  --muted: 210 40% 94%;
+  --secondary: 210 40% 93%;
+  --secondary-foreground: 222 30% 8%;
+  --muted: 210 40% 93%;
   --muted-foreground: 215 16% 45%;
-  --accent: 280 80% 50%;
+  --accent: 199 95% 45%;
   --accent-foreground: 0 0% 100%;
   --destructive: 0 84% 55%;
   --destructive-foreground: 0 0% 100%;
-  --border: 214 32% 91%;
-  --input: 214 32% 91%;
-  --ring: 262 80% 50%;
+  --border: 214 30% 88%;
+  --input: 214 30% 88%;
+  --ring: 213 90% 50%;
 }
 
 html {
@@ -69,9 +69,10 @@ body {
   margin: 0;
   min-width: 320px;
   background-color: hsl(var(--background));
-  background-image: 
-    radial-gradient(ellipse at 15% 50%, hsl(var(--primary) / 0.15), transparent 40%),
-    radial-gradient(ellipse at 85% 30%, hsl(var(--accent) / 0.15), transparent 40%);
+  background-image:
+    radial-gradient(ellipse at 20% 60%, hsl(213 90% 50% / 0.12), transparent 50%),
+    radial-gradient(ellipse at 80% 20%, hsl(199 95% 55% / 0.10), transparent 45%),
+    radial-gradient(ellipse at 50% 100%, hsl(220 40% 8% / 0.6), transparent 60%);
   background-attachment: fixed;
   color: hsl(var(--foreground));
   font-family:
@@ -90,6 +91,10 @@ body {
   body {
     background-attachment: scroll;
   }
+}
+
+.animate-delay-3000 {
+  animation-delay: 3s;
 }
 
 * {
@@ -126,4 +131,109 @@ html[data-theme='light'] .glass-panel {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* ─── Compact Mode ────────────────────────────────────────────────────── */
+/*
+  Applied globally when data-compact="true" is set on <html>.
+  Reduces padding, gaps, and font sizes without touching component JSX.
+*/
+
+html[data-compact='true'] {
+  /* Tighten design-token spacing */
+  --ui-space-3: 8px;
+  --ui-space-4: 12px;
+  --ui-space-5: 16px;
+  --ui-space-6: 20px;
+
+  /* Reduce card/section border radii slightly */
+  --ui-radius-sm: 8px;
+  --ui-radius-md: 12px;
+  --ui-radius-lg: 16px;
+  --radius: 1rem;
+}
+
+/* Main content: less top padding */
+html[data-compact='true'] #main-content {
+  padding-top: 5rem;
+  padding-bottom: 6rem;
+}
+
+/* PageShell: tighter heading and spacing */
+html[data-compact='true'] section.space-y-8 {
+  row-gap: 1rem;
+}
+
+html[data-compact='true'] section.space-y-8 h2 {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+
+/* Cards (.ui-card via Card component) */
+html[data-compact='true'] .ui-card {
+  border-radius: var(--ui-radius-lg);
+}
+
+/* Dashboard cards */
+html[data-compact='true'] .ui-card.p-6,
+html[data-compact='true'] .ui-card.p-8 {
+  padding: 1rem;
+}
+
+/* Dashboard grid: tighter gap */
+html[data-compact='true'] .grid.gap-8 {
+  gap: 0.75rem;
+}
+
+/* Task / Note / Expense list items: halve vertical gaps */
+html[data-compact='true'] .space-y-5 > * + * {
+  margin-top: 0.5rem;
+}
+
+html[data-compact='true'] .space-y-4 > * + * {
+  margin-top: 0.5rem;
+}
+
+/* Rounded article panels used in pages */
+html[data-compact='true'] article.rounded-3xl {
+  border-radius: var(--ui-radius-lg);
+  padding: 0.875rem;
+}
+
+html[data-compact='true'] article.p-5,
+html[data-compact='true'] article.p-6 {
+  padding: 0.875rem;
+}
+
+/* Settings rows */
+html[data-compact='true'] .py-5 {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+/* Settings section cards */
+html[data-compact='true'] .rounded-2xl.p-5 {
+  padding: 0.875rem;
+}
+
+/* Filter bar pills */
+html[data-compact='true'] .rounded-full.px-4.py-2 {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+html[data-compact='true'] .rounded-full.px-3.py-1\.5 {
+  padding: 0.2rem 0.625rem;
+  font-size: 0.7rem;
+}
+
+/* Quick-action buttons on Dashboard */
+html[data-compact='true'] .h-14.rounded-2xl {
+  height: 2.5rem;
+  border-radius: var(--ui-radius-md);
+}
+
+/* Navigation bar: compact but still reachable */
+html[data-compact='true'] nav > div {
+  padding: 0.25rem;
 }

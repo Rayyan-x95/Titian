@@ -1,14 +1,14 @@
 :root,
 [data-theme='dark'] {
-  --ui-bg: hsl(240 10% 4%);
-  --ui-surface: hsl(240 10% 8% / 0.6);
-  --ui-surface-solid: hsl(240 10% 8%);
-  --ui-text: hsl(210 40% 98%);
-  --ui-muted: hsl(215 20% 65%);
-  --ui-primary: hsl(262 80% 65%);
-  --ui-primary-strong: hsl(262 80% 75%);
-  --ui-secondary: hsl(240 5% 15%);
-  --ui-border: hsl(240 10% 20% / 0.5);
+  --ui-bg: hsl(222 20% 5%);
+  --ui-surface: hsl(220 18% 8% / 0.6);
+  --ui-surface-solid: hsl(220 18% 8%);
+  --ui-text: hsl(210 40% 97%);
+  --ui-muted: hsl(215 20% 62%);
+  --ui-primary: hsl(213 90% 58%);
+  --ui-primary-strong: hsl(213 90% 68%);
+  --ui-secondary: hsl(220 14% 14%);
+  --ui-border: hsl(220 15% 14% / 0.6);
   --ui-error: hsl(0 84% 60%);
 
   --ui-space-1: 4px;
@@ -23,23 +23,23 @@
   --ui-radius-lg: 24px;
 
   --ui-shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.4);
-  --ui-shadow-glow: 0 0 15px hsl(262 80% 65% / 0.4), 0 8px 20px hsl(262 80% 65% / 0.2);
+  --ui-shadow-glow: 0 0 20px hsl(213 90% 58% / 0.35), 0 8px 24px hsl(213 90% 58% / 0.15);
 }
 
 [data-theme='light'] {
-  --ui-bg: hsl(210 40% 98%);
+  --ui-bg: hsl(210 50% 98%);
   --ui-surface: hsl(0 0% 100% / 0.7);
   --ui-surface-solid: hsl(0 0% 100%);
-  --ui-text: hsl(240 10% 4%);
+  --ui-text: hsl(222 30% 8%);
   --ui-muted: hsl(215 16% 45%);
-  --ui-primary: hsl(262 80% 50%);
-  --ui-primary-strong: hsl(262 80% 45%);
-  --ui-secondary: hsl(210 40% 94%);
-  --ui-border: hsl(214 32% 91% / 0.8);
+  --ui-primary: hsl(213 90% 50%);
+  --ui-primary-strong: hsl(213 90% 42%);
+  --ui-secondary: hsl(210 40% 93%);
+  --ui-border: hsl(214 30% 88% / 0.8);
   --ui-error: hsl(0 84% 55%);
 
-  --ui-shadow-soft: 0 8px 32px rgba(31, 38, 135, 0.1);
-  --ui-shadow-glow: 0 0 15px hsl(262 80% 50% / 0.3), 0 8px 20px hsl(262 80% 50% / 0.15);
+  --ui-shadow-soft: 0 8px 32px rgba(14, 78, 180, 0.08);
+  --ui-shadow-glow: 0 0 15px hsl(213 90% 50% / 0.25), 0 8px 20px hsl(213 90% 50% / 0.12);
 }
 
 .ui-surface {

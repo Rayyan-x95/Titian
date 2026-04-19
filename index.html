@@ -3,43 +3,68 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Titan - The Ultimate Productivity Hub</title>
-    <meta name="title" content="Titan - The Ultimate Productivity Hub" />
+
+    <!-- Primary SEO -->
+    <title>Titan — Personal Productivity App | Tasks, Notes & Finance</title>
+    <meta name="title" content="Titan — Personal Productivity App | Tasks, Notes & Finance" />
     <meta
       name="description"
-      content="Titan: A stunning, offline-first workspace blending Tasks, Notes, and Finance seamlessly."
+      content="Titan is a free, offline-first productivity app that unifies task management, note-taking, and expense tracking in one sleek workspace. Works without internet. Install as a PWA."
     />
     <meta
       name="keywords"
-      content="Titan, productivity app, tasks, notes, finance tracker, offline-first, PWA, modern UI"
+      content="productivity app, task manager, note taking app, expense tracker, finance tracker, offline app, PWA, personal organizer, todo list, budget tracker, free productivity tool"
     />
     <meta name="author" content="Titan" />
-    <meta name="theme-color" content="#090a0f" />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#1a7fe8" />
 
-    <!-- Open Graph / Facebook -->
+    <!-- Open Graph / Social Sharing -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Titan - The Ultimate Productivity Hub" />
+    <meta property="og:site_name" content="Titan" />
+    <meta property="og:title" content="Titan — Tasks, Notes & Finance in One Place" />
     <meta
       property="og:description"
-      content="A stunning, offline-first workspace blending Tasks, Notes, and Finance seamlessly."
+      content="A free, offline-first workspace that unifies task management, notes, and expense tracking. Install it as a PWA and use it without internet."
     />
-    <meta property="og:image" content="/Opengraph.png" />
+    <meta property="og:image" content="https://titanapp.qzz.io/Opengraph.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta property="og:url" content="https://titanapp.qzz.io/" />
-    <meta property="og:site_name" content="Titan" />
 
-    <!-- Twitter -->
+    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Titan - The Ultimate Productivity Hub" />
+    <meta name="twitter:title" content="Titan — Tasks, Notes & Finance in One Place" />
     <meta
       name="twitter:description"
-      content="Titan helps you manage tasks, notes, and finance from a single visually stunning workspace."
+      content="Manage your tasks, notes, and finances from one beautifully designed, offline-ready app. Free forever, no account needed."
     />
-    <meta name="twitter:image" content="/Opengraph.png" />
+    <meta name="twitter:image" content="https://titanapp.qzz.io/Opengraph.png" />
 
     <link rel="canonical" href="https://titanapp.qzz.io/" />
     <link rel="manifest" href="/manifest.json" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icons/titan-icon-192.png" />
     <link rel="apple-touch-icon" href="/icons/titan-icon-180.png" />
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Titan",
+      "url": "https://titanapp.qzz.io/",
+      "description": "An offline-first productivity app that unifies task management, note-taking, and expense tracking in one workspace.",
+      "applicationCategory": "ProductivityApplication",
+      "operatingSystem": "Any",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "featureList": ["Task Management", "Note Taking", "Expense Tracking", "Offline Support", "PWA"],
+      "screenshot": "https://titanapp.qzz.io/Opengraph.png"
+    }
+    </script>
 
     <!-- Google Fonts: Outfit -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -67,3 +92,4 @@
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
+

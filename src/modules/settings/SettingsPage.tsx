@@ -52,8 +52,8 @@ interface SettingsSectionProps {
 
 function SettingsSection({ title, children }: SettingsSectionProps) {
   return (
-    <div className="rounded-3xl border border-border bg-card p-6 shadow-sm space-y-1">
-      <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-primary/80 mb-2">{title}</p>
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-1">
+      <p className="text-xs font-semibold text-muted-foreground mb-3">{title}</p>
       {children}
     </div>
   );
@@ -81,8 +81,9 @@ function Toggle({ checked, onChange, ariaLabel }: { checked: boolean; onChange: 
 export function SettingsPage() {
   useSeo({
     title: 'Settings',
-    description: 'Customize appearance and preferences in Titan.',
+    description: 'Customize Titan — switch themes, manage data, set your currency, and control notifications. Your data never leaves your device.',
     path: '/settings',
+    keywords: 'settings, preferences, theme, dark mode, data export, privacy, currency settings',
   });
 
   const { theme, toggleTheme } = useTheme();

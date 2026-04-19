@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
+import { CategoryCombobox } from '@/components/ui/CategoryCombobox';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { Dropdown } from '@/components/ui/Dropdown';
 import type { Expense, Task } from '@/core/store/types';
@@ -171,27 +172,23 @@ export function ExpenseForm({
             />
           </label>
 
-          <label className="block space-y-2">
-            <span className="text-sm font-medium text-foreground">Category</span>
-            <input
-              list="finance-category-options"
-              required
+          <div className="space-y-2">
+            <label htmlFor="expense-category" className="text-sm font-medium text-foreground">
+              Category
+            </label>
+            <CategoryCombobox
+              id="expense-category"
               value={values.category}
-              onChange={(event) =>
+              options={categories}
+              onChange={(cat) =>
                 setValues((current) => ({
                   ...current,
-                  category: event.target.value,
+                  category: cat,
                 }))
               }
-              className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary"
-              placeholder="Food"
+              placeholder="e.g. Food"
             />
-            <datalist id="finance-category-options">
-              {categories.map((category) => (
-                <option key={category} value={category} />
-              ))}
-            </datalist>
-          </label>
+          </div>
 
           <div className="space-y-2">
             <span className="text-sm font-medium text-foreground">Date</span>

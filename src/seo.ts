@@ -2,9 +2,9 @@ import { useEffect } from 'react';
 
 const appName = 'Titan';
 const defaultDescription =
-  'Titan is an installable, offline-first productivity app that unifies Tasks, Notes, and Finance.';
+  'Titan is a free, offline-first productivity app that unifies task management, note-taking, and expense tracking in one sleek workspace. No account needed.';
 const defaultKeywords =
-  'Titan, productivity app, tasks, notes, finance, offline-first, pwa, personal organization';
+  'productivity app, task manager, note taking app, expense tracker, finance tracker, offline app, PWA, personal organizer, todo list, budget tracker, free productivity tool, Titan';
 const defaultImage = '/Opengraph.png';
 
 interface SeoConfig {

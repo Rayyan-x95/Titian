@@ -93,8 +93,9 @@ function getContinueItem(tasks: Task[], notes: Note[]) {
 export function DashboardPage() {
   useSeo({
     title: 'Dashboard',
-    description: 'Dashboard overview for tasks, notes, and finance in Titan.',
+    description: 'Your personal productivity dashboard. See today\'s tasks, recent notes, and spending at a glance — all offline, all private.',
     path: '/',
+    keywords: 'dashboard, task overview, today tasks, notes summary, expense summary, productivity dashboard',
   });
 
   const [taskSort, setTaskSort] = useState<TaskSort>('newest');
