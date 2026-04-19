@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { PageShell } from '@/components/PageShell';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { fromDollars, toDollars, useStore } from '@/core/store';
 import type { Expense } from '@/core/store/types';
 import { ExpenseForm, type ExpenseFormValues } from './ExpenseForm';

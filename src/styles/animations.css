@@ -1,0 +1,53 @@
+.ui-fade-enter {
+  animation: uiFadeIn 220ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+.ui-slide-up-enter {
+  animation: uiSlideUp 260ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+.ui-page-transition {
+  animation: uiPageIn 240ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+@keyframes uiFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes uiSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes uiPageIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-fade-enter,
+  .ui-slide-up-enter,
+  .ui-page-transition {
+    animation: none;
+  }
+}

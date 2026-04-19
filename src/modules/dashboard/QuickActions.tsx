@@ -1,6 +1,7 @@
 import { Landmark, NotebookPen, Plus, SquareCheckBig } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 
 const actions = [
   { label: 'Task', icon: SquareCheckBig, to: '/tasks' },
@@ -12,7 +13,7 @@ export function QuickActions() {
   const navigate = useNavigate();
 
   return (
-    <section className="rounded-3xl border border-border bg-card p-4 shadow-sm">
+    <Card className="ui-slide-up-enter p-4">
       <div className="mb-3 flex items-center gap-2">
         <Plus className="h-4 w-4 text-primary" />
         <p className="text-sm font-medium text-foreground">Quick actions</p>
@@ -24,7 +25,7 @@ export function QuickActions() {
             <Button
               key={action.label}
               type="button"
-              variant="outline"
+              variant="secondary"
               className="h-14 rounded-2xl"
               onClick={() => navigate(action.to)}
               aria-label={`Open ${action.label}`}
@@ -35,6 +36,6 @@ export function QuickActions() {
           );
         })}
       </div>
-    </section>
+    </Card>
   );
 }

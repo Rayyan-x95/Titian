@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { PageShell } from '@/components/PageShell';
 import { useStore } from '@/core/store';
 import type { Task, TaskStatus } from '@/core/store/types';

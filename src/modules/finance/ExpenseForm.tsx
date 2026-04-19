@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import type { Expense, Task } from '@/core/store/types';
 
 export interface ExpenseFormValues {

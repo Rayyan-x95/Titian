@@ -1,6 +1,7 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PageShell } from '@/components/PageShell';
+import { Dropdown } from '@/components/ui/Dropdown';
 import { toDollars, useStore } from '@/core/store';
 import type { Note, Task } from '@/core/store/types';
 import { DashboardCard } from './DashboardCard';
@@ -8,6 +9,12 @@ import { QuickActions } from './QuickActions';
 
 const maxTaskItems = 7;
 const maxNoteItems = 5;
+type TaskSort = 'newest' | 'dueSoon';
+
+const taskSortOptions = [
+  { label: 'Newest', value: 'newest' as const },
+  { label: 'Due soon', value: 'dueSoon' as const },
+];
 
 function toInputDateString(date: Date) {
   const year = date.getFullYear();
@@ -82,16 +89,31 @@ function getContinueItem(tasks: Task[], notes: Note[]) {
 }
 
 export function DashboardPage() {
+  const [taskSort, setTaskSort] = useState<TaskSort>('newest');
   const tasks = useStore((state) => state.tasks);
   const notes = useStore((state) => state.notes);
   const expenses = useStore((state) => state.expenses);
 
   const dueTodayTasks = useMemo(() => getDueTodayTasks(tasks), [tasks]);
   const pendingTasks = useMemo(() => getPendingTasks(tasks), [tasks]);
-  const visibleTaskItems = useMemo(
-    () => [...pendingTasks].sort((left, right) => right.createdAt.localeCompare(left.createdAt)).slice(0, maxTaskItems),
-    [pendingTasks],
-  );
+  const visibleTaskItems = useMemo(() => {
+    const sorted = [...pendingTasks].sort((left, right) => {
+      if (taskSort === 'newest') {
+        return right.createdAt.localeCompare(left.createdAt);
+      }
+
+      const leftDue = left.dueDate ? Date.parse(left.dueDate) : Number.POSITIVE_INFINITY;
+      const rightDue = right.dueDate ? Date.parse(right.dueDate) : Number.POSITIVE_INFINITY;
+
+      if (leftDue === rightDue) {
+        return right.createdAt.localeCompare(left.createdAt);
+      }
+
+      return leftDue - rightDue;
+    });
+
+    return sorted.slice(0, maxTaskItems);
+  }, [pendingTasks, taskSort]);
 
   const recentNotes = useMemo(() => getRecentNotes(notes), [notes]);
 
@@ -134,14 +156,17 @@ export function DashboardPage() {
     >
       <QuickActions />
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="ui-page-transition grid gap-4 lg:grid-cols-2">
         <DashboardCard
           title="Today tasks"
           subtitle={`${dueTodayTasks.length} due today · ${pendingTasks.length} pending`}
           action={
-            <Link to="/tasks" className="text-sm font-medium text-primary hover:underline">
-              Open
-            </Link>
+            <div className="flex items-center gap-2">
+              <Dropdown label="Sort" value={taskSort} options={taskSortOptions} onChange={setTaskSort} />
+              <Link to="/tasks" className="text-sm font-medium text-primary hover:underline">
+                Open
+              </Link>
+            </div>
           }
         >
           {visibleTaskItems.length === 0 ? (

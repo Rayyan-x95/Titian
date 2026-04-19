@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { ChevronRight, PencilLine, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import type { Task, TaskStatus } from '@/core/store/types';
 
 interface TaskItemProps {

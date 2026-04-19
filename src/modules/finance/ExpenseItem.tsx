@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { PencilLine, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { toDollars } from '@/core/store';
 import type { Expense, Task } from '@/core/store/types';
 

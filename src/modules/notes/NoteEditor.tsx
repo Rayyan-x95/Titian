@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link2, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import type { Task } from '@/core/store/types';
 
 export interface NoteEditorValues {
