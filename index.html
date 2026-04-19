@@ -3,18 +3,45 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Titan - Your All-in-One Productivity System</title>
+    <meta name="title" content="Titan - Your All-in-One Productivity System" />
     <meta
       name="description"
-      content="Nexus is a minimal offline-first productivity app for tasks, notes, and finance."
+      content="Titan is an installable, offline-first productivity app that unifies Tasks, Notes, and Finance in one streamlined workspace."
     />
+    <meta
+      name="keywords"
+      content="Titan, productivity app, tasks, notes, finance tracker, offline-first, PWA, personal organization"
+    />
+    <meta name="author" content="Titan" />
     <meta name="theme-color" content="#0b0f12" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Titan - Your All-in-One Productivity System" />
+    <meta
+      property="og:description"
+      content="Plan tasks, capture notes, and track expenses in one installable offline-first app."
+    />
+    <meta property="og:image" content="/icons/icon-512.png" />
+    <meta property="og:url" content="https://rayyan-x95.github.io/titian/" />
+    <meta property="og:site_name" content="Titan" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Titan - Your All-in-One Productivity System" />
+    <meta
+      name="twitter:description"
+      content="Titan helps you manage tasks, notes, and finance from a single offline-first workspace."
+    />
+    <meta name="twitter:image" content="/icons/icon-512.png" />
+
+    <link rel="canonical" href="https://rayyan-x95.github.io/titian/" />
     <link rel="manifest" href="/manifest.json" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
     <script>
       (() => {
         try {
-          const storedTheme = localStorage.getItem('nexus-theme');
+          const storedTheme = localStorage.getItem('titan-theme');
           const theme = storedTheme === 'light' ? 'light' : 'dark';
           const root = document.documentElement;
 
@@ -26,7 +53,6 @@
         }
       })();
     </script>
-    <title>Nexus</title>
   </head>
   <body>
     <div id="root"></div>

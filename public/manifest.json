@@ -1,12 +1,12 @@
 {
-  "name": "Nexus",
-  "short_name": "Nexus",
-  "description": "Nexus is an offline-first productivity app for tasks, notes, and finance.",
+  "name": "Titan",
+  "short_name": "Titan",
+  "description": "Titan is an installable, offline-first productivity app for tasks, notes, and finance.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#0b0f12",
-  "theme_color": "#0b0f12",
+  "background_color": "#0a1018",
+  "theme_color": "#0a1018",
   "icons": [
     {
       "src": "/icons/icon-192.png",

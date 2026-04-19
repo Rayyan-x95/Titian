@@ -4,6 +4,7 @@ import { PageShell } from '@/components/PageShell';
 import { Button } from '@/components/ui/Button';
 import { fromDollars, toDollars, useStore } from '@/core/store';
 import type { Expense } from '@/core/store/types';
+import { useSeo } from '@/seo';
 import { ExpenseForm, type ExpenseFormValues } from './ExpenseForm';
 import { ExpenseItem } from './ExpenseItem';
 
@@ -27,6 +28,12 @@ function toIsoAtLocalNoon(dateInput: string) {
 }
 
 export function FinancePage() {
+  useSeo({
+    title: 'Finance',
+    description: 'Monitor spending and financial activity with Titan finance tracking.',
+    path: '/finance',
+  });
+
   const expenses = useStore((state) => state.expenses);
   const tasks = useStore((state) => state.tasks);
   const hydrated = useStore((state) => state.hydrated);

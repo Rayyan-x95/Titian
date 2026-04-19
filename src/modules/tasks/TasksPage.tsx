@@ -4,12 +4,19 @@ import { Button } from '@/components/ui/Button';
 import { PageShell } from '@/components/PageShell';
 import { useStore } from '@/core/store';
 import type { Task, TaskStatus } from '@/core/store/types';
+import { useSeo } from '@/seo';
 import { TaskForm } from './TaskForm';
 import { TaskItem } from './TaskItem';
 
 type TaskFilter = 'all' | 'active' | 'completed';
 
 export function TasksPage() {
+  useSeo({
+    title: 'Tasks',
+    description: 'Track and prioritize your work with task planning in Titan.',
+    path: '/tasks',
+  });
+
   const tasks = useStore((state) => state.tasks);
   const addTask = useStore((state) => state.addTask);
   const updateTask = useStore((state) => state.updateTask);

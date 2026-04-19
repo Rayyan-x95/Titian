@@ -11,12 +11,12 @@ async function bootstrap() {
   const rootElement = document.getElementById('root') as HTMLElement;
 
   const renderFallback = (error: unknown) => {
-    console.error('Nexus failed to start', error);
+    console.error('Titan failed to start', error);
 
     ReactDOM.createRoot(rootElement).render(
       <div className="flex min-h-screen items-center justify-center bg-background px-6 text-center text-foreground">
         <div className="max-w-md space-y-3 rounded-3xl border border-border bg-card p-6 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.32em] text-muted-foreground">Nexus</p>
+          <p className="text-xs uppercase tracking-[0.32em] text-muted-foreground">Titan</p>
           <h1 className="text-2xl font-semibold tracking-tight">Unable to start the app</h1>
           <p className="text-sm text-muted-foreground">
             The offline core failed to initialize. Please refresh the page.

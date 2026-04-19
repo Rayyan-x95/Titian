@@ -1,6 +1,6 @@
-# Nexus
+# Titan
 
-Nexus is a minimal, offline-first productivity shell built with React, Vite, TypeScript, Tailwind CSS, shadcn-style UI primitives, React Router, and Zustand.
+Titan is a minimal, offline-first productivity shell built with React, Vite, TypeScript, Tailwind CSS, custom UI primitives, React Router, and Zustand.
 
 ## Setup
 
@@ -10,19 +10,19 @@ Nexus is a minimal, offline-first productivity shell built with React, Vite, Typ
 npm install
 ```
 
-2. Start the development server.
+1. Start the development server.
 
 ```bash
 npm run dev
 ```
 
-3. Build for production.
+1. Build for production.
 
 ```bash
 npm run build
 ```
 
-4. Preview the production build.
+1. Preview the production build.
 
 ```bash
 npm run preview

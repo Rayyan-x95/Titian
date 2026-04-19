@@ -4,6 +4,7 @@ import { PageShell } from '@/components/PageShell';
 import { Dropdown } from '@/components/ui/Dropdown';
 import { toDollars, useStore } from '@/core/store';
 import type { Note, Task } from '@/core/store/types';
+import { useSeo } from '@/seo';
 import { DashboardCard } from './DashboardCard';
 import { QuickActions } from './QuickActions';
 
@@ -89,6 +90,12 @@ function getContinueItem(tasks: Task[], notes: Note[]) {
 }
 
 export function DashboardPage() {
+  useSeo({
+    title: 'Dashboard',
+    description: 'Dashboard overview for tasks, notes, and finance in Titan.',
+    path: '/',
+  });
+
   const [taskSort, setTaskSort] = useState<TaskSort>('newest');
   const tasks = useStore((state) => state.tasks);
   const notes = useStore((state) => state.notes);

@@ -12,7 +12,10 @@ const items = [
 
 export function Navigation() {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75">
+    <nav
+      aria-label="Primary navigation"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75"
+    >
       <div className="mx-auto grid max-w-5xl grid-cols-5 gap-1 px-2 py-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] sm:px-4 lg:px-8">
         {items.map((item) => {
           const Icon = item.icon;

@@ -10,7 +10,7 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
-const storageKey = 'nexus-theme';
+const storageKey = 'titan-theme';
 
 function getInitialTheme(): Theme {
   if (typeof window === 'undefined') {

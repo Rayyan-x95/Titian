@@ -1,13 +1,13 @@
 import Dexie, { type Table } from 'dexie';
 import type { Expense, Note, Task } from '@/core/store/types';
 
-class NexusDatabase extends Dexie {
+class TitanDatabase extends Dexie {
   tasks!: Table<Task, string>;
   notes!: Table<Note, string>;
   expenses!: Table<Expense, string>;
 
   constructor() {
-    super('nexus');
+    super('titan');
 
     this.version(1).stores({
       tasks: 'id, status, createdAt, dueDate, noteId',
@@ -21,4 +21,4 @@ class NexusDatabase extends Dexie {
   }
 }
 
-export const db = new NexusDatabase();
+export const db = new TitanDatabase();

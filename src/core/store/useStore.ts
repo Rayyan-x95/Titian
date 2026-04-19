@@ -37,7 +37,7 @@ interface CoreStoreState {
   deleteExpense: (id: string) => Promise<void>;
 }
 
-const storageKeyPrefix = 'nexus-core';
+const storageKeyPrefix = 'titan-core';
 let hydrationPromise: Promise<void> | null = null;
 
 function createId() {

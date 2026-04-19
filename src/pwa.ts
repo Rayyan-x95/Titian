@@ -19,7 +19,7 @@ export async function promptInstall() {
   const choice = await deferredInstallPrompt.userChoice;
   deferredInstallPrompt = null;
 
-  window.dispatchEvent(new CustomEvent('nexus:pwa-install-availability', { detail: false }));
+  window.dispatchEvent(new CustomEvent('titan:pwa-install-availability', { detail: false }));
 
   return choice.outcome === 'accepted';
 }
@@ -32,12 +32,12 @@ export function registerPWA() {
   window.addEventListener('beforeinstallprompt', (event) => {
     event.preventDefault();
     deferredInstallPrompt = event as BeforeInstallPromptEvent;
-    window.dispatchEvent(new CustomEvent('nexus:pwa-install-availability', { detail: true }));
+    window.dispatchEvent(new CustomEvent('titan:pwa-install-availability', { detail: true }));
   });
 
   window.addEventListener('appinstalled', () => {
     deferredInstallPrompt = null;
-    window.dispatchEvent(new CustomEvent('nexus:pwa-install-availability', { detail: false }));
+    window.dispatchEvent(new CustomEvent('titan:pwa-install-availability', { detail: false }));
   });
 
   window.addEventListener('load', () => {

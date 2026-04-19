@@ -12,7 +12,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   { label, error, className, containerClassName, id, ...props },
   ref,
 ) {
-  const inputId = id ?? `nexus-input-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+  const inputId = id ?? `titan-input-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
 
   return (
     <label htmlFor={inputId} className={cn('ui-input-wrap', containerClassName)}>

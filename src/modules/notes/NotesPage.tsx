@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button';
 import { PageShell } from '@/components/PageShell';
 import { useStore } from '@/core/store';
 import type { Note, Task } from '@/core/store/types';
+import { useSeo } from '@/seo';
 import { NoteEditor, type NoteEditorValues } from './NoteEditor';
 import { NoteItem } from './NoteItem';
 
@@ -28,6 +29,12 @@ function createTaskTitleFromNote(content: string) {
 }
 
 export function NotesPage() {
+  useSeo({
+    title: 'Notes',
+    description: 'Capture ideas, tag notes, and connect them to tasks in Titan.',
+    path: '/notes',
+  });
+
   const notes = useStore((state) => state.notes);
   const tasks = useStore((state) => state.tasks);
   const hydrated = useStore((state) => state.hydrated);

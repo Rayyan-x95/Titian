@@ -17,14 +17,14 @@ cleanupOutdatedCaches();
 registerRoute(
   ({ request }) => request.destination === 'style' || request.destination === 'script' || request.destination === 'worker',
   new StaleWhileRevalidate({
-    cacheName: 'nexus-static-assets',
+    cacheName: 'titan-static-assets',
   }),
 );
 
 registerRoute(
   ({ request }) => request.destination === 'image' || request.destination === 'font',
   new CacheFirst({
-    cacheName: 'nexus-media-assets',
+    cacheName: 'titan-media-assets',
     plugins: [
       new ExpirationPlugin({
         maxEntries: 120,
@@ -35,7 +35,7 @@ registerRoute(
 );
 
 const appShellHandler = new NetworkFirst({
-  cacheName: 'nexus-app-shell',
+  cacheName: 'titan-app-shell',
   networkTimeoutSeconds: 3,
 });
 
