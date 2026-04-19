@@ -41,6 +41,20 @@ export function TaskItem({ task, onEdit, onToggleStatus, onDelete }: TaskItemPro
     }).format(date);
   }, [task.dueDate]);
 
+  const createdAtFormatted = useMemo(() => {
+    if (!task.createdAt) {
+      return '—';
+    }
+
+    const date = new Date(task.createdAt);
+
+    if (Number.isNaN(date.getTime())) {
+      return '—';
+    }
+
+    return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(date);
+  }, [task.createdAt]);
+
   const nextStatusLabel =
     task.status === 'todo' ? 'Start' : task.status === 'doing' ? 'Complete' : 'Reset';
 
@@ -66,9 +80,7 @@ export function TaskItem({ task, onEdit, onToggleStatus, onDelete }: TaskItemPro
       </div>
 
       <div className="mt-4 flex items-center justify-between gap-3">
-        <p className="text-xs text-muted-foreground">
-          Created {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(task.createdAt))}
-        </p>
+        <p className="text-xs text-muted-foreground">Created {createdAtFormatted}</p>
 
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={() => onEdit(task)} aria-label="Edit task">

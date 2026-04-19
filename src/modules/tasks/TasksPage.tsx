@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageShell } from '@/components/PageShell';
@@ -19,12 +19,6 @@ export function TasksPage() {
   const [filter, setFilter] = useState<TaskFilter>('all');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-
-  useEffect(() => {
-    if (!hydrated) {
-      return;
-    }
-  }, [hydrated]);
 
   const visibleTasks = useMemo(() => {
     const sortedTasks = [...tasks].sort((left, right) => right.createdAt.localeCompare(left.createdAt));
@@ -112,8 +106,8 @@ export function TasksPage() {
               onClick={() => setFilter(item)}
               className={
                 filter === item
-                  ? 'rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground'
-                  : 'rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground'
+                  ? 'rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background'
+                  : 'rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background'
               }
             >
               {item === 'all' ? 'All' : item === 'active' ? 'Active' : 'Completed'}

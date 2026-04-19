@@ -33,14 +33,17 @@ export function TaskForm({
 }: TaskFormProps) {
   const [values, setValues] = useState<TaskFormValues>(defaultValues);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) {
       setValues(defaultValues);
       setIsSubmitting(false);
+      setSubmissionError(null);
       return;
     }
 
+    setSubmissionError(null);
     setValues({
       title: initialValues?.title ?? '',
       dueDate: initialValues?.dueDate ?? '',
@@ -55,18 +58,24 @@ export function TaskForm({
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!values.title.trim()) {
+    const title = values.title.trim();
+
+    if (!title) {
       return;
     }
 
+    setSubmissionError(null);
     setIsSubmitting(true);
     try {
       await onSubmit({
-        title: values.title,
+        title,
         dueDate: values.dueDate,
         status: values.status,
       });
       onOpenChange(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to save task. Please try again.';
+      setSubmissionError(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -90,7 +99,7 @@ export function TaskForm({
             <p className="text-xs uppercase tracking-[0.32em] text-muted-foreground">Task</p>
             <h3 className="mt-1 text-xl font-semibold tracking-tight">{title}</h3>
           </div>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
             Close
           </Button>
         </div>
@@ -134,8 +143,14 @@ export function TaskForm({
           </label>
         </div>
 
+        {submissionError ? (
+          <p role="alert" className="mt-4 rounded-2xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {submissionError}
+          </p>
+        ) : null}
+
         <div className="mt-6 flex items-center justify-end gap-3">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           <Button type="submit" disabled={isSubmitting || !values.title.trim()}>
