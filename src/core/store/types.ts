@@ -62,6 +62,7 @@ export interface Task {
   noteId?: string;
   parentTaskId?: string;
   recurrence?: TaskRecurrence;
+  tags?: string[];
   createdAt: string;
 }
 

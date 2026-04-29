@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link2, X, Pin, PinOff, ListTodo, List } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { Link2, X, Pin, PinOff, ListTodo, List, Eye, Edit2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Dropdown } from '@/components/ui/Dropdown';
+import { TagInput } from '@/components/ui/TagInput';
 import type { Task, Note } from '@/core/store/types';
 import { useStore } from '@/core/store';
 import { cn } from '@/utils/cn';
@@ -53,22 +56,22 @@ export function NoteEditor({
   onConvertToTask,
 }: NoteEditorProps) {
   const [values, setValues] = useState<NoteEditorValues>(defaultValues);
-  const [pendingTag, setPendingTag] = useState('');
   const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
   
   const allNotes = useStore((s) => s.notes);
 
   useEffect(() => {
     if (!open) {
       setValues(defaultValues);
-      setPendingTag('');
       setSubmissionError(null);
+      setIsPreviewMode(false);
       return;
     }
 
     setValues(initialValues ? { ...initialValues, area: (initialValues as any).area || 'personal' } : defaultValues);
-    setPendingTag('');
     setSubmissionError(null);
+    setIsPreviewMode(false);
   }, [initialValues, open]);
 
   const sortedTasks = useMemo(
@@ -114,23 +117,6 @@ export function NoteEditor({
       textarea.focus();
       textarea.setSelectionRange(start + prefix.length, start + prefix.length);
     }, 0);
-  };
-
-  const addTag = () => {
-    const nextTag = normalizeTag(pendingTag);
-    if (!nextTag || values.tags.includes(nextTag)) {
-      setPendingTag('');
-      return;
-    }
-    setValues((current) => ({ ...current, tags: [...current.tags, nextTag] }));
-    setPendingTag('');
-  };
-
-  const removeTag = (tag: string) => {
-    setValues((current) => ({
-      ...current,
-      tags: current.tags.filter((item) => item !== tag),
-    }));
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -195,77 +181,79 @@ export function NoteEditor({
 
             <div className="space-y-4">
               <div className="flex items-center justify-between px-1">
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/70">Content</span>
-                <div className="flex items-center gap-2">
-                  <button 
-                    type="button" 
-                    onClick={() => insertText('\n- [ ] ')}
-                    className="p-2 rounded-xl hover:bg-secondary text-muted-foreground transition-all hover:text-primary"
-                    title="Add checklist"
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsPreviewMode(false)}
+                    className={cn(
+                      "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest transition-all",
+                      !isPreviewMode ? "bg-primary/20 text-primary" : "text-muted-foreground hover:bg-secondary"
+                    )}
                   >
-                    <ListTodo className="h-4 w-4" />
+                    Edit
                   </button>
-                  <button 
-                    type="button" 
-                    onClick={() => insertText('\n• ')}
-                    className="p-2 rounded-xl hover:bg-secondary text-muted-foreground transition-all hover:text-primary"
-                    title="Add bullet list"
+                  <button
+                    type="button"
+                    onClick={() => setIsPreviewMode(true)}
+                    className={cn(
+                      "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest transition-all",
+                      isPreviewMode ? "bg-primary/20 text-primary" : "text-muted-foreground hover:bg-secondary"
+                    )}
                   >
-                    <List className="h-4 w-4" />
+                    Preview
                   </button>
                 </div>
+                {!isPreviewMode && (
+                  <div className="flex items-center gap-2">
+                    <button 
+                      type="button" 
+                      onClick={() => insertText('\n- [ ] ')}
+                      className="p-2 rounded-xl hover:bg-secondary text-muted-foreground transition-all hover:text-primary"
+                      title="Add checklist"
+                    >
+                      <ListTodo className="h-4 w-4" />
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => insertText('\n• ')}
+                      className="p-2 rounded-xl hover:bg-secondary text-muted-foreground transition-all hover:text-primary"
+                      title="Add bullet list"
+                    >
+                      <List className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
               </div>
-              <textarea
-                autoFocus
-                value={values.content}
-                onChange={(event) => setValues((current) => ({ ...current, content: event.target.value }))}
-                placeholder="Capture your brilliance..."
-                className="min-h-60 w-full resize-none rounded-3xl border border-border/70 bg-background/50 px-6 py-6 text-base leading-relaxed text-foreground outline-none transition-all placeholder:text-muted-foreground/40 focus:border-primary focus:ring-4 focus:ring-primary/10"
-              />
+
+              {isPreviewMode ? (
+                <div className="min-h-60 w-full rounded-3xl border border-border/70 bg-background/50 px-6 py-6 text-base leading-relaxed text-foreground transition-all overflow-y-auto prose prose-invert prose-p:leading-relaxed prose-pre:bg-secondary/50 max-w-none">
+                  {values.content.trim() ? (
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {values.content}
+                    </ReactMarkdown>
+                  ) : (
+                    <p className="text-muted-foreground/50 italic text-sm">Nothing to preview</p>
+                  )}
+                </div>
+              ) : (
+                <textarea
+                  autoFocus
+                  value={values.content}
+                  onChange={(event) => setValues((current) => ({ ...current, content: event.target.value }))}
+                  placeholder="Capture your brilliance using Markdown..."
+                  className="min-h-60 w-full resize-none rounded-3xl border border-border/70 bg-background/50 px-6 py-6 text-base leading-relaxed text-foreground outline-none transition-all placeholder:text-muted-foreground/40 focus:border-primary focus:ring-4 focus:ring-primary/10"
+                />
+              )}
             </div>
 
             <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-6">
                 <div className="space-y-3">
                   <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 ml-1">Tags</p>
-                  <div className="flex gap-2">
-                    <input
-                      value={pendingTag}
-                      onChange={(event) => setPendingTag(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter') {
-                          event.preventDefault();
-                          addTag();
-                        }
-                      }}
-                      placeholder="Add tag..."
-                      className="h-11 flex-1 rounded-xl border border-border bg-background px-4 text-sm font-medium outline-none transition-all focus:border-primary focus:ring-4 focus:ring-primary/10"
-                    />
-                    <Button type="button" variant="secondary" size="sm" onClick={addTag} className="rounded-xl px-4">
-                      Add
-                    </Button>
-                  </div>
-
-                  {values.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      <AnimatePresence>
-                        {values.tags.map((tag) => (
-                          <motion.button
-                            key={tag}
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.8 }}
-                            type="button"
-                            onClick={() => removeTag(tag)}
-                            className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-primary transition-colors hover:bg-primary/10"
-                          >
-                            #{tag}
-                            <X className="h-3 w-3" />
-                          </motion.button>
-                        ))}
-                      </AnimatePresence>
-                    </div>
-                  )}
+                  <TagInput
+                    tags={values.tags}
+                    onChange={(tags) => setValues(curr => ({ ...curr, tags }))}
+                  />
                 </div>
 
                 <div className="space-y-3">

@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { Button } from '@/components/ui/Button';
+import { Scan, Loader2 } from 'lucide-react';
 import { CategoryCombobox } from '@/components/ui/CategoryCombobox';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { Dropdown } from '@/components/ui/Dropdown';
+import { TagInput } from '@/components/ui/TagInput';
 import type { Expense, Task, Account, Note } from '@/core/store/types';
 import { cn } from '@/utils/cn';
 import { useSettings } from '@/core/settings';
@@ -79,6 +81,8 @@ export function ExpenseForm({
 }: ExpenseFormProps) {
   const [values, setValues] = useState<ExpenseFormValues>(defaultValues);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!open) {
@@ -138,6 +142,30 @@ export function ExpenseForm({
     }
   };
 
+  const handleScanReceipt = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsScanning(true);
+    setSubmissionError(null);
+
+    // Simulate OCR processing delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // Mock OCR parsing
+    setValues(v => ({
+      ...v,
+      amountDollars: 42.50,
+      category: categories.includes('Food & Drink') ? 'Food & Drink' : categories[0] || 'Food',
+      note: 'Parsed from receipt: Cafe Coffee Day',
+      tags: [...new Set([...v.tags, 'coffee', 'receipt'])],
+      type: 'expense'
+    }));
+
+    setIsScanning(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 px-4 py-4 backdrop-blur-md sm:items-center">
       <button
@@ -152,9 +180,32 @@ export function ExpenseForm({
         className="relative z-10 w-full max-w-2xl overflow-hidden rounded-[2.5rem] border border-border bg-card shadow-2xl animate-in slide-in-from-bottom-8 duration-300"
       >
         <div className="flex items-center justify-between border-b border-border/50 bg-secondary/20 px-8 py-6">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground">Transaction</p>
-            <h3 className="mt-1 text-2xl font-bold tracking-tight">{title}</h3>
+          <div className="flex items-center gap-6">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground">Transaction</p>
+              <h3 className="mt-1 text-2xl font-bold tracking-tight">{title}</h3>
+            </div>
+            
+            <div className="relative">
+              <input 
+                type="file" 
+                accept="image/*" 
+                className="hidden" 
+                ref={fileInputRef}
+                onChange={handleScanReceipt}
+              />
+              <Button 
+                type="button" 
+                variant="secondary" 
+                size="sm" 
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isScanning}
+                className="rounded-full shadow-sm"
+              >
+                {isScanning ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Scan className="h-4 w-4 mr-2 text-primary" />}
+                {isScanning ? 'Scanning...' : 'Scan Receipt'}
+              </Button>
+            </div>
           </div>
           <div className="flex gap-1.5 rounded-full bg-secondary p-1">
              {(['expense', 'income'] as const).map(t => (
@@ -246,6 +297,14 @@ export function ExpenseForm({
                     { label: 'Finance', value: 'finance' },
                     { label: 'Social', value: 'social' },
                   ]}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Tags</label>
+                <TagInput
+                  tags={values.tags}
+                  onChange={(tags) => setValues(v => ({ ...v, tags }))}
                 />
               </div>
             </div>

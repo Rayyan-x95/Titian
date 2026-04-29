@@ -61,17 +61,17 @@ export function CommandPalette() {
     const list: CommandPaletteItem[] = [];
 
     // Search Tasks
-    tasks.filter(t => t.title.toLowerCase().includes(lowQuery)).slice(0, 3).forEach(t => {
+    tasks.filter(t => t.title.toLowerCase().includes(lowQuery) || (t.tags && t.tags.some(tag => tag.toLowerCase().includes(lowQuery)))).slice(0, 5).forEach(t => {
       list.push({ id: `task-${t.id}`, title: t.title, icon: CheckCircle2, action: () => navigate('/tasks'), type: 'task', subtitle: t.status });
     });
 
     // Search Notes
-    notes.filter(n => n.content.toLowerCase().includes(lowQuery)).slice(0, 3).forEach(n => {
+    notes.filter(n => n.content.toLowerCase().includes(lowQuery) || (n.tags && n.tags.some(tag => tag.toLowerCase().includes(lowQuery)))).slice(0, 5).forEach(n => {
       list.push({ id: `note-${n.id}`, title: n.content.split('\n')[0] || 'Untitled Note', icon: FileText, action: () => navigate('/notes'), type: 'note' });
     });
 
     // Search Expenses
-    expenses.filter(e => e.category.toLowerCase().includes(lowQuery)).slice(0, 2).forEach(e => {
+    expenses.filter(e => e.category.toLowerCase().includes(lowQuery) || (e.note && e.note.toLowerCase().includes(lowQuery)) || (e.tags && e.tags.some(tag => tag.toLowerCase().includes(lowQuery)))).slice(0, 5).forEach(e => {
       list.push({ id: `expense-${e.id}`, title: `${e.category}: ${formatMoney(e.amount, currency)}`, icon: History, action: () => navigate('/finance'), type: 'finance' });
     });
 

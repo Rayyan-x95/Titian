@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { Plus, List, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -10,10 +10,11 @@ import { useSeo } from '@/seo';
 import { TaskForm } from './TaskForm';
 import { TaskItem } from './TaskItem';
 import { TaskCalendar } from './TaskCalendar';
+import { TaskKanban } from './TaskKanban';
 import { cn } from '@/utils/cn';
 
 type TaskFilter = 'all' | 'active' | 'completed';
-type TaskView = 'list' | 'calendar';
+type TaskView = 'list' | 'calendar' | 'kanban';
 
 export function TasksPage() {
   useSeo({
@@ -26,6 +27,14 @@ export function TasksPage() {
   const addTask = useStore((state) => state.addTask);
   const updateTask = useStore((state) => state.updateTask);
   const deleteTask = useStore((state) => state.deleteTask);
+  const hydrated = useStore((state) => state.hydrated);
+  const processRecurringTasks = useStore((state) => state.processRecurringTasks);
+
+  useEffect(() => {
+    if (hydrated) {
+      processRecurringTasks();
+    }
+  }, [hydrated, processRecurringTasks]);
 
   const [filter, setFilter] = useState<TaskFilter>('all');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -103,6 +112,10 @@ export function TasksPage() {
 
   const openCreateForm = () => { setEditingTask(null); setIsFormOpen(true); };
   const openEditForm = (task: Task) => { setEditingTask(task); setIsFormOpen(true); };
+  const handleAddSubtask = (parentId: string) => {
+    setEditingTask({ parentTaskId: parentId } as Task); // pre-fill parentTaskId
+    setIsFormOpen(true);
+  };
 
   return (
     <PageShell title="Tasks">
@@ -148,6 +161,13 @@ export function TasksPage() {
                 >
                   <CalendarDays className="h-4 w-4" />
                 </button>
+                <button 
+                  onClick={() => setView('kanban')} 
+                  aria-label="Kanban view"
+                  className={cn("p-1.5 rounded-lg transition-all", view === 'kanban' ? "bg-secondary text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M8 7v7"/><path d="M12 7v4"/><path d="M16 7v9"/></svg>
+                </button>
               </div>
               <Button onClick={openCreateForm} className="flex-1 sm:flex-none shadow-glow">
                 <Plus className="h-4 w-4" />
@@ -166,6 +186,8 @@ export function TasksPage() {
             >
               {view === 'calendar' ? (
                 <TaskCalendar onDateClick={(d) => { setSelectedDate(d); setView('list'); }} onEditTask={openEditForm} />
+              ) : view === 'kanban' ? (
+                <TaskKanban tasks={taskTree.topLevel} onEditTask={openEditForm} />
               ) : (
                 <LayoutGroup>
                   <div className="space-y-4">
@@ -177,6 +199,7 @@ export function TasksPage() {
                         onEdit={openEditForm}
                         onToggleStatus={handleToggleStatus}
                         onDelete={handleDeleteTask}
+                        onAddSubtask={handleAddSubtask}
                       />
                     ))}
                     {taskTree.topLevel.length === 0 && (

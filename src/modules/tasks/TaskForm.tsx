@@ -4,6 +4,7 @@ import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { Dropdown } from '@/components/ui/Dropdown';
+import { TagInput } from '@/components/ui/TagInput';
 import { useStore } from '@/core/store';
 import type { Task, TaskStatus, TaskPriority, TaskRecurrence } from '@/core/store/types';
 
@@ -16,6 +17,7 @@ interface TaskFormValues {
   area: 'work' | 'personal' | 'health' | 'finance' | 'social';
   parentTaskId?: string;
   recurrence?: TaskRecurrence;
+  tags: string[];
 }
 
 interface TaskFormProps {
@@ -34,6 +36,7 @@ const defaultValues: TaskFormValues = {
   priority: 'medium',
   energy: 'medium',
   area: 'personal',
+  tags: [],
 };
 
 export function TaskForm({
@@ -69,6 +72,7 @@ export function TaskForm({
       area: initialValues?.area ?? 'personal',
       parentTaskId: initialValues?.parentTaskId,
       recurrence: initialValues?.recurrence,
+      tags: initialValues?.tags ?? [],
     });
   }, [initialValues, open]);
 
@@ -233,6 +237,14 @@ export function TaskForm({
                     ...potentialParents.map(t => ({ label: t.title, value: t.id }))
                   ]}
                   className="w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 ml-1">Tags</span>
+                <TagInput
+                  tags={values.tags}
+                  onChange={(tags) => setValues(curr => ({ ...curr, tags }))}
                 />
               </div>
 

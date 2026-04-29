@@ -144,6 +144,7 @@ interface CoreStoreState {
   updateBudget: (id: string, updates: BudgetUpdate) => Promise<Budget | undefined>;
   deleteBudget: (id: string) => Promise<void>;
   processRecurringTransactions: () => Promise<void>;
+  processRecurringTasks: () => Promise<void>;
 
   // Rate limiting
   resetRateLimits: () => Promise<void>;
@@ -442,20 +443,21 @@ export const useStore = create<CoreStoreState>((set, get) => ({
   clearAll: async () => {
     try {
       const onboarding = createDefaultOnboardingProfile();
-      await db.transaction('rw', [db.tasks, db.notes, db.expenses, db.budgets, db.accounts, db.onboarding], async () => {
+      await db.transaction('rw', [db.tasks, db.notes, db.expenses, db.budgets, db.accounts, db.friends, db.groups, db.sharedExpenses, db.dailySnapshots, db.onboarding], async () => {
         await Promise.all([
           db.tasks.clear(),
           db.notes.clear(),
           db.expenses.clear(),
           db.budgets.clear(),
           db.accounts.clear(),
-          db.friends?.clear?.(),
-          db.groups?.clear?.(),
-          db.sharedExpenses?.clear?.(),
+          db.friends.clear(),
+          db.groups.clear(),
+          db.sharedExpenses.clear(),
+          db.dailySnapshots.clear(),
           db.onboarding.clear(),
         ]);
       });
-      set({ tasks: [], notes: [], expenses: [], budgets: [], accounts: [], friends: [], groups: [], sharedExpenses: [], onboarding });
+      set({ tasks: [], notes: [], expenses: [], budgets: [], accounts: [], friends: [], groups: [], sharedExpenses: [], dailySnapshots: [], onboarding });
     } catch (error) {
       console.error('[Titan] Clear all failed:', error);
     }
@@ -1111,7 +1113,7 @@ export const useStore = create<CoreStoreState>((set, get) => ({
         recurrenceRule,
         linkedTaskId: sanitizedInput.linkedTaskId,
         linkedNoteId: sanitizedInput.linkedNoteId,
-        area: (input as any).area || 'finance',
+        area: input.area ?? 'finance',
         createdAt: sanitizeDateString(input.createdAt) || new Date().toISOString(),
       };
 
@@ -1391,6 +1393,39 @@ export const useStore = create<CoreStoreState>((set, get) => ({
       }
     }
   },
+
+  processRecurringTasks: async () => {
+    const { tasks, addTask, updateTask } = get();
+    const now = new Date();
+    // Only process tasks that are done and have a recurrence rule
+    const recurring = tasks.filter(t => t.recurrence && t.status === 'done');
+
+    for (const item of recurring) {
+      // For tasks, we usually want to generate the next one only after the current one is completed
+      // We check if we already generated the next one by seeing if there is another task with the same title and a future due date
+      // Or we can just mark this one as not recurring and spawn the new one.
+      // Let's spawn a new task and remove the recurrence from the completed one to prevent infinite spawning
+      
+      let cursorDate = new Date(item.dueDate || item.createdAt);
+      let nextOccurrence = calculateNextOccurrence(cursorDate.toISOString(), item.recurrence!);
+      if (!nextOccurrence) continue;
+      
+      // Update the current completed task to remove its recurrence so we don't process it again
+      await updateTask(item.id, { recurrence: undefined });
+      
+      // Spawn the new task
+      await addTask({
+        title: item.title,
+        status: 'todo',
+        priority: item.priority,
+        energy: item.energy,
+        area: item.area,
+        dueDate: nextOccurrence.split('T')[0],
+        recurrence: item.recurrence, // pass the recurrence forward to the new task
+      });
+    }
+  },
+
 
   resetRateLimits: async () => {
     // No-op for now, can be implemented with a debounce store if needed

@@ -10,6 +10,7 @@ import {
   Palette,
   ShieldCheck,
   RefreshCw,
+  Fingerprint
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Dropdown } from '@/components/ui/Dropdown';
@@ -90,13 +91,19 @@ export function SettingsPage() {
   const tasks = useStore((state) => state.tasks);
   const notes = useStore((state) => state.notes);
   const expenses = useStore((state) => state.expenses);
+  const budgets = useStore((state) => state.budgets);
+  const accounts = useStore((state) => state.accounts);
+  const friends = useStore((state) => state.friends);
+  const groups = useStore((state) => state.groups);
+  const sharedExpenses = useStore((state) => state.sharedExpenses);
+  const onboarding = useStore((state) => state.onboarding);
   const importBackup = useStore((state) => state.importBackup);
   const clearAll = useStore((state) => state.clearAll);
   const recomputeSnapshots = useStore((state) => state.recomputeSnapshots);
 
   const { 
-    currency, compactMode, animations, appPin, pinEnabled,
-    setCurrency, setCompactMode, setAnimations, setPin, setPinEnabled 
+    currency, compactMode, animations, appPin, pinEnabled, biometricEnabled,
+    setCurrency, setCompactMode, setAnimations, setPin, setPinEnabled, setBiometricEnabled 
   } = useSettings();
 
   const totalItems = tasks.length + notes.length + expenses.length;
@@ -109,6 +116,12 @@ export function SettingsPage() {
       tasks,
       notes,
       expenses,
+      budgets,
+      accounts,
+      friends,
+      groups,
+      sharedExpenses,
+      onboarding,
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -262,6 +275,14 @@ export function SettingsPage() {
               </div>
             }
           />
+          {pinEnabled && (
+            <SettingsRow
+              icon={<Fingerprint className="h-5 w-5" />}
+              title="Biometric Unlock"
+              description="Use WebAuthn / Biometrics (Touch ID, Face ID) instead of entering your PIN."
+              action={<Toggle checked={biometricEnabled} onChange={setBiometricEnabled} ariaLabel="Toggle biometric unlock" />}
+            />
+          )}
         </SettingsSection>
 
         {/* Data & Storage */}

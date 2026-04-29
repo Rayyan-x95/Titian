@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   CheckCircle2, 
@@ -20,6 +20,7 @@ import type { TimelineItem } from '@/core/store/useStore';
 import { cn } from '@/utils/cn';
 import { format } from 'date-fns';
 import { useSettings, formatMoney } from '@/core/settings';
+import { TagInput } from '@/components/ui/TagInput';
 
 const AreaIcon = ({ area, className }: { area: string, className?: string }) => {
   switch (area) {
@@ -105,6 +106,16 @@ const TimelineCard = ({ item }: { item: TimelineItem }) => {
         
         <p className="text-xs font-medium text-muted-foreground/80">{details.meta}</p>
 
+        {(data as any).tags && (data as any).tags.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {(data as any).tags.map((tag: string) => (
+              <span key={tag} className="inline-flex rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary">
+                #{tag}
+              </span>
+            ))}
+          </div>
+        )}
+
         {(data as any).note && (
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground/60 line-clamp-2 italic">
             "{ (data as any).note }"
@@ -118,10 +129,19 @@ const TimelineCard = ({ item }: { item: TimelineItem }) => {
 export const TimelineView = () => {
   const getTimelineItems = useStore(state => state.getTimelineItems);
   const items = getTimelineItems();
+  const [filterTags, setFilterTags] = useState<string[]>([]);
+  
+  const filteredItems = useMemo(() => {
+    if (filterTags.length === 0) return items;
+    return items.filter(item => {
+      const tags = (item.data as any).tags || [];
+      return filterTags.some(ft => tags.includes(ft.toLowerCase()));
+    });
+  }, [items, filterTags]);
 
   const groupedItems = useMemo(() => {
     const groups: Record<string, TimelineItem[]> = {};
-    items.forEach(item => {
+    filteredItems.forEach(item => {
       const date = format(new Date(item.timestamp), 'yyyy-MM-dd');
       if (!groups[date]) groups[date] = [];
       groups[date].push(item);
@@ -149,8 +169,13 @@ export const TimelineView = () => {
           <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/60 leading-none">Narrative</p>
           <h2 className="mt-4 text-4xl font-black tracking-tight text-foreground leading-tight">Life Timeline</h2>
         </div>
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-card shadow-glass text-muted-foreground hover:text-primary transition-colors cursor-pointer">
-          <Search className="h-5 w-5" />
+        <div className="w-1/3 min-w-[200px]">
+          <TagInput 
+            tags={filterTags} 
+            onChange={setFilterTags} 
+            placeholder="Filter by tags..." 
+            className="border-border/50 bg-card/50"
+          />
         </div>
       </header>
 
@@ -175,7 +200,7 @@ export const TimelineView = () => {
           </section>
         ))}
 
-        {items.length === 0 && (
+        {filteredItems.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[2.5rem] bg-secondary/30 text-muted-foreground/30">
               <Clock className="h-10 w-10" />

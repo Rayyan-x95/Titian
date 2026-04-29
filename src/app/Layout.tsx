@@ -7,6 +7,7 @@ import { LockScreen } from '@/components/LockScreen';
 import { useSettings } from '@/core/settings';
 import { APP_VERSION } from '@/core/version';
 import { useScrollDirection } from '@/hooks/useScrollDirection';
+import { useBackgroundNotifications } from '@/hooks/useBackgroundNotifications';
 import { cn } from '@/utils/cn';
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
@@ -15,6 +16,9 @@ export function Layout() {
   const { compactMode, animations, pinEnabled, appPin } = useSettings();
   const [isUnlocked, setIsUnlocked] = useState(!pinEnabled || !appPin);
   const scrollDirection = useScrollDirection();
+  
+  // Background processes
+  useBackgroundNotifications();
 
   // Re-check lock status if settings change
   useEffect(() => {

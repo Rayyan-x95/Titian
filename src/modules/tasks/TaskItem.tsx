@@ -11,6 +11,7 @@ interface TaskItemProps {
   onEdit: (task: Task) => void;
   onToggleStatus: (task: Task) => void;
   onDelete: (task: Task) => void;
+  onAddSubtask?: (parentId: string) => void;
 }
 
 const statusLabels: Record<TaskStatus, string> = {
@@ -31,7 +32,7 @@ const priorityStyles: Record<TaskPriority, string> = {
   high: 'bg-rose-500/10 text-rose-500',
 };
 
-export function TaskItem({ task, subtasks, onEdit, onToggleStatus, onDelete }: TaskItemProps) {
+export function TaskItem({ task, subtasks, onEdit, onToggleStatus, onDelete, onAddSubtask }: TaskItemProps) {
   const formattedDueDate = useMemo(() => {
     if (!task.dueDate) {
       return null;
@@ -122,6 +123,21 @@ export function TaskItem({ task, subtasks, onEdit, onToggleStatus, onDelete }: T
               Created {createdAtFormatted}
             </p>
           </div>
+
+          {subtasks && subtasks.length > 0 && (
+            <div className="mt-4">
+              <div className="flex justify-between items-center mb-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Subtask Progress</span>
+                <span className="text-[10px] font-bold text-foreground">{subtasks.filter(s => s.status === 'done').length}/{subtasks.length}</span>
+              </div>
+              <div className="h-1.5 w-full bg-secondary/50 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-primary transition-all duration-500" 
+                  style={{ width: `${(subtasks.filter(s => s.status === 'done').length / subtasks.length) * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col gap-2">
@@ -159,11 +175,18 @@ export function TaskItem({ task, subtasks, onEdit, onToggleStatus, onDelete }: T
         </div>
       </div>
 
-      {subtasks && subtasks.length > 0 && (
+      {subtasks && (
         <div className="mt-6 space-y-4 pl-6 border-l border-border/50">
-          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 mb-2">
-            <ChevronDown className="h-3 w-3" />
-            Subtasks ({subtasks.length})
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">
+              <ChevronDown className="h-3 w-3" />
+              Subtasks ({subtasks.length})
+            </div>
+            {onAddSubtask && (
+              <Button variant="ghost" size="sm" onClick={() => onAddSubtask(task.id)} className="h-6 px-2 text-[9px] uppercase tracking-widest">
+                <Plus className="h-3 w-3 mr-1" /> Add
+              </Button>
+            )}
           </div>
           {subtasks.map((st) => (
             <TaskItem
@@ -172,8 +195,14 @@ export function TaskItem({ task, subtasks, onEdit, onToggleStatus, onDelete }: T
               onEdit={onEdit}
               onToggleStatus={onToggleStatus}
               onDelete={onDelete}
+              onAddSubtask={onAddSubtask}
             />
           ))}
+          {subtasks.length === 0 && onAddSubtask && (
+             <Button variant="ghost" size="sm" onClick={() => onAddSubtask(task.id)} className="h-8 w-full border border-dashed border-border text-[10px] uppercase tracking-widest text-muted-foreground">
+                <Plus className="h-3 w-3 mr-2" /> Add Subtask
+             </Button>
+          )}
         </div>
       )}
     </motion.article>

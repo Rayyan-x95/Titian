@@ -18,6 +18,7 @@ import { parseQuickCapture } from '@/lib/core/parserEngine';
 import { SmartInput } from '@/components/ParseConfirmation';
 import { SplitPage } from '../split/SplitPage';
 import { BudgetDialog } from './BudgetDialog';
+import { SpendingTrendChart, CategoryPieChart } from '@/components/ui/SpendingCharts';
 
 type FinanceTab = 'today' | 'week' | 'month' | 'split';
 
@@ -28,11 +29,18 @@ export function FinancePage() {
     path: '/finance',
   });
 
-  const { 
-    expenses, budgets, accounts, tasks, notes, hydrated,
-    addExpense, updateExpense, deleteExpense, 
-    addBudget, deleteBudget, processRecurringTransactions 
-  } = useStore();
+  const expenses = useStore((s) => s.expenses);
+  const budgets = useStore((s) => s.budgets);
+  const accounts = useStore((s) => s.accounts);
+  const tasks = useStore((s) => s.tasks);
+  const notes = useStore((s) => s.notes);
+  const hydrated = useStore((s) => s.hydrated);
+  const addExpense = useStore((s) => s.addExpense);
+  const updateExpense = useStore((s) => s.updateExpense);
+  const deleteExpense = useStore((s) => s.deleteExpense);
+  const addBudget = useStore((s) => s.addBudget);
+  const deleteBudget = useStore((s) => s.deleteBudget);
+  const processRecurringTransactions = useStore((s) => s.processRecurringTransactions);
   
   const { currency } = useSettings();
 
@@ -63,6 +71,23 @@ export function FinancePage() {
       })
       .reduce((sum, e) => sum + e.amount, 0);
   }, [expenses]);
+
+  const lastMonthSpend = useMemo(() => {
+    const now = new Date();
+    const lastMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+    const lastMonthYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+    return expenses
+      .filter(e => {
+        const d = new Date(e.createdAt);
+        return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear && e.type === 'expense';
+      })
+      .reduce((sum, e) => sum + e.amount, 0);
+  }, [expenses]);
+
+  const monthChange = useMemo(() => {
+    if (lastMonthSpend === 0) return null;
+    return Math.round(((monthlySpend - lastMonthSpend) / lastMonthSpend) * 100);
+  }, [monthlySpend, lastMonthSpend]);
 
   const filteredExpenses = useMemo(() => {
     const now = new Date();
@@ -167,21 +192,22 @@ export function FinancePage() {
               {formatMoney(totalBalance, currency)}
             </h2>
             <div className="mt-10 flex flex-wrap gap-4">
-              <div className="group flex items-center gap-4 rounded-2xl bg-emerald-500/10 px-6 py-3 border border-emerald-500/20 transition-all hover:bg-emerald-500/15">
-                <div>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-emerald-500/80">Monthly Spend</p>
-                  <p className="text-xl font-bold text-emerald-400 group-hover:scale-105 transition-transform origin-left">{formatMoney(monthlySpend, currency)}</p>
+                <div className="group flex items-center gap-4 rounded-2xl bg-emerald-500/10 px-6 py-3 border border-emerald-500/20 transition-all hover:bg-emerald-500/15">
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-widest text-emerald-500/80">Monthly Spend</p>
+                    <p className="text-xl font-bold text-emerald-400 group-hover:scale-105 transition-transform origin-left">{formatMoney(monthlySpend, currency)}</p>
+                  </div>
+                  {monthChange !== null && (
+                    <>
+                      <div className="h-8 w-px bg-emerald-500/20" />
+                      <div className="flex items-center gap-1.5">
+                         {monthChange >= 0 ? <ArrowUpRight className="h-4 w-4 text-rose-400" /> : <ArrowDownRight className="h-4 w-4 text-emerald-500" />}
+                         <span className={`text-sm font-black ${monthChange >= 0 ? 'text-rose-400' : 'text-emerald-500'}`}>{Math.abs(monthChange)}%</span>
+                      </div>
+                    </>
+                  )}
                 </div>
-                <div className="h-8 w-px bg-emerald-500/20" />
-                <div className="flex items-center gap-1.5">
-                   <ArrowUpRight className="h-4 w-4 text-emerald-500" />
-                   <span className="text-sm font-black text-emerald-500">12%</span>
-                </div>
-              </div>
-              <Button variant="secondary" className="rounded-2xl h-auto py-3 px-6 border-border/50 bg-secondary/40 backdrop-blur-md">
-                <TrendingUp className="mr-2 h-4 w-4 text-primary" />
-                <span className="text-xs font-bold uppercase tracking-wider">Analysis</span>
-              </Button>
+
             </div>
           </div>
         </motion.article>
@@ -248,8 +274,20 @@ export function FinancePage() {
           </div>
           <div className="grid grid-cols-1 gap-4">
              {budgets.slice(0, 3).map(b => {
+               const now = new Date();
                const spent = expenses
-                 .filter(e => e.category === b.category && e.type === 'expense')
+                 .filter(e => {
+                   if (e.category !== b.category || e.type !== 'expense') return false;
+                   const d = new Date(e.createdAt);
+                   if (b.period === 'monthly') {
+                     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+                   }
+                   // weekly: current week (Sunday start)
+                   const startOfWeek = new Date(now);
+                   startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+                   startOfWeek.setHours(0, 0, 0, 0);
+                   return d >= startOfWeek;
+                 })
                  .reduce((sum, e) => sum + e.amount, 0);
                const percent = Math.min((spent / b.limit) * 100, 100);
                const isCritical = percent > 85;
@@ -297,35 +335,19 @@ export function FinancePage() {
              </div>
              <div>
                <h3 className="font-bold tracking-tight text-foreground">Spending Insights</h3>
-               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Category Mix</p>
+               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Trends & Mix</p>
              </div>
           </div>
-          <div className="rounded-[2.5rem] border border-border/50 bg-card/20 p-8 space-y-6 backdrop-blur-sm">
-             {categoryBreakdown.slice(0, 4).map(([cat, amt]) => {
-               const percent = monthlySpend > 0 ? (amt / monthlySpend) * 100 : 0;
-
-               return (
-                 <div key={cat} className="space-y-2.5">
-                   <div className="flex justify-between items-end">
-                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/80">{cat}</span>
-                     <span className="text-xs font-bold text-foreground">{percent.toFixed(0)}%</span>
-                   </div>
-                   <div className="h-1.5 w-full rounded-full bg-secondary/40">
-                     <motion.div 
-                       initial={{ width: 0 }}
-                       animate={{ width: `${percent}%` }}
-                       transition={{ duration: 0.8, ease: "easeOut" }}
-                       className="h-full rounded-full bg-accent shadow-[0_0_8px_rgba(168,85,247,0.3)]" 
-                     />
-                   </div>
-                 </div>
-               );
-             })}
-             {categoryBreakdown.length === 0 && (
-               <div className="py-10 text-center">
-                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">No Spending Data</p>
-               </div>
-             )}
+          <div className="rounded-[2.5rem] border border-border/50 bg-card/20 p-8 space-y-8 backdrop-blur-sm">
+             <div className="space-y-4">
+               <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Trend (14 Days)</h4>
+               <SpendingTrendChart expenses={expenses} />
+             </div>
+             <div className="h-px w-full bg-border/50" />
+             <div className="space-y-4">
+               <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Category Mix</h4>
+               <CategoryPieChart expenses={expenses} />
+             </div>
           </div>
         </motion.div>
       </section>

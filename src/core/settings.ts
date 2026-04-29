@@ -17,6 +17,7 @@ export interface AppSettings {
   animations: boolean;
   appPin?: string;
   pinEnabled: boolean;
+  biometricEnabled: boolean;
 }
 
 const DEFAULT_PIN_SALT = 'titan-pin-salt-v1';
@@ -49,6 +50,7 @@ interface SettingsStore extends AppSettings {
   setAnimations: (enabled: boolean) => void;
   setPin: (pin?: string) => Promise<void>;
   setPinEnabled: (enabled: boolean) => void;
+  setBiometricEnabled: (enabled: boolean) => void;
 }
 
 const STORAGE_KEY = 'titan-settings';
@@ -71,6 +73,7 @@ function loadSettings(): AppSettings {
         animations: parsed.animations ?? true,
         appPin: parsed.appPin,
         pinEnabled: parsed.pinEnabled ?? false,
+        biometricEnabled: parsed.biometricEnabled ?? false,
       };
     }
   } catch {
@@ -87,7 +90,8 @@ function loadSettings(): AppSettings {
     },
     compactMode: false,
     animations: true,
-    pinEnabled: false
+    pinEnabled: false,
+    biometricEnabled: false
   };
 }
 
@@ -137,6 +141,7 @@ export const useSettings = create<SettingsStore>((set, get) => ({
     set(makeUpdater('appPin')(get(), hashed));
   },
   setPinEnabled: (pinEnabled) => set(makeUpdater('pinEnabled')(get(), pinEnabled)),
+  setBiometricEnabled: (biometricEnabled) => set(makeUpdater('biometricEnabled')(get(), biometricEnabled)),
 }));
 
 /**

@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowUpRight, Link2, PencilLine, Trash2, Pin, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { cn } from '@/utils/cn';
 import type { Note, Task } from '@/core/store/types';
 
@@ -19,7 +21,7 @@ function toPreview(content: string) {
     .map((line) => line.trim())
     .filter(Boolean)
     .slice(0, 3)
-    .join(' ')
+    .join('\n\n')
     .trim();
 
   if (!compact) {
@@ -71,9 +73,11 @@ export function NoteItem({ note, linkedTasks, onOpen, onDelete, onConvertToTask 
             )}
           </div>
 
-          <p className="text-base font-medium leading-relaxed text-foreground/90 selection:bg-primary/20">
-            {preview}
-          </p>
+          <div className="text-base font-medium leading-relaxed text-foreground/90 selection:bg-primary/20 line-clamp-4 prose prose-invert prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-li:my-0">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {preview}
+            </ReactMarkdown>
+          </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-2">
             {note.tags.map((tag) => (

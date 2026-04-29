@@ -1,6 +1,6 @@
 import { LayoutDashboard, Landmark, NotebookPen, Settings, SquareCheckBig, Clock } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { cn } from '@/utils/cn';
 
 const items = [
@@ -39,18 +39,13 @@ export function Navigation() {
             >
               {({ isActive }) => (
                 <>
-                  <AnimatePresence>
-                    {isActive && (
-                      <motion.div 
-                        layoutId="nav-active"
-                        className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-primary/80 to-accent/80 shadow-[0_0_20px_rgba(var(--primary),0.3)] -z-10"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                      />
-                    )}
-                  </AnimatePresence>
+                  {isActive && (
+                    <motion.div 
+                      layoutId="nav-active"
+                      className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-primary/80 to-accent/80 shadow-[0_0_20px_rgba(var(--primary),0.3)] -z-10"
+                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                    />
+                  )}
                   <Icon className={cn("h-5 w-5 transition-all duration-500", isActive ? "scale-110 drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" : "opacity-80")} />
                   <span className="hidden sm:block text-[10px] font-black uppercase tracking-widest leading-none opacity-90">{item.label}</span>
                 </>

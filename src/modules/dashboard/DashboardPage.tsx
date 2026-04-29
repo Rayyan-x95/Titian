@@ -20,7 +20,7 @@ import { PageShell } from '@/components/PageShell';
 import { Card } from '@/components/ui/Card';
 import { useStore } from '@/core/store';
 import { useSettings, formatMoney } from '@/core/settings';
-import type { Note, Task } from '@/core/store/types';
+import type { Note, Task, OnboardingProfile } from '@/core/store/types';
 import { useSeo } from '@/seo';
 import { cn } from '@/utils/cn';
 import { parseQuickCapture } from '@/lib/core/parserEngine';
@@ -159,12 +159,6 @@ function QuickCapture() {
 
       setValue('');
       setStatus('success');
-      
-      const today = new Date().toISOString().split('T')[0];
-      await useStore.getState().updateSnapshot(today, 'task', 1);
-      if (parsed.amount !== undefined) {
-        await useStore.getState().updateSnapshot(today, 'expense', parsed.amount);
-      }
 
       setTimeout(() => setStatus('idle'), 1800);
     } catch {
@@ -343,6 +337,7 @@ function SnapshotCard() {
   const tasks = useStore(state => state.tasks);
   const notes = useStore(state => state.notes);
   const expenses = useStore(state => state.expenses);
+  const onboardingName = useStore(state => state.onboarding.name);
   const currency = useSettings(s => s.currency);
 
   const today = format(new Date(), 'yyyy-MM-dd');
@@ -364,7 +359,7 @@ function SnapshotCard() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/80">Life Snapshot</p>
-            <h2 className="mt-2 text-3xl font-black tracking-tight text-foreground">{getGreeting()}, Rayyan</h2>
+            <h2 className="mt-2 text-3xl font-black tracking-tight text-foreground">{getGreeting()}, {onboardingName || 'there'}</h2>
           </div>
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-glow-sm">
             <Activity className="h-6 w-6" />
@@ -458,6 +453,7 @@ function InsightCard({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
+
 export function DashboardPage() {
   useSeo({ title: 'Dashboard', description: 'Your personal command center for tasks, notes, and finance.' });
 
@@ -468,6 +464,14 @@ export function DashboardPage() {
   const expenses = useStore((s) => s.expenses);
   const budgets = useStore((s) => s.budgets);
   const sharedExpenses = useStore((s) => s.sharedExpenses);
+  const hydrated = useStore((s) => s.hydrated);
+  const processRecurringTasks = useStore((s) => s.processRecurringTasks);
+
+  useEffect(() => {
+    if (hydrated) {
+      processRecurringTasks();
+    }
+  }, [hydrated, processRecurringTasks]);
 
   // ── Derived data (memoized) ──────────────────────────────────────────────
   const todayTasks = useMemo(() => getTodayTasks(tasks), [tasks]);
