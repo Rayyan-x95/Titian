@@ -1,11 +1,7 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, Image as ImageIcon, FileText, X, Check, AlertCircle, Sparkles } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { BottomSheet } from '@/components/ui/BottomSheet';
-import { PremiumInput } from '@/components/ui/PremiumInput';
-import { CategoryCombobox } from '@/components/ui/CategoryCombobox';
-import { DatePicker } from '@/components/ui/DatePicker';
+import { Button, BottomSheet, PremiumInput, CategoryCombobox, DatePicker } from '@/shared/ui';
 import { parseFile, parseText, type ParsedTransaction, type ParseResult } from '@/utils/parserEngine';
 import { cn } from '@/utils/cn';
 

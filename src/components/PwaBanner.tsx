@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Download, RefreshCcw, WifiOff } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/shared/ui';
 import { promptInstall } from '@/pwa';
 import { createPwaUpdateController } from '@/pwaUpdates';
 import { usePwaStatus } from '@/hooks/usePwaStatus';

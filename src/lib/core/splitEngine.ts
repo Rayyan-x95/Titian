@@ -3,6 +3,8 @@ export interface SplitParticipant {
   weight?: number;
 }
 
+import { safeAddCents, safeSubCents } from './financeEngine';
+
 export interface SplitShare {
   id: string;
   amount: number;
@@ -65,8 +67,8 @@ export function splitWeighted(totalAmount: number, participants: SplitParticipan
     amount: Math.floor((total * weights[index]) / weightTotal),
   }));
 
-  let allocated = provisional.reduce((sum, item) => sum + item.amount, 0);
-  let remainder = total - allocated;
+  let allocated = provisional.reduce((sum, item) => safeAddCents(sum, item.amount), 0);
+  let remainder = safeSubCents(total, allocated);
 
   const sortedIndexes = participants
     .map((participant, index) => ({ index, weight: weights[index] }))
@@ -85,12 +87,12 @@ export function splitWeighted(totalAmount: number, participants: SplitParticipan
 
 export function validateSplitShares(totalAmount: number, shares: SplitShare[]): boolean {
   const total = normalizeCents(totalAmount);
-  const sum = shares.reduce((accumulator, share) => accumulator + normalizeCents(share.amount), 0);
+  const sum = shares.reduce((accumulator, share) => safeAddCents(accumulator, share.amount), 0);
   return total === sum;
 }
 
 export function validateBalances(balances: BalanceEntry[]): boolean {
-  const sum = balances.reduce((accumulator, entry) => accumulator + normalizeCents(entry.balance), 0);
+  const sum = balances.reduce((accumulator, entry) => safeAddCents(accumulator, entry.balance), 0);
   return Math.abs(sum) < 2; // Allow 1-2 cents rounding error across large lists
 }
 
@@ -106,8 +108,8 @@ export function computeSettlements(balances: BalanceEntry[]): Settlement[] {
     .map((entry) => ({ id: entry.id, balance: normalizeCents(entry.balance) }))
     .sort((left, right) => right.balance - left.balance);
 
-  const totalDebt = debtors.reduce((sum, d) => sum + d.balance, 0);
-  const totalCredit = creditors.reduce((sum, c) => sum + c.balance, 0);
+  const totalDebt = debtors.reduce((sum, d) => safeAddCents(sum, d.balance), 0);
+  const totalCredit = creditors.reduce((sum, c) => safeAddCents(sum, c.balance), 0);
 
   // If there's a slight mismatch due to rounding in upstream logic, 
   // adjust the largest debtor/creditor to ensure the settlement can zero out.

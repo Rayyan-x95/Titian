@@ -1,4 +1,4 @@
-import { LayoutDashboard, Landmark, NotebookPen, Settings, SquareCheckBig, Clock } from 'lucide-react';
+import { LayoutDashboard, Landmark, NotebookPen, Settings, SquareCheckBig, Clock, Users } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { cn } from '@/utils/cn';
@@ -8,6 +8,7 @@ const items = [
   { to: '/timeline', label: 'Feed', icon: Clock },
   { to: '/tasks', label: 'Tasks', icon: SquareCheckBig },
   { to: '/notes', label: 'Notes', icon: NotebookPen },
+  { to: '/splits', label: 'Splits', icon: Users },
   { to: '/finance', label: 'Finance', icon: Landmark },
   { to: '/settings', label: 'Settings', icon: Settings },
 ] as const;

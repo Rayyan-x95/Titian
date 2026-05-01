@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useStore } from '@/core/store';
 import { createNotificationHandler } from '@/lib/notifications';
 import { useSettings } from '@/core/settings';
+import { calculateBudgetUsage } from '@/lib/core/financeEngine';
 
 export function useBackgroundNotifications() {
   const tasks = useStore((state) => state.tasks);
@@ -37,11 +38,9 @@ export function useBackgroundNotifications() {
       budgets.forEach((budget) => {
         if (notifiedBudgets.has(budget.id)) return;
 
-        const spent = expenses
-          .filter(e => e.category === budget.category && e.type === 'expense')
-          .reduce((sum, e) => sum + e.amount, 0);
-
-        const percent = budget.limit > 0 ? (spent / budget.limit) * 100 : 0;
+        const usage = calculateBudgetUsage(budget, expenses, now);
+        const percent = usage.percent;
+        const spent = usage.spent;
 
         if (percent >= 90) {
           handler.notifyBudgetAlert({ category: budget.category, limit: budget.limit, spent });

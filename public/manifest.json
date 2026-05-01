@@ -1,7 +1,7 @@
 {
-  "name": "Titan",
+  "name": "Titan Productivity & Finance",
   "short_name": "Titan",
-  "description": "Titan is an installable, offline-first productivity app for tasks, notes, and finance.",
+  "description": "Titan is an offline-first productivity app for task management, notes, and expense tracking. A free personal organizer that works without internet.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

@@ -17,6 +17,7 @@ export interface Friend {
   id: string;
   name: string;
   phoneNumber?: string;
+  upiId?: string;
   avatar?: string;
   createdAt: string;
 }
@@ -38,6 +39,10 @@ export interface SharedExpense {
   linkedExpenseId?: string;
   note?: string;
   area?: LifeArea;
+  isSettlement?: boolean;
+  settlementStatus?: 'pending' | 'settled';
+  settlementAmount?: MoneyCents;
+  settlementDate?: string;
   createdAt: string;
 }
 
@@ -137,6 +142,7 @@ export interface OnboardingProfile {
   id: 'primary';
   name: string;
   phoneNumber?: string;
+  upiId?: string;
   dob?: string;
   income: MoneyCents;
   avgExpense: MoneyCents;
@@ -186,7 +192,7 @@ export interface BudgetInput {
 }
 
 export type OnboardingUpdate = Partial<
-  Pick<OnboardingProfile, 'name' | 'phoneNumber' | 'dob' | 'income' | 'avgExpense' | 'goals' | 'preferences' | 'currentStep'>
+  Pick<OnboardingProfile, 'name' | 'phoneNumber' | 'upiId' | 'dob' | 'income' | 'avgExpense' | 'goals' | 'preferences' | 'currentStep'>
 >;
 
 export type FriendInput = Omit<Friend, 'id' | 'createdAt'> & Partial<Pick<Friend, 'id' | 'createdAt'>>;
@@ -202,3 +208,9 @@ export type NoteUpdate = Partial<Omit<Note, 'id' | 'createdAt'>>;
 export type AccountUpdate = Partial<Omit<Account, 'id' | 'createdAt'>>;
 export type ExpenseUpdate = Partial<Omit<Expense, 'id' | 'createdAt'>>;
 export type BudgetUpdate = Partial<Omit<Budget, 'id'>>;
+
+export type TimelineItem =
+  | { type: 'task'; data: Task; timestamp: string }
+  | { type: 'note'; data: Note; timestamp: string }
+  | { type: 'expense'; data: Expense; timestamp: string }
+  | { type: 'split'; data: SharedExpense; timestamp: string };

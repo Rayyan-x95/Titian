@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "prepare": "husky install",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "lint": "eslint 'src/**/*.{ts,tsx}' --max-warnings=0",
@@ -40,7 +41,8 @@
     "remark-gfm": "^4.0.1",
     "tesseract.js": "^7.0.0",
     "workbox-window": "^7.4.0",
-    "zustand": "^5.0.7"
+    "zustand": "^5.0.7",
+    "memoize-one": "^6.0.0"
   },
   "devDependencies": {
     "@types/node": "^24.2.1",
@@ -64,7 +66,6 @@
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-jsx-a11y": "^6.7.1",
     "husky": "^8.0.0",
-    "lint-staged": "^14.0.0",
-    "memoize-one": "^6.0.0"
+    "lint-staged": "^14.0.0"
   }
 }

@@ -194,76 +194,83 @@ function toIsoDate(date: Date): string {
 }
 
 export function parseQuickCapture(input: string, now = new Date()): QuickParseResult {
-  const lower = input.toLowerCase();
-  let amount: number | undefined;
-  let type: 'expense' | 'income' = 'expense';
-  let category = 'Uncategorized';
-  let dueDate: string | undefined;
+  try {
+    const lower = input.toLowerCase();
+    let amount: number | undefined;
+    let type: 'expense' | 'income' = 'expense';
+    let category = 'Uncategorized';
+    let dueDate: string | undefined;
 
-  // 1. Parse Amount
-  // 1. Parse Amount (handles symbols like ₹, $, €, £, and various placements)
-  const amountMatch = input.match(/(?:[\u20B9\u0024\u20AC\u00A3\u00A5]|rs\.?|inr)\s*([\d,]+(?:\.\d{1,2})?)|([\d,]+(?:\.\d{1,2})?)\s*(?:[\u20B9\u0024\u20AC\u00A3\u00A5]|rs\.?|inr)|(?:\b|^)([\d,]+(?:\.\d{1,2})?)(?:\b|$)/i);
-  if (amountMatch) {
-    const amountStr = amountMatch[1] || amountMatch[2] || amountMatch[3];
-    const parsed = Number.parseFloat(amountStr.replace(/,/g, ''));
-    if (Number.isFinite(parsed) && parsed > 0) {
-      amount = dollarsToCentsSafe(parsed);
-    }
-  }
-
-  // 2. Parse Type
-  if (incomeKeywords.some((keyword) => lower.includes(keyword))) {
-    type = 'income';
-  }
-
-  // 3. Parse Category
-  for (const [mappedCategory, keywords] of Object.entries(categoriesMap)) {
-    if (keywords.some((keyword) => lower.includes(keyword))) {
-      category = mappedCategory;
-      break;
-    }
-  }
-
-  // 4. Parse Date
-  if (lower.includes('tomorrow')) {
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    dueDate = toIsoDate(tomorrow);
-  } else if (lower.includes('today')) {
-    dueDate = toIsoDate(now);
-  } else {
-    // Match "on 25th", "on 25", "on 3rd"
-    const dayMatch = lower.match(/on\s+(\d+)(?:st|nd|rd|th)?/i);
-    if (dayMatch) {
-      const day = parseInt(dayMatch[1], 10);
-      const targetDate = new Date(now);
-      if (day >= 1 && day <= 31) {
-        if (day < targetDate.getDate()) {
-          targetDate.setMonth(targetDate.getMonth() + 1);
-        }
-        targetDate.setDate(day);
-        dueDate = toIsoDate(targetDate);
+    // 1. Parse Amount
+    const amountMatch = input.match(/(?:[\u20B9\u0024\u20AC\u00A3\u00A5]|rs\.?|inr)\s*([\d,]+(?:\.\d{1,2})?)|([\d,]+(?:\.\d{1,2})?)\s*(?:[\u20B9\u0024\u20AC\u00A3\u00A5]|rs\.?|inr)|(?:\b|^)([\d,]+(?:\.\d{1,2})?)(?:\b|$)/i);
+    if (amountMatch) {
+      const amountStr = amountMatch[1] || amountMatch[2] || amountMatch[3];
+      const parsed = Number.parseFloat(amountStr.replace(/,/g, ''));
+      if (Number.isFinite(parsed) && parsed > 0) {
+        amount = dollarsToCentsSafe(parsed);
       }
     }
+
+    // 2. Parse Type
+    if (incomeKeywords.some((keyword) => lower.includes(keyword))) {
+      type = 'income';
+    }
+
+    // 3. Parse Category
+    for (const [mappedCategory, keywords] of Object.entries(categoriesMap)) {
+      if (keywords.some((keyword) => lower.includes(keyword))) {
+        category = mappedCategory;
+        break;
+      }
+    }
+
+    // 4. Parse Date
+    if (lower.includes('tomorrow')) {
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      dueDate = toIsoDate(tomorrow);
+    } else if (lower.includes('today')) {
+      dueDate = toIsoDate(now);
+    } else {
+      const dayMatch = lower.match(/on\s+(\d+)(?:st|nd|rd|th)?/i);
+      if (dayMatch) {
+        const day = parseInt(dayMatch[1], 10);
+        const targetDate = new Date(now);
+        if (day >= 1 && day <= 31) {
+          if (day < targetDate.getDate()) {
+            targetDate.setMonth(targetDate.getMonth() + 1);
+          }
+          targetDate.setDate(day);
+          dueDate = toIsoDate(targetDate);
+        }
+      }
+    }
+
+    // 5. Clean Title
+    const cleanTitle = input
+      .replace(/(?:[\u20B9\u0024\u20AC\u00A3\u00A5]|rs\.?|inr)\s*[\d,]+(?:\.\d{1,2})?|[\d,]+(?:\.\d{1,2})?\s*(?:[\u20B9\u0024\u20AC\u00A3\u00A5]|rs\.?|inr)|(?:\b|^)[\d,]+(?:\.\d{1,2})?(?:\b|$)/gi, '')
+      .replace(/\b(tomorrow|today)\b/gi, '')
+      .replace(/\bon\s+\d+(?:st|nd|rd|th)?\b/gi, '')
+      .replace(new RegExp(`\\b(${incomeKeywords.join('|')})\\b`, 'gi'), '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    return {
+      title: cleanTitle || input.trim() || 'Untitled Entry',
+      amount,
+      type,
+      category,
+      dueDate,
+      note: input.length > 200 ? `${input.slice(0, 200).trim()}...` : input.trim(),
+    };
+  } catch (err) {
+    // Ultimate fallback if parsing entirely fails
+    return {
+      title: input.trim() || 'Untitled Entry',
+      type: 'expense',
+      category: 'Uncategorized',
+    };
   }
-
-  // 5. Clean Title
-  const cleanTitle = input
-    .replace(/(?:[\u20B9\u0024\u20AC\u00A3\u00A5]|rs\.?|inr)\s*[\d,]+(?:\.\d{1,2})?|[\d,]+(?:\.\d{1,2})?\s*(?:[\u20B9\u0024\u20AC\u00A3\u00A5]|rs\.?|inr)|(?:\b|^)[\d,]+(?:\.\d{1,2})?(?:\b|$)/gi, '')
-    .replace(/\b(tomorrow|today)\b/gi, '')
-    .replace(/\bon\s+\d+(?:st|nd|rd|th)?\b/gi, '')
-    .replace(new RegExp(`\\b(${incomeKeywords.join('|')})\\b`, 'gi'), '')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  return {
-    title: cleanTitle || input.trim(),
-    amount,
-    type,
-    category,
-    dueDate,
-    note: input.length > 200 ? `${input.slice(0, 200).trim()}...` : input.trim(),
-  };
 }
 
 // Backward-compatible adapter used by existing tests and older call sites.

@@ -1,0 +1,1 @@
+export { ShareTargetPage } from './ShareTargetPage';

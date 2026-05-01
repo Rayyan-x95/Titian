@@ -1,4 +1,5 @@
 import type { Account, Budget, Expense, OnboardingProfile } from '@/core/store/types';
+import { calculateNextOccurrence as calculateTaskNextOccurrence } from './taskEngine';
 
 export type FinanceRange = 'today' | 'week' | 'month' | 'all';
 
@@ -70,23 +71,26 @@ export function shouldRebalanceForExpenseUpdate(updates: Partial<Expense>): bool
 }
 
 export function normalizeExpenseRecurrenceRule(value: unknown): Expense['recurrenceRule'] | undefined {
+  // Max interval: 1 year (365 days) to prevent unreasonable recurrence rules
+  const MAX_RECURRENCE_INTERVAL = 365;
+  
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
 
   const candidate = value as Record<string, unknown>;
-  const type =
-    candidate.type === 'daily' ||
-    candidate.type === 'weekly' ||
-    candidate.type === 'monthly'
-      ? candidate.type
-      : undefined;
+  const validTypes = ['daily', 'weekly', 'monthly'] as const;
+  const type = validTypes.includes(candidate.type as any) ? (candidate.type as any) : undefined;
+  
+  if (!type) return undefined;
+  
   const interval =
     typeof candidate.interval === 'number' &&
     Number.isFinite(candidate.interval) &&
-    candidate.interval > 0
-      ? candidate.interval
+    candidate.interval > 0 &&
+    candidate.interval <= MAX_RECURRENCE_INTERVAL
+      ? Math.floor(candidate.interval)
       : undefined;
 
-  return type && interval ? { type, interval } : undefined;
+  return interval ? { type, interval } : undefined;
 }
 
 export function recalculateBalancesForExpenseUpdate(
@@ -122,6 +126,18 @@ export function recalculateBalancesForExpenseUpdate(
 
 export function calculateTotalBalance(accounts: Account[]): number {
   return accounts.reduce((sum, account) => safeAddCents(sum, account.balance), 0);
+}
+
+export function calculateTotalSpent(expenses: Expense[]): number {
+  return expenses
+    .filter(e => e.type === 'expense')
+    .reduce((sum, expense) => safeAddCents(sum, expense.amount), 0);
+}
+
+export function calculateTotalIncome(expenses: Expense[]): number {
+  return expenses
+    .filter(e => e.type === 'income')
+    .reduce((sum, expense) => safeAddCents(sum, expense.amount), 0);
 }
 
 function toDateKey(date: Date): string {
@@ -179,6 +195,28 @@ export function calculateCategoryTotals(expenses: Expense[]): Record<string, num
     accumulator[expense.category] = safeAddCents(current, expense.amount);
     return accumulator;
   }, {});
+}
+
+export function getTopCategories(expenses: Expense[], top = 3): { category: string; amount: number }[] {
+  const totals = calculateCategoryTotals(expenses);
+  return Object.entries(totals)
+    .map(([category, amount]) => ({ category, amount }))
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, top);
+}
+
+export function getWeeklyTrend(expenses: Expense[], now = new Date()): { day: string; amount: number }[] {
+  const result: { day: string; amount: number }[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(now.getDate() - i);
+    const key = toDateKey(d);
+    const dayTotal = expenses
+      .filter(e => e.type === 'expense' && toDateKey(new Date(e.createdAt)) === key)
+      .reduce((sum, e) => safeAddCents(sum, e.amount), 0);
+    result.push({ day: d.toLocaleDateString(undefined, { weekday: 'short' }), amount: dayTotal });
+  }
+  return result;
 }
 
 export function calculateMonthlyExpense(expenses: Expense[], now = new Date()): number {
@@ -274,4 +312,47 @@ export function normalizeBudget(payload: any): Budget {
     limit: typeof payload.limit === 'number' ? normalizePositiveCents(payload.limit) : 0,
     period: payload.period === 'weekly' ? 'weekly' : 'monthly',
   };
+}
+
+export function generateNextRecurringTransactions(expenses: Expense[], now = new Date()): { newExpenses: Expense[], updatedExpenses: { id: string; lastProcessedAt: string }[] } {
+  const recurring = expenses.filter(e => e.isRecurring && e.recurrenceRule);
+  const newExpenses: Expense[] = [];
+  const updatedExpenses: { id: string; lastProcessedAt: string }[] = [];
+
+  for (const item of recurring) {
+    // Use lastProcessedAt if available, otherwise use createdAt as the base
+    const baseDate = item.lastProcessedAt || item.createdAt;
+    let cursorDate = new Date(baseDate);
+    let nextOccurrence = calculateTaskNextOccurrence(cursorDate.toISOString(), item.recurrenceRule!);
+    if (!nextOccurrence) continue;
+
+    let nextDate = new Date(nextOccurrence);
+    let createdCount = 0;
+
+    while (nextDate <= now) {
+      newExpenses.push({
+        id: crypto.randomUUID(),
+        amount: item.amount,
+        category: item.category,
+        type: item.type,
+        accountId: item.accountId,
+        note: `Recurring: ${item.note || item.category}`,
+        tags: item.tags,
+        area: item.area,
+        isRecurring: false,
+        createdAt: nextDate.toISOString(),
+      });
+      cursorDate = nextDate;
+      const nextTime = calculateTaskNextOccurrence(nextDate.toISOString(), item.recurrenceRule!);
+      if (!nextTime) break;
+      nextDate = new Date(nextTime);
+      createdCount++;
+    }
+
+    if (createdCount > 0) {
+      updatedExpenses.push({ id: item.id, lastProcessedAt: cursorDate.toISOString() });
+    }
+  }
+
+  return { newExpenses, updatedExpenses };
 }

@@ -1,9 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import { Navigation } from '@/components/Navigation';
-import { PwaBanner } from '@/components/PwaBanner';
-import { CommandPalette } from '@/components/CommandPalette';
-import { LockScreen } from '@/components/LockScreen';
+import { Navigation, PwaBanner, CommandPalette, LockScreen } from '@/shared/components';
 import { useSettings } from '@/core/settings';
 import { APP_VERSION } from '@/core/version';
 import { useScrollDirection } from '@/hooks/useScrollDirection';

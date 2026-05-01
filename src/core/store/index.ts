@@ -27,7 +27,7 @@ export type {
   GroupBalance,
 } from './types';
 export { initializeCoreStore, useStore } from './useStore';
-export type { TimelineItem } from './useStore';
+export type { TimelineItem } from './types';
 export {
   clearTaskNoteReference,
   clearTasksForDeletedNote,

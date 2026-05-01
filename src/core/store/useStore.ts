@@ -38,7 +38,8 @@ import {
   syncNoteNoteReferences,
   syncTaskNoteReference,
   validateTaskNoteReference,
-  clearTaskNoteReference
+  clearTaskNoteReference,
+  validateNoteReferences
 } from './taskNoteSync';
 import { sanitizeString, sanitizeTags, sanitizeDateString } from '@/utils/sanitizer';
 import {
@@ -54,15 +55,17 @@ import {
   shouldRebalanceForExpenseUpdate,
   normalizeAccount,
   normalizeBudget,
+  generateNextRecurringTransactions,
 } from '@/lib/core/financeEngine';
 import {
   calculateNextOccurrence,
-  getTodayTasks as getTodayTasksFromEngine,
   normalizeRecurrence as normalizeTaskRecurrence,
   normalizeTask,
   validateTaskRelationships,
+  generateNextRecurringTasks,
 } from '@/lib/core/taskEngine';
 import { normalizeNote } from '@/lib/core/noteEngine';
+import { computeDailySnapshots } from '@/lib/core/timelineEngine';
 
 // Security: Input validation limits
 const MAX_ARRAY_LENGTH = 1000;
@@ -149,20 +152,9 @@ interface CoreStoreState {
   // Rate limiting
   resetRateLimits: () => Promise<void>;
 
-  getTodayTasks: () => Task[];
-  getWeeklyExpenses: () => Expense[];
-  getCategoryTotals: () => Record<string, number>;
-  getPinnedNotes: () => Note[];
-  getTimelineItems: () => TimelineItem[];
   updateSnapshot: (date: string, type: 'task' | 'expense' | 'note' | 'split', value?: number) => Promise<void>;
   recomputeSnapshots: () => Promise<void>;
 }
-
-export type TimelineItem = 
-  | { type: 'task'; data: Task; timestamp: string }
-  | { type: 'note'; data: Note; timestamp: string }
-  | { type: 'expense'; data: Expense; timestamp: string }
-  | { type: 'split'; data: SharedExpense; timestamp: string };
 
 function createId() {
   return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -752,16 +744,41 @@ export const useStore = create<CoreStoreState>((set, get) => ({
       memberIds: g.memberIds.filter(mid => mid !== id)
     }));
 
-    await db.transaction('rw', [db.friends, db.groups], async () => {
+    const nextSharedExpenses = currentState.sharedExpenses.map(se => {
+      let modified = false;
+      let nextPaidBy = se.paidBy;
+      if (se.paidBy === id) {
+        nextPaidBy = 'primary'; // Default fallback
+        modified = true;
+      }
+      const nextParticipants = se.participants.filter(p => p.id !== id);
+      if (nextParticipants.length !== se.participants.length) {
+        modified = true;
+      }
+      return modified ? { ...se, paidBy: nextPaidBy, participants: nextParticipants } : se;
+    });
+
+    await db.transaction('rw', [db.friends, db.groups, db.sharedExpenses], async () => {
       await db.friends.delete(id);
-      for (const g of groups) {
+      
+      const updatedGroups = groups.filter(g => currentState.groups.find(og => og.id === g.id)?.memberIds.length !== g.memberIds.length);
+      for (const g of updatedGroups) {
         await db.groups.update(g.id, { memberIds: g.memberIds });
+      }
+
+      const updatedExpenses = nextSharedExpenses.filter(se => {
+        const orig = currentState.sharedExpenses.find(ose => ose.id === se.id);
+        return orig && (orig.paidBy !== se.paidBy || orig.participants.length !== se.participants.length);
+      });
+      if (updatedExpenses.length > 0) {
+        await db.sharedExpenses.bulkPut(updatedExpenses);
       }
     });
 
     set(state => ({
       friends: state.friends.filter(f => f.id !== id),
-      groups
+      groups,
+      sharedExpenses: nextSharedExpenses
     }));
   },
 
@@ -959,9 +976,20 @@ export const useStore = create<CoreStoreState>((set, get) => ({
           await db.notes.bulkPut(updatedNotes);
         }
         
-        const updatedExpenses = nextExpenses.filter(e => allIdsToDelete.includes(get().expenses.find(x => x.id === e.id)?.linkedTaskId || ''));
+        // Only update expenses that actually had linkedTaskId changed
+        const updatedExpenses = nextExpenses.filter(e => e.linkedTaskId && allIdsToDelete.includes(e.linkedTaskId));
         if (updatedExpenses.length > 0) {
           await db.expenses.bulkPut(updatedExpenses);
+        }
+        
+        // Track completed tasks for snapshot decrement
+        const completedCount = allIdsToDelete.filter(tid => {
+          const task = currentState.tasks.find(t => t.id === tid);
+          return task?.status === 'done';
+        }).length;
+        if (completedCount > 0) {
+          const dateKey = new Date().toISOString().split('T')[0];
+          await get().updateSnapshot(dateKey, 'task', -completedCount);
         }
       });
 
@@ -1006,6 +1034,13 @@ export const useStore = create<CoreStoreState>((set, get) => ({
       if (!current) return undefined;
 
       const nextNote = normalizeNote({ ...current, ...updates });
+      
+      // Validate note references (existence and cycle detection)
+      const referenceErrors = validateNoteReferences(nextNote, currentState.notes);
+      if (referenceErrors.length > 0) {
+        throw new Error(referenceErrors.join(' '));
+      }
+      
       const nextNotes = syncNoteNoteReferences(nextNote, currentState.notes);
       const touchedIds = new Set([nextNote.id, ...(nextNote.linkedNoteIds ?? []), ...(current.linkedNoteIds ?? [])]);
 
@@ -1253,102 +1288,53 @@ export const useStore = create<CoreStoreState>((set, get) => ({
     set(state => ({ budgets: state.budgets.filter(b => b.id !== id) }));
   },
 
-  getTodayTasks: () => {
-    return getTodayTasksFromEngine(get().tasks);
-  },
-
-  getWeeklyExpenses: () => {
-    return filterExpensesByRange(get().expenses, 'week');
-  },
-
-  getCategoryTotals: () => {
-    return calculateCategoryTotals(get().expenses);
-  },
-
-  getPinnedNotes: () => {
-    return get().notes.filter((n) => n.pinned);
-  },
-
-  getTimelineItems: () => {
-    const { tasks, notes, expenses, sharedExpenses } = get();
-    const items: TimelineItem[] = [
-      ...tasks.map(t => ({ type: 'task' as const, data: t, timestamp: t.createdAt })),
-      ...notes.map(n => ({ type: 'note' as const, data: n, timestamp: n.createdAt })),
-      ...expenses.map(e => ({ type: 'expense' as const, data: e, timestamp: e.createdAt })),
-      ...sharedExpenses.map(se => ({ type: 'split' as const, data: se, timestamp: se.createdAt })),
-    ];
-    return items.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
-  },
-
   updateSnapshot: async (date, type, value = 1) => {
-    const snapshots = get().dailySnapshots;
-    let snapshot = snapshots.find(s => s.date === date);
-    
-    if (!snapshot) {
-      snapshot = {
+    try {
+      const current = get().dailySnapshots.find(s => s.date === date);
+      
+      // Create immutable next snapshot
+      const next = {
         date,
-        tasksCompleted: 0,
-        expensesTotal: 0,
-        notesCreated: 0,
-        splitsAdded: 0,
-        topArea: 'personal',
+        tasksCompleted: current?.tasksCompleted ?? 0,
+        expensesTotal: current?.expensesTotal ?? 0,
+        notesCreated: current?.notesCreated ?? 0,
+        splitsAdded: current?.splitsAdded ?? 0,
+        topArea: current?.topArea ?? 'personal',
       };
-    }
 
-    if (type === 'task') snapshot.tasksCompleted += value;
-    else if (type === 'expense') snapshot.expensesTotal += value;
-    else if (type === 'note') snapshot.notesCreated += value;
-    else if (type === 'split') snapshot.splitsAdded += value;
+      // Safely apply the value change
+      if (type === 'task') {
+        next.tasksCompleted = Math.max(0, next.tasksCompleted + value);
+      } else if (type === 'expense') {
+        next.expensesTotal = Math.max(0, next.expensesTotal + value);
+      } else if (type === 'note') {
+        next.notesCreated = Math.max(0, next.notesCreated + value);
+      } else if (type === 'split') {
+        next.splitsAdded = Math.max(0, next.splitsAdded + value);
+      }
 
-    if (db.dailySnapshots && typeof db.dailySnapshots.put === 'function') {
-      await db.dailySnapshots.put(snapshot);
+      // Atomic transaction
+      if (db.dailySnapshots && typeof db.dailySnapshots.put === 'function') {
+        await db.transaction('rw', [db.dailySnapshots], async () => {
+          await db.dailySnapshots.put(next);
+        });
+      }
+      
+      // Update state: filter and update
+      set((state) => {
+        const filtered = state.dailySnapshots.filter(s => s.date !== date);
+        return { dailySnapshots: [...filtered, next] };
+      });
+    } catch (error) {
+      console.error('[Titan] Update snapshot failed:', error);
+      // Don't throw; snapshots are non-critical
     }
-    set((state) => {
-      const nextSnapshots = state.dailySnapshots.filter((entry) => entry.date !== snapshot!.date);
-      nextSnapshots.push(snapshot!);
-      return { dailySnapshots: nextSnapshots };
-    });
   },
 
   recomputeSnapshots: async () => {
     const { tasks, expenses, notes, sharedExpenses } = get();
-    const snapshotMap = new Map<string, DailySnapshot>();
-
-    const getSnapshot = (date: string) => {
-      if (!snapshotMap.has(date)) {
-        snapshotMap.set(date, {
-          date,
-          tasksCompleted: 0,
-          expensesTotal: 0,
-          notesCreated: 0,
-          splitsAdded: 0,
-          topArea: 'personal',
-        });
-      }
-      return snapshotMap.get(date)!;
-    };
-
-    tasks.filter(t => t.status === 'done').forEach(t => {
-      const date = t.createdAt.split('T')[0];
-      getSnapshot(date).tasksCompleted += 1;
-    });
-
-    expenses.filter(e => e.type === 'expense').forEach(e => {
-      const date = e.createdAt.split('T')[0];
-      getSnapshot(date).expensesTotal += e.amount;
-    });
-
-    notes.forEach(n => {
-      const date = n.createdAt.split('T')[0];
-      getSnapshot(date).notesCreated += 1;
-    });
-
-    sharedExpenses.forEach(se => {
-      const date = se.createdAt.split('T')[0];
-      getSnapshot(date).splitsAdded += se.totalAmount;
-    });
-
-    const newSnapshots = Array.from(snapshotMap.values());
+    const newSnapshots = computeDailySnapshots(tasks, notes, expenses, sharedExpenses);
+    
     await db.transaction('rw', [db.dailySnapshots], async () => {
       await db.dailySnapshots.clear();
       await db.dailySnapshots.bulkPut(newSnapshots);
@@ -1359,70 +1345,38 @@ export const useStore = create<CoreStoreState>((set, get) => ({
 
   processRecurringTransactions: async () => {
     const { expenses, addExpense, updateExpense } = get();
-    const now = new Date();
-    const recurring = expenses.filter(e => e.isRecurring && e.recurrenceRule);
+    const { newExpenses, updatedExpenses } = generateNextRecurringTransactions(expenses);
+    
+    if (newExpenses.length === 0 && updatedExpenses.length === 0) return;
 
-    for (const item of recurring) {
-      let cursorDate = new Date(item.lastProcessedAt || item.createdAt);
-      let nextOccurrence = calculateNextOccurrence(cursorDate.toISOString(), item.recurrenceRule!);
-      if (!nextOccurrence) continue;
-      
-      let nextDate = new Date(nextOccurrence);
-      let createdCount = 0;
-
-      while (nextDate <= now) {
-        await addExpense({
-          amount: item.amount,
-          category: item.category,
-          type: item.type,
-          accountId: item.accountId,
-          note: `Recurring: ${item.note || item.category}`,
-          tags: item.tags,
-          isRecurring: false,
-          createdAt: nextDate.toISOString(),
-        });
-        cursorDate = nextDate;
-        const nextTime = calculateNextOccurrence(nextDate.toISOString(), item.recurrenceRule!);
-        if (!nextTime) break;
-        nextDate = new Date(nextTime);
-        createdCount++;
+    await db.transaction('rw', [db.expenses, db.accounts], async () => {
+      for (const update of updatedExpenses) {
+        await updateExpense(update.id, { lastProcessedAt: update.lastProcessedAt });
       }
-
-      if (createdCount > 0) {
-        await updateExpense(item.id, { lastProcessedAt: cursorDate.toISOString() });
+      for (const e of newExpenses) {
+        await addExpense(e);
       }
-    }
+    });
   },
 
   processRecurringTasks: async () => {
-    const { tasks, addTask, updateTask } = get();
-    const now = new Date();
-    // Only process tasks that are done and have a recurrence rule
-    const recurring = tasks.filter(t => t.recurrence && t.status === 'done');
+    try {
+      const { tasks } = get();
+      const { newTasks, updatedTaskIds } = generateNextRecurringTasks(tasks);
 
-    for (const item of recurring) {
-      // For tasks, we usually want to generate the next one only after the current one is completed
-      // We check if we already generated the next one by seeing if there is another task with the same title and a future due date
-      // Or we can just mark this one as not recurring and spawn the new one.
-      // Let's spawn a new task and remove the recurrence from the completed one to prevent infinite spawning
-      
-      let cursorDate = new Date(item.dueDate || item.createdAt);
-      let nextOccurrence = calculateNextOccurrence(cursorDate.toISOString(), item.recurrence!);
-      if (!nextOccurrence) continue;
-      
-      // Update the current completed task to remove its recurrence so we don't process it again
-      await updateTask(item.id, { recurrence: undefined });
-      
-      // Spawn the new task
-      await addTask({
-        title: item.title,
-        status: 'todo',
-        priority: item.priority,
-        energy: item.energy,
-        area: item.area,
-        dueDate: nextOccurrence.split('T')[0],
-        recurrence: item.recurrence, // pass the recurrence forward to the new task
-      });
+      if (newTasks.length === 0 && updatedTaskIds.length === 0) return;
+
+      // Note: Don't nest transactions - call store actions directly
+      // Each addTask/updateTask handles its own transaction
+      for (const id of updatedTaskIds) {
+        await get().updateTask(id, { recurrence: undefined });
+      }
+      for (const t of newTasks) {
+        await get().addTask(t);
+      }
+    } catch (error) {
+      console.error('[Titan] Process recurring tasks failed:', error);
+      throw error;
     }
   },
 

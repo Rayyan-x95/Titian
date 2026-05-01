@@ -122,3 +122,30 @@ export function normalizeTask(payload: any, existingTasks: Task[] = []): Task {
 
   return task;
 }
+
+export function generateNextRecurringTasks(tasks: Task[]): { newTasks: Task[], updatedTaskIds: string[] } {
+  const recurring = tasks.filter((t) => t.recurrence && t.status === 'done');
+  const newTasks: Task[] = [];
+  const updatedTaskIds: string[] = [];
+
+  for (const item of recurring) {
+    const cursorDate = new Date(item.dueDate || item.createdAt);
+    const nextOccurrence = calculateNextOccurrence(cursorDate.toISOString(), item.recurrence!);
+    if (!nextOccurrence) continue;
+
+    updatedTaskIds.push(item.id);
+    newTasks.push({
+      id: crypto.randomUUID(),
+      title: item.title,
+      status: 'todo',
+      priority: item.priority,
+      energy: item.energy,
+      area: item.area,
+      dueDate: nextOccurrence.split('T')[0],
+      recurrence: item.recurrence,
+      createdAt: new Date().toISOString(),
+    });
+  }
+
+  return { newTasks, updatedTaskIds };
+}

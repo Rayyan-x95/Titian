@@ -138,3 +138,63 @@ export function reconcileTaskNoteReferences(tasks: Task[], notes: Note[]) {
 
   return { tasks: sanitizedTasks, notes: normalizedNotes };
 }
+
+/**
+ * Detects circular references in note-to-note linking.
+ * Returns error message if cycle detected, undefined if valid.
+ * Uses depth-first search with visited tracking.
+ */
+export function detectNoteReferenceCycle(noteId: string, notes: Note[]): string | undefined {
+  const visited = new Set<string>();
+  const recursionStack = new Set<string>();
+  
+  function hasCycle(id: string): boolean {
+    visited.add(id);
+    recursionStack.add(id);
+    
+    const note = notes.find(n => n.id === id);
+    const linkedIds = note?.linkedNoteIds ?? [];
+    
+    for (const linkedId of linkedIds) {
+      if (!visited.has(linkedId)) {
+        if (hasCycle(linkedId)) return true;
+      } else if (recursionStack.has(linkedId)) {
+        return true; // Cycle detected
+      }
+    }
+    
+    recursionStack.delete(id);
+    return false;
+  }
+  
+  if (hasCycle(noteId)) {
+    return `Circular reference detected: Note ${noteId} creates a cycle in linked notes`;
+  }
+  
+  return undefined;
+}
+
+/**
+ * Validates all note references before updating.
+ * Returns array of error messages (empty if valid).
+ */
+export function validateNoteReferences(note: Note, noteStore: Note[]): string[] {
+  const errors: string[] = [];
+  const noteIds = new Set(noteStore.map(n => n.id));
+  
+  // Check that all linked notes exist
+  const linkedIds = note.linkedNoteIds ?? [];
+  for (const linkedId of linkedIds) {
+    if (!noteIds.has(linkedId)) {
+      errors.push(`Linked note ${linkedId} does not exist`);
+    }
+  }
+  
+  // Check for circular references
+  const cycleError = detectNoteReferenceCycle(note.id, [...noteStore.filter(n => n.id !== note.id), note]);
+  if (cycleError) {
+    errors.push(cycleError);
+  }
+  
+  return errors;
+}

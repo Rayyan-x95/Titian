@@ -13,11 +13,17 @@
     />
     <meta
       name="keywords"
-      content="productivity app, task manager, note taking app, expense tracker, finance tracker, offline app, PWA, personal organizer, todo list, budget tracker, free productivity tool"
+      content="productivity app, task manager, note taking app, expense tracker, finance tracker, offline app, PWA, personal organizer, todo list, budget tracker, free productivity tool, split expenses app"
     />
     <meta name="author" content="Titan" />
     <meta name="robots" content="index, follow" />
     <meta name="theme-color" content="#1a7fe8" />
+
+    <!-- PWA / Mobile SEO -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Titan" />
 
     <!-- Open Graph / Social Sharing -->
     <meta property="og:type" content="website" />
@@ -53,9 +59,13 @@
       "@type": "WebApplication",
       "name": "Titan",
       "url": "https://titanapp.qzz.io/",
-      "description": "An offline-first productivity app that unifies task management, note-taking, and expense tracking in one workspace.",
+      "description": "An offline-first productivity app that unifies task management, note-taking, and expense tracking in one sleek workspace. No account required.",
       "applicationCategory": "ProductivityApplication",
-      "operatingSystem": "Any",
+      "operatingSystem": "All",
+      "author": {
+        "@type": "Organization",
+        "name": "Titan App"
+      },
       "offers": {
         "@type": "Offer",
         "price": "0",
