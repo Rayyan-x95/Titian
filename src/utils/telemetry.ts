@@ -16,7 +16,7 @@ export function trackEvent(name: string, props: Record<string, unknown> = {}) {
         keepalive: true,
       }).catch(() => {});
     }
-  } catch (err) {
+  } catch {
     // swallow errors — telemetry must not break app
   }
 }

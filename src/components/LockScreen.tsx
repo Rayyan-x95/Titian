@@ -97,7 +97,7 @@ export function LockScreen({ onUnlock }: { onUnlock: () => void }) {
           {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
             <button
               key={n}
-              onClick={() => handlePress(n.toString())}
+              onClick={() => { void handlePress(n.toString()); }}
               className="flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary/50 text-xl font-bold hover:bg-secondary hover:scale-105 active:scale-95 transition-all"
             >
               {n}
@@ -105,7 +105,7 @@ export function LockScreen({ onUnlock }: { onUnlock: () => void }) {
           ))}
           {biometricEnabled ? (
             <button
-              onClick={handleBiometric}
+              onClick={() => { void handleBiometric(); }}
               aria-label="Use Biometrics"
               className="flex h-16 w-16 items-center justify-center rounded-2xl text-primary hover:bg-primary/10 transition-all"
             >
@@ -115,7 +115,7 @@ export function LockScreen({ onUnlock }: { onUnlock: () => void }) {
             <div />
           )}
           <button
-            onClick={() => handlePress('0')}
+            onClick={() => { void handlePress('0'); }}
             className="flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary/50 text-xl font-bold hover:bg-secondary hover:scale-105 active:scale-95 transition-all"
           >
             0

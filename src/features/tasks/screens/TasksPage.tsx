@@ -4,13 +4,14 @@ import { Plus, List, CalendarDays } from 'lucide-react';
 import { Button, Calendar } from '@/shared/ui';
 import { PageShell } from '@/shared/components';
 import { useStore } from '@/core/store';
-import type { Task, TaskStatus, TaskPriority, TaskRecurrence } from '@/core/store/types';
+import type { Task, TaskStatus } from '@/core/store/types';
 import { useSeo } from '@/seo';
 import { TaskForm } from '../components/TaskForm';
 import { TaskItem } from '../components/TaskItem';
 import { TaskCalendar } from '../components/TaskCalendar';
 import { TaskKanban } from '../components/TaskKanban';
 import { cn } from '@/utils/cn';
+import { toLocalDateString } from '@/utils/date';
 
 type TaskFilter = 'all' | 'active' | 'completed';
 type TaskView = 'list' | 'calendar' | 'kanban';
@@ -18,7 +19,7 @@ type TaskView = 'list' | 'calendar' | 'kanban';
 export function TasksPage() {
   useSeo({
     title: 'Tasks',
-    description: 'Track and prioritize your work with task planning in Titan.',
+    description: 'Master your productivity with smart task management. Organize workflows, set priorities, and connect tasks to your notes and finances.',
     path: '/tasks',
   });
 
@@ -31,7 +32,7 @@ export function TasksPage() {
 
   useEffect(() => {
     if (hydrated) {
-      processRecurringTasks();
+      void processRecurringTasks();
     }
   }, [hydrated, processRecurringTasks]);
 
@@ -72,7 +73,7 @@ export function TasksPage() {
     const topLevel = filtered.filter(t => !t.parentTaskId || !filteredIds.has(t.parentTaskId));
 
     topLevel.sort((a, b) => {
-      const pMap = { high: 0, medium: 1, low: 2 } as any;
+      const pMap: Record<string, number> = { high: 0, medium: 1, low: 2 };
       if (pMap[a.priority] !== pMap[b.priority]) return pMap[a.priority] - pMap[b.priority];
       return b.createdAt.localeCompare(a.createdAt);
     });
@@ -80,12 +81,12 @@ export function TasksPage() {
     return { topLevel, childrenMap: map };
   }, [filter, selectedDate, tasks]);
 
-  const handleCreateTask = async (values: any) => {
+  const handleCreateTask = async (values: import('@/core/store/types').TaskInput) => {
     await addTask({ ...values, title: values.title.trim() });
     setIsFormOpen(false);
   };
 
-  const handleUpdateTask = async (values: any) => {
+  const handleUpdateTask = async (values: import('@/core/store/types').TaskInput) => {
     if (!editingTask) return;
     await updateTask(editingTask.id, { ...values, title: values.title.trim() });
     setEditingTask(null);
@@ -96,10 +97,10 @@ export function TasksPage() {
     await updateTask(task.id, { status: nextStatus });
     
     if (nextStatus === 'done') {
-      const today = new Date().toISOString().split('T')[0];
+      const today = toLocalDateString(new Date());
       await useStore.getState().updateSnapshot(today, 'task', 1);
     } else if (task.status === 'done') {
-      const today = new Date().toISOString().split('T')[0];
+      const today = toLocalDateString(new Date());
       await useStore.getState().updateSnapshot(today, 'task', -1);
     }
   };
@@ -116,7 +117,11 @@ export function TasksPage() {
   };
 
   return (
-    <PageShell title="Tasks">
+    <PageShell
+      eyebrow="Execution"
+      title="Tasks"
+      description="Plan today, keep upcoming visible, and close loops without clutter."
+    >
       <div className="flex flex-col gap-7 lg:flex-row lg:items-start">
         <div className="shrink-0">
           <Calendar
@@ -134,8 +139,8 @@ export function TasksPage() {
                   key={item}
                   onClick={() => setFilter(item)}
                   className={cn(
-                    "px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all",
-                    filter === item ? "bg-primary text-white shadow-glow-sm" : "bg-card border border-border text-muted-foreground hover:bg-secondary"
+                    "px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all",
+                    filter === item ? "bg-primary text-white shadow-glow" : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   {item}
@@ -195,16 +200,19 @@ export function TasksPage() {
                         task={task}
                         subtasks={taskTree.childrenMap.get(task.id)}
                         onEdit={openEditForm}
-                        onToggleStatus={handleToggleStatus}
-                        onDelete={handleDeleteTask}
+                        onToggleStatus={(t) => { void handleToggleStatus(t); }}
+                        onDelete={(t) => { void handleDeleteTask(t); }}
                         onAddSubtask={handleAddSubtask}
                       />
                     ))}
                     {taskTree.topLevel.length === 0 && (
-                      <article className="rounded-[2.5rem] border border-dashed border-border bg-card/20 p-16 text-center">
-                        <p className="text-sm font-bold text-foreground">No tasks found</p>
-                        <p className="mt-1 text-xs text-muted-foreground">Adjust filters or create your first task.</p>
-                      </article>
+                      <div className="flex flex-col items-center justify-center gap-6 py-20 text-center">
+                        <img src="/icons/falcon.png" alt="Falcon" className="h-24 w-24 opacity-10 grayscale" />
+                        <div className="space-y-1">
+                          <p className="text-sm font-bold text-foreground">A clean horizon</p>
+                          <p className="text-xs text-muted-foreground">Adjust filters or start a new quest.</p>
+                        </div>
+                      </div>
                     )}
                   </div>
                 </LayoutGroup>

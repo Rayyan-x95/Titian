@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ChevronRight, PencilLine, Trash2, Repeat, ChevronDown, Calendar, Flag, Plus } from 'lucide-react';
+import { ChevronRight, PencilLine, Trash2, Repeat, Calendar, Flag } from 'lucide-react';
 import { useMemo } from 'react';
 import { Button } from '@/shared/ui';
 import { cn } from '@/utils/cn';
@@ -21,52 +21,33 @@ const statusLabels: Record<TaskStatus, string> = {
 };
 
 const statusStyles: Record<TaskStatus, string> = {
-  todo: 'bg-muted text-muted-foreground',
-  doing: 'bg-amber-500/15 text-amber-300 dark:text-amber-200',
-  done: 'bg-emerald-500/15 text-emerald-300 dark:text-emerald-200',
+  todo: 'bg-muted/50 text-muted-foreground',
+  doing: 'bg-amber-500/10 text-amber-500',
+  done: 'bg-emerald-500/10 text-emerald-500',
 };
 
 const priorityStyles: Record<TaskPriority, string> = {
-  low: 'bg-blue-500/10 text-blue-400',
-  medium: 'bg-amber-500/10 text-amber-400',
+  low: 'bg-blue-500/10 text-blue-500',
+  medium: 'bg-amber-500/10 text-amber-500',
   high: 'bg-rose-500/10 text-rose-500',
 };
 
 export function TaskItem({ task, subtasks, onEdit, onToggleStatus, onDelete, onAddSubtask }: TaskItemProps) {
   const formattedDueDate = useMemo(() => {
-    if (!task.dueDate) {
-      return null;
-    }
-
+    if (!task.dueDate) return null;
     const date = new Date(task.dueDate);
-
-    if (Number.isNaN(date.getTime())) {
-      return task.dueDate;
-    }
-
-    return new Intl.DateTimeFormat(undefined, {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    }).format(date);
+    if (Number.isNaN(date.getTime())) return task.dueDate;
+    return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(date);
   }, [task.dueDate]);
 
   const createdAtFormatted = useMemo(() => {
-    if (!task.createdAt) {
-      return '—';
-    }
-
+    if (!task.createdAt) return '-';
     const date = new Date(task.createdAt);
-
-    if (Number.isNaN(date.getTime())) {
-      return '—';
-    }
-
-    return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(date);
+    if (Number.isNaN(date.getTime())) return '-';
+    return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(date);
   }, [task.createdAt]);
 
-  const nextStatusLabel =
-    task.status === 'todo' ? 'Start' : task.status === 'doing' ? 'Complete' : 'Reset';
+  const nextStatusLabel = task.status === 'todo' ? 'Start' : task.status === 'doing' ? 'Complete' : 'Reset';
 
   return (
     <motion.article
@@ -74,63 +55,58 @@ export function TaskItem({ task, subtasks, onEdit, onToggleStatus, onDelete, onA
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      whileHover={{ y: -2 }}
-      className="group relative overflow-hidden rounded-[2rem] border border-border/50 bg-card/40 p-6 shadow-sm transition-all hover:border-primary/30 hover:shadow-glass backdrop-blur-sm"
+      className="group relative overflow-hidden rounded-xl border border-border bg-surface p-5 transition-all hover:border-primary/40"
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-3 mb-3">
+          <div className="flex flex-wrap items-center gap-2 mb-3">
              <span className={cn(
-               "flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider",
+               "flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider",
                statusStyles[task.status]
              )}>
-               <span className="h-1.5 w-1.5 rounded-full bg-current" />
+               <span className="h-1 w-1 rounded-full bg-current" />
                {statusLabels[task.status]}
              </span>
              
              <span className={cn(
-               "flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider",
+               "flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider",
                priorityStyles[task.priority]
              )}>
-               <Flag className="h-3 w-3" />
+               <Flag className="h-2.5 w-2.5" />
                {task.priority}
              </span>
 
              {task.recurrence && (
-               <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
-                 <Repeat className="h-3 w-3" />
-                 {task.recurrence.type}
-               </span>
-             )}
+                <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-muted-foreground/60">
+                  <Repeat className="h-2.5 w-2.5" />
+                  {task.recurrence.type}
+                </span>
+              )}
 
              {formattedDueDate && (
-               <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
-                 <Calendar className="h-3 w-3" />
+               <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-muted-foreground/60">
+                 <Calendar className="h-2.5 w-2.5" />
                  {formattedDueDate}
                </span>
              )}
           </div>
 
           <h3 className={cn(
-            "text-base font-semibold leading-relaxed transition-all",
-            task.status === 'done' ? "text-muted-foreground line-through opacity-60" : "text-foreground"
+            "text-base font-bold tracking-tight leading-tight transition-all",
+            task.status === 'done' ? "text-muted-foreground line-through opacity-40" : "text-foreground"
           )}>
             {task.title}
           </h3>
           
           <div className="mt-4 flex items-center justify-between">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
-              Created {createdAtFormatted}
+            <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/40">
+              {createdAtFormatted}
             </p>
           </div>
 
           {subtasks && subtasks.length > 0 && (
             <div className="mt-4">
-              <div className="flex justify-between items-center mb-1.5">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Subtask Progress</span>
-                <span className="text-[10px] font-bold text-foreground">{subtasks.filter(s => s.status === 'done').length}/{subtasks.length}</span>
-              </div>
-              <div className="h-1.5 w-full bg-secondary/50 rounded-full overflow-hidden">
+              <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-primary transition-all duration-500" 
                   style={{ width: `${(subtasks.filter(s => s.status === 'done').length / subtasks.length) * 100}%` }}
@@ -146,48 +122,39 @@ export function TaskItem({ task, subtasks, onEdit, onToggleStatus, onDelete, onA
             size="sm" 
             onClick={() => onToggleStatus(task)} 
             className={cn(
-              "h-10 px-4 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all",
-              task.status === 'done' ? "bg-emerald-500/10 text-emerald-500" : "bg-primary/10 text-primary shadow-glow-sm"
+              "h-8 px-3 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all",
+              task.status === 'done' ? "bg-emerald-500/10 text-emerald-500" : "bg-primary/10 text-primary"
             )}
           >
             {nextStatusLabel}
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="ml-1 h-3.5 w-3.5" />
           </Button>
           
-          <div className="flex gap-2 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+          <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
             <Button 
               variant="ghost" 
               size="sm" 
+              aria-label={`Edit ${task.title}`}
               onClick={(e) => { e.stopPropagation(); onEdit(task); }} 
-              className="h-8 w-8 p-0 rounded-lg bg-secondary/50 hover:bg-secondary"
+              className="h-7 w-7 p-0 rounded-md bg-white/5 hover:bg-white/10"
             >
-              <PencilLine className="h-4 w-4" />
+              <PencilLine className="h-3.5 w-3.5" />
             </Button>
             <Button
               variant="ghost"
               size="sm"
+              aria-label={`Delete ${task.title}`}
               onClick={(e) => { e.stopPropagation(); onDelete(task); }}
-              className="h-8 w-8 p-0 rounded-lg bg-destructive/5 hover:bg-destructive/10 text-destructive"
+              className="h-7 w-7 p-0 rounded-md bg-destructive/5 hover:bg-destructive/10 text-destructive"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>
       </div>
 
-      {subtasks && (
-        <div className="mt-6 space-y-4 pl-6 border-l border-border/50">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">
-              <ChevronDown className="h-3 w-3" />
-              Subtasks ({subtasks.length})
-            </div>
-            {onAddSubtask && (
-              <Button variant="ghost" size="sm" onClick={() => onAddSubtask(task.id)} className="h-6 px-2 text-[9px] uppercase tracking-widest">
-                <Plus className="h-3 w-3 mr-1" /> Add
-              </Button>
-            )}
-          </div>
+      {subtasks && subtasks.length > 0 && (
+        <div className="mt-6 space-y-3 pl-6 border-l border-border/50">
           {subtasks.map((st) => (
             <TaskItem
               key={st.id}
@@ -198,11 +165,6 @@ export function TaskItem({ task, subtasks, onEdit, onToggleStatus, onDelete, onA
               onAddSubtask={onAddSubtask}
             />
           ))}
-          {subtasks.length === 0 && onAddSubtask && (
-             <Button variant="ghost" size="sm" onClick={() => onAddSubtask(task.id)} className="h-8 w-full border border-dashed border-border text-[10px] uppercase tracking-widest text-muted-foreground">
-                <Plus className="h-3 w-3 mr-2" /> Add Subtask
-             </Button>
-          )}
         </div>
       )}
     </motion.article>

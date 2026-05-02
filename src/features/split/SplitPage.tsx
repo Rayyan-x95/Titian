@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Plus, Users, ArrowUpRight, ArrowDownRight, Search, Landmark, ChevronRight, UserPlus, Info } from 'lucide-react';
+import { Users, Search, ChevronRight, UserPlus } from 'lucide-react';
 import { PageShell } from '@/shared/components';
 import { Button } from '@/shared/ui';
 import { useStore } from '@/core/store';
@@ -19,7 +19,7 @@ interface SplitPageProps {
 export function SplitPage({ isEmbedded = false }: SplitPageProps) {
   useSeo({ title: 'Split', description: 'Track group expenses and shared balances with friends.', path: '/split' });
 
-  const { groups, friends, sharedExpenses, onboarding } = useStore();
+  const { groups, sharedExpenses } = useStore();
   const { currency } = useSettings();
 
   const [isAddGroupOpen, setIsAddGroupOpen] = useState(false);
@@ -111,5 +111,13 @@ export function SplitPage({ isEmbedded = false }: SplitPageProps) {
 
   if (isEmbedded) return content;
 
-  return <PageShell title="Split" description="Divide costs, settle debts, and keep your friendships balanced.">{content}</PageShell>;
+  return (
+    <PageShell
+      eyebrow="Shared"
+      title="Splits & Groups"
+      description="Balance-first view for friends, groups, and fast settlement actions."
+    >
+      {content}
+    </PageShell>
+  );
 }

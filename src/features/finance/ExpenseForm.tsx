@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Scan, Loader2 } from 'lucide-react';
 import { Button, CategoryCombobox, DatePicker, Dropdown, TagInput } from '@/shared/ui';
 import type { Expense, Task, Account, Note } from '@/core/store/types';
 import { cn } from '@/utils/cn';
 import { useSettings } from '@/core/settings';
+import { parseFile } from '@/utils/parserEngine';
 
 export interface ExpenseFormValues {
   amountDollars: number;
@@ -27,12 +28,15 @@ interface ExpenseFormProps {
   open: boolean;
   title: string;
   submitLabel: string;
-  categories: string[];
+  expenseCategories: string[];
+  incomeCategories: string[];
   accounts: Account[];
   tasks: Task[];
   notes: Note[];
   initialValues?: Expense;
+  initialType?: ExpenseFormValues['type'];
   isSubmitting?: boolean;
+  autoTriggerScan?: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: ExpenseFormValues) => Promise<void>;
 }
@@ -62,11 +66,27 @@ const defaultValues: ExpenseFormValues = {
   area: 'finance',
 };
 
-export function ExpenseForm({ open, title, submitLabel, categories, accounts, tasks, notes, initialValues, isSubmitting = false, onOpenChange, onSubmit }: ExpenseFormProps) {
+export function ExpenseForm({ 
+  open, 
+  title, 
+  submitLabel, 
+  expenseCategories, 
+  incomeCategories, 
+  accounts, 
+  tasks, 
+  notes, 
+  initialValues, 
+  initialType = 'expense', 
+  isSubmitting = false, 
+  autoTriggerScan = false,
+  onOpenChange, 
+  onSubmit 
+}: ExpenseFormProps) {
   const [values, setValues] = useState<ExpenseFormValues>(defaultValues);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const currency = useSettings((state) => state.currency);
 
   useEffect(() => {
     if (!open) {
@@ -76,7 +96,7 @@ export function ExpenseForm({ open, title, submitLabel, categories, accounts, ta
     }
 
     if (!initialValues) {
-      setValues({ ...defaultValues, accountId: accounts[0]?.id || 'cash' });
+      setValues({ ...defaultValues, type: initialType, accountId: accounts[0]?.id || 'cash' });
       setSubmissionError(null);
       return;
     }
@@ -93,10 +113,16 @@ export function ExpenseForm({ open, title, submitLabel, categories, accounts, ta
       recurrenceRule: initialValues.recurrenceRule,
       linkedTaskId: initialValues.linkedTaskId,
       linkedNoteId: initialValues.linkedNoteId,
-      area: (initialValues as any).area || 'finance',
+      area: initialValues.area || 'finance',
     });
     setSubmissionError(null);
-  }, [initialValues, open, accounts]);
+  }, [initialValues, open, accounts, initialType]);
+
+  useEffect(() => {
+    if (open && autoTriggerScan && fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  }, [open, autoTriggerScan]);
 
   if (!open) return null;
 
@@ -128,26 +154,38 @@ export function ExpenseForm({ open, title, submitLabel, categories, accounts, ta
     setIsScanning(true);
     setSubmissionError(null);
 
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    setValues(v => ({
-      ...v,
-      amountDollars: 42.50,
-      category: categories.includes('Food & Drink') ? 'Food & Drink' : categories[0] || 'Food',
-      note: 'Parsed from receipt: Cafe Coffee Day',
-      tags: [...new Set([...v.tags, 'coffee', 'receipt'])],
-      type: 'expense'
-    }));
-
-    setIsScanning(false);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    try {
+      const result = await parseFile(file);
+      
+      if (result.errors.length > 0) {
+        setSubmissionError(`Scan Error: ${result.errors[0]}`);
+      } else if (result.transactions.length > 0) {
+        const t = result.transactions[0];
+        setValues(v => ({
+          ...v,
+          amountDollars: t.amount,
+          category: t.category === 'Other' ? (expenseCategories[0] || 'Other') : t.category,
+          note: t.merchant ? `Parsed from receipt: ${t.merchant}` : v.note,
+          tags: [...new Set([...v.tags, 'receipt'])],
+          type: t.type
+        }));
+      } else {
+        setSubmissionError('No transaction data found in image.');
+      }
+    } catch (error) {
+      console.error('Scan failed', error);
+      setSubmissionError('OCR Engine failed. Please try a clearer photo.');
+    } finally {
+      setIsScanning(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 px-4 py-4 backdrop-blur-md sm:items-center">
       <button type="button" aria-label="Close expense form" className="absolute inset-0 cursor-default" onClick={() => onOpenChange(false)} />
 
-      <form onSubmit={handleSubmit} className="relative z-10 w-full max-w-2xl overflow-hidden rounded-[2.5rem] border border-border bg-card shadow-2xl animate-in slide-in-from-bottom-8 duration-300">
+      <form onSubmit={(event) => { void handleSubmit(event); }} className="relative z-10 w-full max-w-2xl overflow-hidden rounded-[2.5rem] border border-border bg-card shadow-2xl animate-in slide-in-from-bottom-8 duration-300">
         <div className="flex items-center justify-between border-b border-border/50 bg-secondary/20 px-8 py-6">
           <div className="flex items-center gap-6">
             <div>
@@ -155,7 +193,7 @@ export function ExpenseForm({ open, title, submitLabel, categories, accounts, ta
               <h3 className="mt-1 text-2xl font-bold tracking-tight">{title}</h3>
             </div>
             <div className="relative">
-              <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleScanReceipt} />
+              <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={(event) => { void handleScanReceipt(event); }} />
               <Button type="button" variant="secondary" size="sm" onClick={() => fileInputRef.current?.click()} disabled={isScanning} className="rounded-full shadow-sm">
                 {isScanning ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Scan className="h-4 w-4 mr-2 text-primary" />}
                 {isScanning ? 'Scanning...' : 'Scan Receipt'}
@@ -175,8 +213,8 @@ export function ExpenseForm({ open, title, submitLabel, categories, accounts, ta
               <label className="block space-y-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Amount</span>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-muted-foreground">{useSettings.getState().currency === 'INR' ? '₹' : '$'}</span>
-                  <input autoFocus type="number" step="0.01" required value={values.amountDollars || ''} onChange={(e) => setValues(v => ({ ...v, amountDollars: parseFloat(e.target.value) }))} className="h-14 w-full rounded-2xl border border-border bg-background pl-10 pr-4 text-xl font-bold text-foreground outline-none focus:border-primary transition-colors" placeholder="0.00" />
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-muted-foreground">{currency === 'INR' ? '₹' : '$'}</span>
+                  <input autoFocus type="number" step="0.01" value={values.amountDollars || ''} onChange={(e) => setValues(v => ({ ...v, amountDollars: parseFloat(e.target.value) }))} className="h-14 w-full rounded-2xl border border-border bg-background pl-10 pr-4 text-xl font-bold text-foreground outline-none focus:border-primary transition-colors" placeholder="0.00" />
                 </div>
               </label>
 
@@ -191,7 +229,12 @@ export function ExpenseForm({ open, title, submitLabel, categories, accounts, ta
 
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Category</label>
-                <CategoryCombobox value={values.category} options={categories} onChange={(cat) => setValues(v => ({ ...v, category: cat }))} placeholder="e.g. Food" />
+                <CategoryCombobox 
+                  value={values.category} 
+                  options={values.type === 'expense' ? expenseCategories : incomeCategories} 
+                  onChange={(cat) => setValues(v => ({ ...v, category: cat }))} 
+                  placeholder={values.type === 'expense' ? "e.g. Food" : "e.g. Salary"} 
+                />
               </div>
 
                <div className="space-y-2">
@@ -201,7 +244,7 @@ export function ExpenseForm({ open, title, submitLabel, categories, accounts, ta
 
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Life Area</label>
-                <Dropdown label="Area" value={values.area} onChange={(val) => setValues(v => ({ ...v, area: val as any }))} options={[{ label: 'Work', value: 'work' }, { label: 'Personal', value: 'personal' }, { label: 'Health', value: 'health' }, { label: 'Finance', value: 'finance' }, { label: 'Social', value: 'social' }]} />
+                <Dropdown label="Area" value={values.area} onChange={(val) => setValues(v => ({ ...v, area: val }))} options={[{ label: 'Work', value: 'work' }, { label: 'Personal', value: 'personal' }, { label: 'Health', value: 'health' }, { label: 'Finance', value: 'finance' }, { label: 'Social', value: 'social' }]} />
               </div>
 
               <div className="space-y-2">
@@ -227,7 +270,7 @@ export function ExpenseForm({ open, title, submitLabel, categories, accounts, ta
           </div>
         </div>
 
-        {submissionError && <div className="mx-8 mb-4 rounded-xl bg-rose-500/10 p-3 text-xs font-semibold text-rose-500">{submissionError}</div>}
+        {submissionError && <div role="alert" className="mx-8 mb-4 rounded-xl bg-rose-500/10 p-3 text-xs font-semibold text-rose-500">{submissionError}</div>}
 
         <div className="flex items-center justify-end gap-3 border-t border-border/50 bg-secondary/10 px-8 py-6">
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>

@@ -51,7 +51,7 @@ export function useBackgroundNotifications() {
 
     // Request permission if not granted
     if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
+      void Notification.requestPermission();
     }
 
     return () => clearInterval(checkInterval);

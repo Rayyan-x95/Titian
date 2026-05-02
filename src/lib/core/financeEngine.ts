@@ -1,5 +1,4 @@
 import type { Account, Budget, Expense, OnboardingProfile } from '@/core/store/types';
-import { calculateNextOccurrence as calculateTaskNextOccurrence } from './taskEngine';
 
 export type FinanceRange = 'today' | 'week' | 'month' | 'all';
 
@@ -78,7 +77,9 @@ export function normalizeExpenseRecurrenceRule(value: unknown): Expense['recurre
 
   const candidate = value as Record<string, unknown>;
   const validTypes = ['daily', 'weekly', 'monthly'] as const;
-  const type = validTypes.includes(candidate.type as any) ? (candidate.type as any) : undefined;
+  const type = typeof candidate.type === 'string' && (validTypes as readonly string[]).includes(candidate.type) 
+    ? (candidate.type as 'daily' | 'weekly' | 'monthly') 
+    : undefined;
   
   if (!type) return undefined;
   
@@ -102,9 +103,12 @@ export function recalculateBalancesForExpenseUpdate(
   const previousAccount = map.get(previous.accountId);
   const nextAccount = map.get(next.accountId);
 
-  if (!previousAccount || !nextAccount) {
-    return accounts;
-  }
+    if (!previousAccount) {
+      throw new Error(`Account "${previous.accountId}" not found during balance recalculation`);
+    }
+    if (!nextAccount) {
+      throw new Error(`Account "${next.accountId}" not found during balance recalculation`);
+    }
 
   const revertedPrevious = {
     ...previousAccount,
@@ -188,17 +192,26 @@ export function filterExpensesByRange(
   return expenses.filter((expense) => new Date(expense.createdAt) >= start);
 }
 
-export function calculateCategoryTotals(expenses: Expense[]): Record<string, number> {
+export function calculateCategoryTotals(expenses: Expense[], filterDate?: Date): Record<string, number> {
   return expenses.reduce<Record<string, number>>((accumulator, expense) => {
     if (expense.type !== 'expense') return accumulator;
+    
+    // Filter by date if provided
+    if (filterDate) {
+      const date = new Date(expense.createdAt);
+      if (date.getMonth() !== filterDate.getMonth() || date.getFullYear() !== filterDate.getFullYear()) {
+        return accumulator;
+      }
+    }
+
     const current = accumulator[expense.category] ?? 0;
     accumulator[expense.category] = safeAddCents(current, expense.amount);
     return accumulator;
   }, {});
 }
 
-export function getTopCategories(expenses: Expense[], top = 3): { category: string; amount: number }[] {
-  const totals = calculateCategoryTotals(expenses);
+export function getTopCategories(expenses: Expense[], top = 3, filterDate?: Date): { category: string; amount: number }[] {
+  const totals = calculateCategoryTotals(expenses, filterDate);
   return Object.entries(totals)
     .map(([category, amount]) => ({ category, amount }))
     .sort((a, b) => b.amount - a.amount)
@@ -294,43 +307,74 @@ export function buildBudgetSuggestions(profile: OnboardingProfile, existingBudge
     }));
 }
 
-export function normalizeAccount(payload: any): Account {
-  const rawName = typeof payload.name === 'string' ? payload.name.trim() : '';
+export function normalizeAccount(payload: unknown): Account {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return {
+      id: crypto.randomUUID(),
+      name: 'Untitled Account',
+      balance: 0,
+      createdAt: new Date().toISOString(),
+    };
+  }
+  const p = payload as Record<string, unknown>;
+  const rawName = typeof p.name === 'string' ? p.name.trim() : '';
   return {
-    id: typeof payload.id === 'string' && payload.id.length > 0 ? payload.id : crypto.randomUUID(),
+    id: typeof p.id === 'string' && p.id.length > 0 ? p.id : crypto.randomUUID(),
     name: rawName || 'Untitled Account',
-    balance: typeof payload.balance === 'number' ? normalizeCents(payload.balance) : 0,
-    createdAt: typeof payload.createdAt === 'string' ? payload.createdAt : new Date().toISOString(),
+    balance: typeof p.balance === 'number' ? normalizeCents(p.balance) : 0,
+    createdAt: typeof p.createdAt === 'string' ? p.createdAt : new Date().toISOString(),
   };
 }
 
-export function normalizeBudget(payload: any): Budget {
-  const rawCategory = typeof payload.category === 'string' ? payload.category.trim() : '';
+export function normalizeBudget(payload: unknown): Budget {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return {
+      id: crypto.randomUUID(),
+      category: 'uncategorized',
+      limit: 0,
+      period: 'monthly',
+    };
+  }
+  const p = payload as Record<string, unknown>;
+  const rawCategory = typeof p.category === 'string' ? p.category.trim() : '';
   return {
-    id: typeof payload.id === 'string' && payload.id.length > 0 ? payload.id : crypto.randomUUID(),
-    category: rawCategory || 'Uncategorized',
-    limit: typeof payload.limit === 'number' ? normalizePositiveCents(payload.limit) : 0,
-    period: payload.period === 'weekly' ? 'weekly' : 'monthly',
+    id: typeof p.id === 'string' && p.id.length > 0 ? p.id : crypto.randomUUID(),
+    category: (rawCategory || 'uncategorized').toLowerCase(),
+    limit: typeof p.limit === 'number' ? normalizePositiveCents(p.limit) : 0,
+    period: p.period === 'weekly' ? 'weekly' : 'monthly',
   };
 }
 
-export function generateNextRecurringTransactions(expenses: Expense[], now = new Date()): { newExpenses: Expense[], updatedExpenses: { id: string; lastProcessedAt: string }[] } {
+function calculateExpenseNextOccurrence(baseDate: string, recurrence: { type: 'daily' | 'weekly' | 'monthly'; interval: number }): string {
+  const date = new Date(baseDate);
+  if (!Number.isFinite(date.getTime())) return baseDate;
+
+  if (recurrence.type === 'daily') date.setDate(date.getDate() + recurrence.interval);
+  else if (recurrence.type === 'weekly') date.setDate(date.getDate() + recurrence.interval * 7);
+  else if (recurrence.type === 'monthly') date.setMonth(date.getMonth() + recurrence.interval);
+
+  return date.toISOString();
+}
+
+export function generateNextRecurringTransactions(expenses: Expense[], accounts: Account[], now = new Date()): { newExpenses: Expense[], updatedExpenses: { id: string; lastProcessedAt: string }[], updatedAccounts: Account[] } {
   const recurring = expenses.filter(e => e.isRecurring && e.recurrenceRule);
   const newExpenses: Expense[] = [];
   const updatedExpenses: { id: string; lastProcessedAt: string }[] = [];
+  const nextAccounts = [...accounts];
+    const MAX_RECURRING_PER_TRANSACTION = 12;
+    let totalGenerated = 0;
 
   for (const item of recurring) {
-    // Use lastProcessedAt if available, otherwise use createdAt as the base
     const baseDate = item.lastProcessedAt || item.createdAt;
     let cursorDate = new Date(baseDate);
-    let nextOccurrence = calculateTaskNextOccurrence(cursorDate.toISOString(), item.recurrenceRule!);
+    const nextOccurrence = calculateExpenseNextOccurrence(cursorDate.toISOString(), item.recurrenceRule!);
     if (!nextOccurrence) continue;
 
     let nextDate = new Date(nextOccurrence);
     let createdCount = 0;
 
-    while (nextDate <= now) {
-      newExpenses.push({
+    while (nextDate <= now && totalGenerated < MAX_RECURRING_PER_TRANSACTION) {
+      const newExpense: Expense = {
         id: crypto.randomUUID(),
         amount: item.amount,
         category: item.category,
@@ -341,12 +385,30 @@ export function generateNextRecurringTransactions(expenses: Expense[], now = new
         area: item.area,
         isRecurring: false,
         createdAt: nextDate.toISOString(),
-      });
+      };
+      
+      newExpenses.push(newExpense);
+      totalGenerated++;
+      
+      // Update account balance
+      const accIndex = nextAccounts.findIndex(a => a.id === item.accountId);
+      if (accIndex !== -1) {
+        nextAccounts[accIndex] = {
+          ...nextAccounts[accIndex],
+          balance: applyExpenseToBalance(nextAccounts[accIndex].balance, newExpense.amount, newExpense.type)
+        };
+      }
+
       cursorDate = nextDate;
-      const nextTime = calculateTaskNextOccurrence(nextDate.toISOString(), item.recurrenceRule!);
+      const nextTime = calculateExpenseNextOccurrence(nextDate.toISOString(), item.recurrenceRule!);
       if (!nextTime) break;
       nextDate = new Date(nextTime);
       createdCount++;
+      
+      if (totalGenerated >= MAX_RECURRING_PER_TRANSACTION) {
+        console.warn('[Recurring] Limit reached, next sync will process more');
+        break;
+      }
     }
 
     if (createdCount > 0) {
@@ -354,5 +416,5 @@ export function generateNextRecurringTransactions(expenses: Expense[], now = new
     }
   }
 
-  return { newExpenses, updatedExpenses };
+  return { newExpenses, updatedExpenses, updatedAccounts: nextAccounts };
 }

@@ -1,22 +1,44 @@
 import type { Note } from '@/core/store/types';
-import { sanitizeString, sanitizeTags, sanitizeDateString } from '@/utils/sanitizer';
+import { sanitizeString, sanitizeTags, sanitizeDateString, stripHtml } from '@/utils/sanitizer';
 
-export function normalizeNote(payload: any): Note {
-  const content = sanitizeString(payload.content);
+export function normalizeNote(payload: unknown): Note {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return {
+      id: crypto.randomUUID(),
+      content: '',
+      tags: [],
+      area: 'personal',
+      pinned: false,
+      linkedTaskIds: [],
+      linkedNoteIds: [],
+      createdAt: new Date().toISOString(),
+    };
+  }
+  const p = payload as Record<string, unknown>;
+  // Strip HTML and then sanitize to prevent XSS
+  const content = sanitizeString(stripHtml(typeof p.content === 'string' ? p.content : ''));
   
+  const noteId = typeof p.id === 'string' && p.id.length > 0 ? p.id : crypto.randomUUID();
+  
+  const validAreas = ['work', 'personal', 'health', 'finance', 'social'] as const;
+  const area = typeof p.area === 'string' && (validAreas as readonly string[]).includes(p.area) 
+    ? (p.area as typeof validAreas[number]) 
+    : 'personal';
+
   return {
-    id: typeof payload.id === 'string' && payload.id.length > 0 ? payload.id : crypto.randomUUID(),
+    id: noteId,
     content: content || '',
-    tags: sanitizeTags(payload.tags),
-    area: ['work', 'personal', 'health', 'finance', 'social'].includes(payload.area) ? payload.area : 'personal',
-    pinned: typeof payload.pinned === 'boolean' ? payload.pinned : false,
-    linkedTaskIds: Array.isArray(payload.linkedTaskIds) 
-      ? payload.linkedTaskIds.filter((id: any) => typeof id === 'string') 
+    tags: sanitizeTags(p.tags),
+    area,
+    pinned: typeof p.pinned === 'boolean' ? p.pinned : false,
+    linkedTaskIds: Array.isArray(p.linkedTaskIds) 
+      ? p.linkedTaskIds.filter((id): id is string => typeof id === 'string') 
       : [],
-    linkedNoteIds: Array.isArray(payload.linkedNoteIds) 
-      ? payload.linkedNoteIds.filter((id: any) => typeof id === 'string') 
+    // Filter out self-references in note links
+    linkedNoteIds: Array.isArray(p.linkedNoteIds) 
+      ? p.linkedNoteIds.filter((id): id is string => typeof id === 'string' && id !== noteId) 
       : [],
-    createdAt: sanitizeDateString(payload.createdAt) || new Date().toISOString(),
+    createdAt: sanitizeDateString(p.createdAt) || new Date().toISOString(),
   };
 }
 

@@ -14,8 +14,9 @@ export interface ParsedSmsExpense {
 }
 
 const amountPatterns = [
-  /(?:\u20b9|rs\.?|inr)\s*([\d,]+(?:\.\d+)?)/i,
-  /\b(?:paid|spent|debited|deducted|payment\s+of|purchase\s+of)\s*(?:\u20b9|rs\.?|inr)?\s*([\d,]+(?:\.\d+)?)/i,
+  /(?:\u20b9|rs\.?|inr|\$|€|£|¥)\s*([\d,]+(?:\.\d+)?)/i,
+  /\b(?:paid|spent|debited|deducted|payment\s+of|purchase\s+of|total|sent|dr)\s*(?:\u20b9|rs\.?|inr|\$|€|£|¥)?\s*([\d,]+(?:\.\d+)?)/i,
+  /(?:^|\s)([\d,]+(?:\.\d{1,2})?)\s*(?:\u20b9|rs|inr|cr|dr)\b/i,
 ];
 
 const merchantPatterns = [
@@ -23,6 +24,8 @@ const merchantPatterns = [
   /\bto\s+(.+?)\s+via\b/i,
   /\bat\s+(.+?)(?:\s+on\b|[.,;]|$)/i,
   /\bto\s+(.+?)(?:\s+on\b|[.,;]|$)/i,
+  /\b(?:merchant|store|shop)[:\s]+(.+?)(?:\n|$)/i,
+  /\b(?:thank\s+you\s+for\s+shopping\s+at|your\s+purchase\s+from)[:\s]+(.+?)(?:\n|$)/i,
 ];
 
 const datePatterns = [

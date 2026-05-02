@@ -1,11 +1,13 @@
-import { useState, useMemo } from 'react';
-import { X, Receipt, Check } from 'lucide-react';
+import { useState } from 'react';
+import { X, Check } from 'lucide-react';
 import { Button } from '@/shared/ui';
 import { useStore } from '@/core/store';
 import type { Group } from '@/core/store/types';
 import { cn } from '@/utils/cn';
+import { toLocalDateString } from '@/utils/date';
 import { useSettings } from '@/core/settings';
 import { splitEqual } from '@/lib/core/splitEngine';
+import { dollarsToCentsSafe } from '@/lib/core/financeEngine';
 
 interface AddSharedExpenseSheetProps {
   open: boolean;
@@ -33,7 +35,7 @@ export function AddSharedExpenseSheet({ open, onOpenChange, group, members }: Ad
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    const amountCents = Math.round(parseFloat(amountInput) * 100);
+    const amountCents = dollarsToCentsSafe(parseFloat(amountInput));
     if (!description.trim() || isNaN(amountCents) || amountCents <= 0) return;
     if (selectedParticipants.length === 0) return;
     
@@ -47,7 +49,7 @@ export function AddSharedExpenseSheet({ open, onOpenChange, group, members }: Ad
         groupId: group.id,
         participants: shares,
       });
-      const today = new Date().toISOString().split('T')[0];
+      const today = toLocalDateString(new Date());
       await useStore.getState().updateSnapshot(today, 'split', amountCents);
       onOpenChange(false);
       setDescription('');
@@ -62,7 +64,7 @@ export function AddSharedExpenseSheet({ open, onOpenChange, group, members }: Ad
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60 px-4 py-4 backdrop-blur-md sm:items-center">
       <button type="button" aria-label="Close add shared expense sheet" className="absolute inset-0 cursor-default" onClick={() => onOpenChange(false)} />
-      <form onSubmit={handleSave} className="relative z-10 w-full max-w-xl overflow-hidden rounded-[2.5rem] border border-border bg-card shadow-2xl animate-in slide-in-from-bottom-8 duration-300">
+      <form onSubmit={(e) => { void handleSave(e); }} className="relative z-10 w-full max-w-xl overflow-hidden rounded-[2.5rem] border border-border bg-card shadow-2xl animate-in slide-in-from-bottom-8 duration-300">
         <div className="flex items-center justify-between border-b border-border/50 bg-secondary/20 px-8 py-6">
           <div><p className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground">Expense</p><h3 className="mt-1 text-2xl font-bold tracking-tight">Add Group Expense</h3></div>
           <button type="button" aria-label="Close add shared expense sheet" onClick={() => onOpenChange(false)} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary transition-colors"><X className="h-5 w-5 text-muted-foreground" /></button>

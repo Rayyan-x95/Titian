@@ -95,7 +95,7 @@ export function QRScreen({ open, onOpenChange, upiId, payeeName, amount, note, o
         <div className="flex flex-col items-center px-8 py-8 space-y-6">
           <div className="text-center space-y-1"><p className="text-sm font-medium text-muted-foreground">Paying {payeeName}</p><p className="text-4xl font-black tracking-tighter text-primary">{formatMoney(amount, currency)}</p></div>
           <div className="rounded-3xl bg-white p-6 shadow-sm border-4 border-secondary/20">
-            <QRCodeCanvas ref={qrRef} value={upiLink} size={240} level="H" includeMargin={false} imageSettings={{ src: '/icons/titan_logo_icon_transparent.png', height: 56, width: 56, excavate: true }} />
+            <QRCodeCanvas ref={qrRef} value={upiLink} size={240} level="H" includeMargin={false} imageSettings={{ src: '/icons/titan-logo.png', height: 56, width: 56, excavate: true }} />
           </div>
           <div className="flex items-center justify-center gap-2 rounded-xl bg-secondary/30 px-4 py-2 border border-border/50 w-full">
             <span className="text-sm font-semibold truncate max-w-[200px]">{upiId}</span>

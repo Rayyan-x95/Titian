@@ -1,47 +1,47 @@
 {
-  "name": "Titan Productivity & Finance",
+  "name": "Titan — Personal Life Operating System",
   "short_name": "Titan",
-  "description": "Titan is an offline-first productivity app for task management, notes, and expense tracking. A free personal organizer that works without internet.",
+  "description": "The professional workspace for your life. Unify tasks, money, and thoughts into one connected, offline-first system.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#0a1018",
-  "theme_color": "#0a1018",
+  "background_color": "#0B0F1A",
+  "theme_color": "#0A3DFF",
   "shortcuts": [
     {
       "name": "New Task",
       "short_name": "New Task",
       "description": "Create a new task",
       "url": "/tasks?new=1",
-      "icons": [{ "src": "/icons/titan-icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "/icons/titan-logo.png", "sizes": "512x512", "type": "image/png" }]
     },
     {
       "name": "New Note",
       "short_name": "New Note",
       "description": "Create a new note",
       "url": "/notes?new=1",
-      "icons": [{ "src": "/icons/titan-icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "/icons/titan-logo.png", "sizes": "512x512", "type": "image/png" }]
     },
     {
       "name": "Add Expense",
       "short_name": "Expense",
       "description": "Add a new expense",
       "url": "/finance?new=1",
-      "icons": [{ "src": "/icons/titan-icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "/icons/titan-logo.png", "sizes": "512x512", "type": "image/png" }]
     },
     {
       "name": "Today's Tasks",
       "short_name": "Tasks",
       "description": "View today's tasks",
       "url": "/tasks?date=today",
-      "icons": [{ "src": "/icons/titan-icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "/icons/titan-logo.png", "sizes": "512x512", "type": "image/png" }]
     },
     {
       "name": "Weekly Review",
       "short_name": "Review",
       "description": "Weekly review and summary",
       "url": "/finance?week=1",
-      "icons": [{ "src": "/icons/titan-icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "/icons/titan-logo.png", "sizes": "512x512", "type": "image/png" }]
     }
   ],
   "share_target": {
@@ -55,13 +55,7 @@
   },
   "icons": [
     {
-      "src": "/icons/titan-icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/titan-icon-512.png",
+      "src": "/icons/titan-logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

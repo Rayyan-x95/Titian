@@ -22,7 +22,7 @@ export function ExpenseItem({ expense, account, linkedTask, linkedNote, onEdit, 
   const amountFormatted = useMemo(() => {
     const formatted = formatMoney(expense.amount, currency);
     return isExpense ? `-${formatted}` : `+${formatted}`;
-  }, [expense.amount, expense.type, currency]);
+  }, [expense.amount, currency, isExpense]);
 
   return (
     <motion.article
@@ -87,7 +87,7 @@ export function ExpenseItem({ expense, account, linkedTask, linkedNote, onEdit, 
           <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onEdit(); }} className="h-8 w-8 p-0 rounded-lg bg-secondary/50 hover:bg-secondary">
             <PencilLine className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onDelete(); }} className="h-8 w-8 p-0 rounded-lg text-destructive bg-destructive/5 hover:bg-destructive/10">
+          <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); void onDelete(); }} className="h-8 w-8 p-0 rounded-lg text-destructive bg-destructive/5 hover:bg-destructive/10">
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>

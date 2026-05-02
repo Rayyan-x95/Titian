@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import { Navigation, PwaBanner, CommandPalette, LockScreen } from '@/shared/components';
+import { Navigation, Sidebar, PwaBanner, CommandPalette, LockScreen } from '@/shared/components';
 import { useSettings } from '@/core/settings';
 import { APP_VERSION } from '@/core/version';
 import { useScrollDirection } from '@/hooks/useScrollDirection';
@@ -44,14 +44,15 @@ export function Layout() {
   }, [animations]);
 
   return (
-    <div className="min-h-screen bg-transparent text-foreground relative overflow-hidden">
+    <div className="relative min-h-screen overflow-hidden bg-transparent text-foreground">
       {!isUnlocked && <LockScreen onUnlock={() => setIsUnlocked(true)} />}
       {isUnlocked && <CommandPalette />}
-      {/* Ambient background glows */}
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div className="absolute top-[-8%] left-[-5%] w-[45%] h-[45%] rounded-full bg-primary/15 blur-[140px] animate-pulse-slow" />
-        <div className="absolute bottom-[-12%] right-[-8%] w-[55%] h-[55%] rounded-full bg-accent/10 blur-[160px] animate-pulse-slow animate-delay-3000" />
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        <div className="absolute left-[-6%] top-[-8%] h-[28rem] w-[28rem] rounded-full bg-primary/7 blur-[120px]" />
+        <div className="absolute bottom-[-18%] right-[-12%] h-[30rem] w-[30rem] rounded-full bg-accent/7 blur-[140px]" />
       </div>
+
+      <Sidebar />
 
       <a
         href="#main-content"
@@ -62,25 +63,25 @@ export function Layout() {
 
       <header 
         className={cn(
-          "fixed top-4 left-4 right-4 z-40 mx-auto max-w-5xl rounded-2xl border border-primary/20 bg-background/50 backdrop-blur-xl shadow-glass transition-all duration-500 ease-in-out",
+          "fixed inset-x-4 top-4 z-40 mx-auto max-w-4xl rounded-2xl border border-border/70 bg-card/70 backdrop-blur-xl transition-all duration-300 lg:hidden",
           scrollDirection === 'down' ? "-translate-y-28 opacity-0" : "translate-y-0 opacity-100"
         )}
       >
-        <div className="mx-auto max-w-4xl flex items-center justify-between px-4 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
             <img
-              src="/icons/titan_logo_icon_transparent.png"
+              src="/icons/titan-logo.png"
               alt="Titan logo"
-              className="h-8 w-8 object-contain drop-shadow-md"
+              className="h-8 w-8 rounded-lg object-contain"
             />
             <div>
-              <h1 className="text-sm font-bold tracking-tight text-gradient leading-none">Titan</h1>
-              <p className="text-[9px] text-muted-foreground font-medium mt-0.5">
+              <h1 className="leading-none text-sm font-semibold tracking-tight text-foreground">Titan</h1>
+              <p className="mt-0.5 text-[10px] font-medium text-muted-foreground">
                 v{APP_VERSION}
               </p>
             </div>
           </div>
-          <span className="rounded-full border border-primary/25 bg-primary/8 px-2.5 py-0.5 text-[10px] font-semibold text-primary/90 tracking-wide">
+          <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[10px] font-semibold tracking-wide text-primary">
             Offline Ready
           </span>
         </div>
@@ -88,8 +89,10 @@ export function Layout() {
 
       <PwaBanner />
 
-      <main id="main-content" className="relative z-10 mx-auto max-w-5xl px-4 pb-32 pt-28 sm:px-6 lg:px-8">
-        <Outlet />
+      <main id="main-content" className="relative z-10 px-4 pb-48 pt-32 sm:px-6 lg:pl-64 lg:px-8 lg:pb-12 lg:pt-12">
+        <div className="mx-auto max-w-5xl">
+          <Outlet />
+        </div>
       </main>
 
       <Navigation />

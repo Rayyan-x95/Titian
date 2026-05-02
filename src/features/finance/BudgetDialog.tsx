@@ -52,7 +52,7 @@ export function BudgetDialog({ open, onOpenChange }: BudgetDialogProps) {
         </div>
 
         <div className="p-8 space-y-8">
-          <form onSubmit={handleAdd} className="space-y-4">
+          <form onSubmit={(e) => { void handleAdd(e); }} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Category</label>
@@ -109,7 +109,7 @@ export function BudgetDialog({ open, onOpenChange }: BudgetDialogProps) {
                   </div>
                   <div className="flex items-center gap-4">
                     <p className="text-sm font-black text-foreground">{formatMoney(budget.limit, currency)}</p>
-                    <button onClick={() => deleteBudget(budget.id)} className="opacity-0 group-hover:opacity-100 p-2 text-muted-foreground hover:text-rose-500 transition-all">
+                    <button onClick={() => { void deleteBudget(budget.id); }} className="opacity-0 group-hover:opacity-100 p-2 text-muted-foreground hover:text-rose-500 transition-all">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>

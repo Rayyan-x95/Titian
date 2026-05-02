@@ -1,5 +1,6 @@
 import type { Task, TaskRecurrence } from '@/core/store/types';
 import { sanitizeTitle, sanitizeDateString } from '@/utils/sanitizer';
+import { toLocalDateString } from '@/utils/date';
 
 export function calculateNextOccurrence(
   baseDate: string,
@@ -19,12 +20,10 @@ export function normalizeRecurrence(value: unknown): TaskRecurrence | undefined 
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
 
   const candidate = value as Record<string, unknown>;
-  const type =
-    candidate.type === 'daily' ||
-    candidate.type === 'weekly' ||
-    candidate.type === 'monthly'
-      ? candidate.type
-      : undefined;
+  const validTypes = ['daily', 'weekly', 'monthly'] as const;
+  const type = typeof candidate.type === 'string' && (validTypes as readonly string[]).includes(candidate.type) 
+    ? (candidate.type as 'daily' | 'weekly' | 'monthly') 
+    : undefined;
 
   const interval =
     typeof candidate.interval === 'number' && Number.isFinite(candidate.interval) && candidate.interval > 0
@@ -92,48 +91,75 @@ export function validateTaskRelationships(task: Task, tasks: Task[]): string[] {
 }
 
 export function getTodayTasks(tasks: Task[], now = new Date()): Task[] {
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  const today = `${year}-${month}-${day}`;
+  const today = toLocalDateString(now);
   return tasks.filter((task) => task.dueDate === today);
 }
 
-export function normalizeTask(payload: any, existingTasks: Task[] = []): Task {
-  const title = sanitizeTitle(payload.title) || 'Untitled Task';
-  const status = ['todo', 'doing', 'done'].includes(payload.status) ? payload.status : 'todo';
-  const priority = ['low', 'medium', 'high'].includes(payload.priority) ? payload.priority : 'medium';
-  const energy = ['low', 'medium', 'high'].includes(payload.energy) ? payload.energy : 'medium';
-  const area = ['work', 'personal', 'health', 'finance', 'social'].includes(payload.area) ? payload.area : 'personal';
+export function normalizeTask(payload: unknown, _existingTasks: Task[] = []): Task {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return {
+      id: crypto.randomUUID(),
+      title: 'Untitled Task',
+      status: 'todo',
+      priority: 'medium',
+      energy: 'medium',
+      area: 'personal',
+      createdAt: new Date().toISOString(),
+    };
+  }
+  const p = payload as Record<string, unknown>;
+  const title = typeof p.title === 'string' ? sanitizeTitle(p.title) || 'Untitled Task' : 'Untitled Task';
+  
+  const validStatus = ['todo', 'doing', 'done'] as const;
+  const status = typeof p.status === 'string' && (validStatus as readonly string[]).includes(p.status) 
+    ? (p.status as typeof validStatus[number]) 
+    : 'todo';
+    
+  const validLevels = ['low', 'medium', 'high'] as const;
+  const priority = typeof p.priority === 'string' && (validLevels as readonly string[]).includes(p.priority) 
+    ? (p.priority as typeof validLevels[number]) 
+    : 'medium';
+    
+  const energy = typeof p.energy === 'string' && (validLevels as readonly string[]).includes(p.energy) 
+    ? (p.energy as typeof validLevels[number]) 
+    : 'medium';
+    
+  const validAreas = ['work', 'personal', 'health', 'finance', 'social'] as const;
+  const area = typeof p.area === 'string' && (validAreas as readonly string[]).includes(p.area) 
+    ? (p.area as typeof validAreas[number]) 
+    : 'personal';
 
   const task: Task = {
-    id: typeof payload.id === 'string' && payload.id.length > 0 ? payload.id : crypto.randomUUID(),
+    id: typeof p.id === 'string' && p.id.length > 0 ? p.id : crypto.randomUUID(),
     title,
     status,
     priority,
     energy,
     area,
-    dueDate: sanitizeDateString(payload.dueDate)?.split('T')[0],
-    noteId: typeof payload.noteId === 'string' ? payload.noteId : undefined,
-    parentTaskId: typeof payload.parentTaskId === 'string' ? payload.parentTaskId : undefined,
-    recurrence: normalizeRecurrence(payload.recurrence),
-    createdAt: sanitizeDateString(payload.createdAt) || new Date().toISOString(),
+    dueDate: toLocalDateString(sanitizeDateString(p.dueDate) || ''),
+    noteId: typeof p.noteId === 'string' ? p.noteId : undefined,
+    parentTaskId: typeof p.parentTaskId === 'string' ? p.parentTaskId : undefined,
+    recurrence: normalizeRecurrence(p.recurrence),
+    tags: Array.isArray(p.tags) ? p.tags.filter((t): t is string => typeof t === 'string') : undefined,
+    createdAt: sanitizeDateString(p.createdAt) || new Date().toISOString(),
   };
 
   return task;
 }
 
-export function generateNextRecurringTasks(tasks: Task[]): { newTasks: Task[], updatedTaskIds: string[] } {
-  const recurring = tasks.filter((t) => t.recurrence && t.status === 'done');
+export function generateNextRecurringTasks(tasks: Task[]): { newTasks: Task[], updatedTasks: Task[] } {
+  const recurring = tasks.filter((t) => t.recurrence && t.status === 'done' && !t.lastProcessedAt);
   const newTasks: Task[] = [];
-  const updatedTaskIds: string[] = [];
+  const updatedTasks: Task[] = [];
 
   for (const item of recurring) {
     const cursorDate = new Date(item.dueDate || item.createdAt);
     const nextOccurrence = calculateNextOccurrence(cursorDate.toISOString(), item.recurrence!);
     if (!nextOccurrence) continue;
 
-    updatedTaskIds.push(item.id);
+    const now = new Date().toISOString();
+    updatedTasks.push({ ...item, lastProcessedAt: now });
+    
     newTasks.push({
       id: crypto.randomUUID(),
       title: item.title,
@@ -141,11 +167,11 @@ export function generateNextRecurringTasks(tasks: Task[]): { newTasks: Task[], u
       priority: item.priority,
       energy: item.energy,
       area: item.area,
-      dueDate: nextOccurrence.split('T')[0],
+      dueDate: toLocalDateString(nextOccurrence),
       recurrence: item.recurrence,
-      createdAt: new Date().toISOString(),
+      createdAt: now,
     });
   }
 
-  return { newTasks, updatedTaskIds };
+  return { newTasks, updatedTasks };
 }

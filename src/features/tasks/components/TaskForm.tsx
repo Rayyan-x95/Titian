@@ -109,7 +109,7 @@ export function TaskForm({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 40, scale: 0.95 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            onSubmit={handleSubmit}
+            onSubmit={(e) => { void handleSubmit(e); }}
             className="relative z-10 w-full max-w-lg rounded-[2.5rem] border border-border bg-card p-8 shadow-2xl overflow-y-auto max-h-[90vh]"
           >
             <div className="flex items-start justify-between gap-4 mb-8">
@@ -143,7 +143,7 @@ export function TaskForm({
                     label="Priority"
                     value={values.priority}
                     onChange={(value) =>
-                      setValues((current) => ({ ...current, priority: value as TaskPriority }))
+                      setValues((current) => ({ ...current, priority: value }))
                     }
                     options={[
                       { label: 'Low', value: 'low' },
@@ -160,7 +160,7 @@ export function TaskForm({
                     label="Status"
                     value={values.status}
                     onChange={(value) =>
-                      setValues((current) => ({ ...current, status: value as TaskStatus }))
+                      setValues((current) => ({ ...current, status: value }))
                     }
                     options={[
                       { label: 'Todo', value: 'todo' },
@@ -179,7 +179,7 @@ export function TaskForm({
                     label="Energy"
                     value={values.energy}
                     onChange={(value) =>
-                      setValues((current) => ({ ...current, energy: value as any }))
+                      setValues((current) => ({ ...current, energy: value }))
                     }
                     options={[
                       { label: 'Low', value: 'low' },
@@ -196,7 +196,7 @@ export function TaskForm({
                     label="Area"
                     value={values.area}
                     onChange={(value) =>
-                      setValues((current) => ({ ...current, area: value as any }))
+                      setValues((current) => ({ ...current, area: value }))
                     }
                     options={[
                       { label: 'Work', value: 'work' },
@@ -276,7 +276,7 @@ export function TaskForm({
                       onChange={(value) =>
                         setValues((current) => ({ 
                           ...current, 
-                          recurrence: { ...current.recurrence!, type: value as TaskRecurrence['type'] } 
+                          recurrence: { ...current.recurrence!, type: value } 
                         }))
                       }
                       options={[

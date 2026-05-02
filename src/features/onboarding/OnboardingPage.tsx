@@ -12,7 +12,6 @@ import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useSettings } from '@/core/settings';
 import { useStore, type FinancialGoal, type OnboardingProfile, type OnboardingUpdate } from '@/core/store';
-import { useThemeContext } from '@/core/theme';
 import { useSeo } from '@/seo';
 import { OnboardingControls } from './components/OnboardingControls';
 import { OnboardingStepper } from './components/OnboardingStepper';
@@ -55,6 +54,7 @@ function toPersistedUpdate(profile: OnboardingProfile): OnboardingUpdate {
   return {
     name: profile.name,
     phoneNumber: profile.phoneNumber,
+    upiId: profile.upiId,
     dob: profile.dob,
     income: profile.income,
     avgExpense: profile.avgExpense,
@@ -78,7 +78,6 @@ export function OnboardingPage() {
   const skipOnboarding = useStore((state) => state.skipOnboarding);
   const setNotifications = useSettings((state) => state.setNotifications);
   const setCurrency = useSettings((state) => state.setCurrency);
-  const { setTheme } = useThemeContext();
 
   const [draft, setDraft] = useState(onboarding);
   const draftRef = useRef(draft);
@@ -142,7 +141,7 @@ export function OnboardingPage() {
     try {
       await persistQueueRef.current.catch(() => undefined);
       await skipOnboarding();
-      navigate('/', { replace: true });
+      void navigate('/', { replace: true });
     } finally {
       setIsSaving(false);
     }
@@ -164,6 +163,7 @@ export function OnboardingPage() {
       await completeOnboarding({
         name: profile.name.trim(),
         phoneNumber: profile.phoneNumber?.trim(),
+        upiId: profile.upiId?.trim(),
         dob: profile.dob,
         income: incomeCents,
         avgExpense: expenseCents,
@@ -171,10 +171,9 @@ export function OnboardingPage() {
         preferences: profile.preferences,
       });
 
-      setNotifications(profile.preferences.notifications);
-      setCurrency('INR');
-      setTheme(profile.preferences.darkMode ? 'dark' : 'light');
-      navigate('/', { replace: true });
+      void setNotifications(profile.preferences.notifications);
+      void setCurrency('INR');
+      void navigate('/', { replace: true });
     } catch (completeError) {
       setError(completeError instanceof Error ? completeError.message : 'Could not finish onboarding.');
     } finally {
@@ -213,10 +212,6 @@ export function OnboardingPage() {
   const handlePreferenceChange = (preferences: Partial<OnboardingProfile['preferences']>) => {
     const nextPreferences = { ...draftRef.current.preferences, ...preferences };
     persistProfile({ preferences: nextPreferences });
-
-    if (preferences.darkMode !== undefined) {
-      setTheme(preferences.darkMode ? 'dark' : 'light');
-    }
   };
 
   const stepProps: OnboardingStepProps = {
@@ -252,7 +247,7 @@ export function OnboardingPage() {
         <OnboardingStepper
           currentStep={activeStep}
           totalSteps={onboardingSteps.length}
-          onSkip={handleSkip}
+          onSkip={() => { void handleSkip(); }}
           disabled={skipDisabled}
         />
 
@@ -319,7 +314,7 @@ export function OnboardingPage() {
           isSaving={isSaving}
           onBack={handleBack}
           onNext={handleNext}
-          onComplete={handleComplete}
+          onComplete={() => { void handleComplete(); }}
         />
       </section>
     </main>

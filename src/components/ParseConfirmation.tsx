@@ -1,9 +1,9 @@
 import { useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, Image as ImageIcon, FileText, X, Check, AlertCircle, Sparkles } from 'lucide-react';
+import { Upload, Image as ImageIcon, FileText, Check, AlertCircle, Sparkles } from 'lucide-react';
 import { Button, BottomSheet, PremiumInput, CategoryCombobox, DatePicker } from '@/shared/ui';
 import { parseFile, parseText, type ParsedTransaction, type ParseResult } from '@/utils/parserEngine';
 import { cn } from '@/utils/cn';
+import { toLocalDateString } from '@/utils/date';
 
 interface ParseConfirmationProps {
   isOpen: boolean;
@@ -27,7 +27,7 @@ export function ParseConfirmation({
     amount: initialData?.amount?.toString() || '',
     merchant: initialData?.merchant || '',
     category: initialData?.category || 'Other',
-    date: initialData?.date ? initialData.date.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+    date: initialData?.date ? toLocalDateString(initialData.date) : toLocalDateString(new Date()),
     type: initialData?.type || 'expense',
   });
   const [isSaving, setIsSaving] = useState(false);
@@ -56,7 +56,7 @@ export function ParseConfirmation({
         merchant: formData.merchant,
         category: formData.category,
         date: new Date(formData.date),
-        type: formData.type as 'expense' | 'income',
+        type: formData.type,
       });
       onClose();
     } catch (err) {
@@ -66,16 +66,6 @@ export function ParseConfirmation({
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      amount: initialData?.amount?.toString() || '',
-      merchant: initialData?.merchant || '',
-      category: initialData?.category || 'Other',
-      date: initialData?.date ? initialData.date.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-      type: initialData?.type || 'expense',
-    });
-    setError(null);
-  };
 
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} title="Review Transaction" className="max-h-[90vh]">
@@ -183,7 +173,7 @@ export function ParseConfirmation({
           </Button>
           <Button
             type="button"
-            onClick={handleSave}
+            onClick={() => { void handleSave(); }}
             disabled={isSaving || !formData.amount}
             className="flex-1"
           >
@@ -231,14 +221,14 @@ export function FileUpload({ onParsed, onTextParsed }: FileUploadProps) {
 
     const file = e.dataTransfer.files[0];
     if (file && (file.type.includes('image') || file.type.includes('pdf'))) {
-      processFile(file);
+      void processFile(file);
     }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      processFile(file);
+      void processFile(file);
     }
   };
 

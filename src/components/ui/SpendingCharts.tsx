@@ -82,7 +82,7 @@ export function SpendingTrendChart({ expenses }: SpendingTrendChartProps) {
           <Tooltip 
             cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
             contentStyle={{ backgroundColor: '#09090b', borderColor: '#27272a', borderRadius: '12px' }}
-            formatter={(value: any) => [formatMoney((Number(value) || 0) * 100, currency), 'Spent']}
+            formatter={((value: any) => [formatMoney((Number(value) || 0) * 100, currency), 'Spent']) as any}
           />
           <Bar dataKey="amount" fill="#3b82f6" radius={[4, 4, 0, 0]} />
         </BarChart>
@@ -141,7 +141,7 @@ export function CategoryPieChart({ expenses }: CategoryPieChartProps) {
           <Tooltip 
             contentStyle={{ backgroundColor: '#09090b', borderColor: '#27272a', borderRadius: '12px', color: '#fff' }}
             itemStyle={{ color: '#fff' }}
-            formatter={(value: any) => formatMoney((Number(value) || 0) * 100, currency)}
+            formatter={((value: any) => formatMoney((Number(value) || 0) * 100, currency)) as any}
           />
           <Legend 
             verticalAlign="bottom" 

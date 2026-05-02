@@ -67,7 +67,7 @@ export function splitWeighted(totalAmount: number, participants: SplitParticipan
     amount: Math.floor((total * weights[index]) / weightTotal),
   }));
 
-  let allocated = provisional.reduce((sum, item) => safeAddCents(sum, item.amount), 0);
+  const allocated = provisional.reduce((sum, item) => safeAddCents(sum, item.amount), 0);
   let remainder = safeSubCents(total, allocated);
 
   const sortedIndexes = participants

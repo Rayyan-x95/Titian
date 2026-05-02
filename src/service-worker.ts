@@ -11,8 +11,9 @@ declare let self: ServiceWorkerGlobalScope;
 clientsClaim();
 
 self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
+  const data = event.data as Record<string, unknown> | null;
+  if (data && data.type === 'SKIP_WAITING') {
+    void self.skipWaiting();
   }
 });
 
@@ -92,13 +93,16 @@ registerRoute(navigationRoute);
 // ─── Notifications ────────────────────────────────────────────────────────────
 
 self.addEventListener('push', (event) => {
-  const data = event.data?.json() ?? {};
-  const title = data.title ?? 'Titan Update';
-  const options = {
-    body: data.body ?? 'Your financial report is ready.',
+  const data = (event.data?.json() as Record<string, unknown>) ?? {};
+  const title = typeof data.title === 'string' ? data.title : 'Titan Update';
+  const body = typeof data.body === 'string' ? data.body : 'Your financial report is ready.';
+  const url = typeof data.url === 'string' ? data.url : '/';
+
+  const options: NotificationOptions = {
+    body,
     icon: '/icons/icon-192x192.png',
     badge: '/icons/badge-72x72.png',
-    data: data.url ?? '/',
+    data: url,
   };
 
   event.waitUntil(self.registration.showNotification(title, options));
@@ -106,18 +110,18 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const urlToOpen = event.notification.data || '/';
+  const urlToOpen = String(event.notification.data || '/');
 
-  event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        if (client.url === urlToOpen && 'focus' in client) {
-          return client.focus();
-        }
+  event.waitUntil((async () => {
+    const clientList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of clientList) {
+      if (client.url === urlToOpen && 'focus' in client) {
+        await client.focus();
+        return;
       }
-      if (self.clients.openWindow) {
-        return self.clients.openWindow(urlToOpen);
-      }
-    }),
-  );
+    }
+    if (self.clients.openWindow) {
+      await self.clients.openWindow(urlToOpen);
+    }
+  })());
 });

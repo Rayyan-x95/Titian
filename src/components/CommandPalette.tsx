@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, type ComponentType } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, Calendar, FileText, CreditCard, Settings, ArrowRight, CheckCircle2, History } from 'lucide-react';
+import { Search, Calendar, FileText, CreditCard, Settings, ArrowRight, CheckCircle2, History } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { formatMoney } from '@/core/settings';
 import { useSettings } from '@/core/settings';
@@ -50,10 +50,10 @@ export function CommandPalette() {
   const results = useMemo<CommandPaletteItem[]>(() => {
     if (!query.trim()) {
       return [
-        { id: 'nav-tasks', title: 'Go to Tasks', icon: Calendar, action: () => navigate('/tasks'), type: 'action' as const },
-        { id: 'nav-notes', title: 'Go to Notes', icon: FileText, action: () => navigate('/notes'), type: 'action' as const },
-        { id: 'nav-finance', title: 'Go to Finance', icon: CreditCard, action: () => navigate('/finance'), type: 'action' as const },
-        { id: 'nav-settings', title: 'Settings', icon: Settings, action: () => navigate('/settings'), type: 'action' as const },
+        { id: 'nav-tasks', title: 'Go to Tasks', icon: Calendar, action: () => { void navigate('/tasks'); }, type: 'action' as const },
+        { id: 'nav-notes', title: 'Go to Notes', icon: FileText, action: () => { void navigate('/notes'); }, type: 'action' as const },
+        { id: 'nav-finance', title: 'Go to Finance', icon: CreditCard, action: () => { void navigate('/finance'); }, type: 'action' as const },
+        { id: 'nav-settings', title: 'Settings', icon: Settings, action: () => { void navigate('/settings'); }, type: 'action' as const },
       ];
     }
 
@@ -62,17 +62,17 @@ export function CommandPalette() {
 
     // Search Tasks
     tasks.filter(t => t.title.toLowerCase().includes(lowQuery) || (t.tags && t.tags.some(tag => tag.toLowerCase().includes(lowQuery)))).slice(0, 5).forEach(t => {
-      list.push({ id: `task-${t.id}`, title: t.title, icon: CheckCircle2, action: () => navigate('/tasks'), type: 'task', subtitle: t.status });
+      list.push({ id: `task-${t.id}`, title: t.title, icon: CheckCircle2, action: () => { void navigate('/tasks'); }, type: 'task', subtitle: t.status });
     });
 
     // Search Notes
     notes.filter(n => n.content.toLowerCase().includes(lowQuery) || (n.tags && n.tags.some(tag => tag.toLowerCase().includes(lowQuery)))).slice(0, 5).forEach(n => {
-      list.push({ id: `note-${n.id}`, title: n.content.split('\n')[0] || 'Untitled Note', icon: FileText, action: () => navigate('/notes'), type: 'note' });
+      list.push({ id: `note-${n.id}`, title: n.content.split('\n')[0] || 'Untitled Note', icon: FileText, action: () => { void navigate('/notes'); }, type: 'note' });
     });
 
     // Search Expenses
     expenses.filter(e => e.category.toLowerCase().includes(lowQuery) || (e.note && e.note.toLowerCase().includes(lowQuery)) || (e.tags && e.tags.some(tag => tag.toLowerCase().includes(lowQuery)))).slice(0, 5).forEach(e => {
-      list.push({ id: `expense-${e.id}`, title: `${e.category}: ${formatMoney(e.amount, currency)}`, icon: History, action: () => navigate('/finance'), type: 'finance' });
+      list.push({ id: `expense-${e.id}`, title: `${e.category}: ${formatMoney(e.amount, currency)}`, icon: History, action: () => { void navigate('/finance'); }, type: 'finance' });
     });
 
     return list;

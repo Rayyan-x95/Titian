@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState } from 'react';
 
-export type Theme = 'dark' | 'light';
+export type Theme = 'dark';
 
 interface ThemeContextValue {
   theme: Theme;
@@ -10,40 +10,22 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
-const storageKey = 'titan-theme';
-
-function getInitialTheme(): Theme {
-  if (typeof window === 'undefined') {
-    return 'dark';
-  }
-
-  const storedTheme = window.localStorage.getItem(storageKey);
-
-  if (storedTheme === 'light' || storedTheme === 'dark') {
-    return storedTheme;
-  }
-
-  return 'dark';
-}
 
 function applyTheme(theme: Theme) {
   const root = document.documentElement;
   root.dataset.theme = theme;
-  root.classList.toggle('dark', theme === 'dark');
+  root.classList.add('dark');
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(getInitialTheme);
-
   useEffect(() => {
-    applyTheme(theme);
-    window.localStorage.setItem(storageKey, theme);
-  }, [theme]);
+    applyTheme('dark');
+  }, []);
 
   const value: ThemeContextValue = {
-    theme,
-    setTheme: setThemeState,
-    toggleTheme: () => setThemeState((currentTheme) => (currentTheme === 'dark' ? 'light' : 'dark')),
+    theme: 'dark',
+    setTheme: () => {},
+    toggleTheme: () => {},
   };
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

@@ -1,27 +1,37 @@
-import { LayoutDashboard, Landmark, NotebookPen, Settings, SquareCheckBig, Clock, Users } from 'lucide-react';
-import { NavLink } from 'react-router-dom';
+import { LayoutDashboard, SquareCheckBig, Landmark, NotebookPen, Plus, Settings } from 'lucide-react';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { cn } from '@/utils/cn';
 
 const items = [
   { to: '/', label: 'Home', icon: LayoutDashboard },
-  { to: '/timeline', label: 'Feed', icon: Clock },
   { to: '/tasks', label: 'Tasks', icon: SquareCheckBig },
-  { to: '/notes', label: 'Notes', icon: NotebookPen },
-  { to: '/splits', label: 'Splits', icon: Users },
-  { to: '/finance', label: 'Finance', icon: Landmark },
+  { to: '/finance', label: 'Money', icon: Landmark },
+  { to: '/notes', label: 'Thoughts', icon: NotebookPen },
   { to: '/settings', label: 'Settings', icon: Settings },
 ] as const;
 
 export function Navigation() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   return (
     <nav
       aria-label="Primary navigation"
-      className="fixed inset-x-0 bottom-8 z-50 mx-auto max-w-[min(92vw,540px)] pointer-events-none px-4"
+      className="pointer-events-none fixed inset-x-0 bottom-6 z-50 mx-auto flex max-w-[calc(100%-2rem)] flex-col items-center gap-4 px-4 lg:hidden"
     >
-      <div className="compact-nav pointer-events-auto flex items-center justify-around gap-1 rounded-[2rem] border border-white/10 bg-black/40 p-2 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+      <button
+        onClick={() => { void navigate('/tasks?new=1'); }}
+        className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/20 bg-gradient-to-br from-primary to-accent shadow-[0_10px_24px_rgba(24,125,255,0.38)] transition-all active:scale-95"
+        aria-label="Add new item"
+      >
+        <Plus className="h-7 w-7 text-white" strokeWidth={2.5} />
+      </button>
+
+      <div className="compact-nav pointer-events-auto flex w-full items-center justify-around gap-1 rounded-[1.6rem] border border-border/70 bg-card/70 p-2 backdrop-blur-2xl">
         {items.map((item) => {
           const Icon = item.icon;
+          const isMoneyActive = item.to === '/finance' && location.pathname.startsWith('/split');
 
           return (
             <NavLink
@@ -31,26 +41,29 @@ export function Navigation() {
               aria-label={item.label}
               className={({ isActive }) =>
                 cn(
-                  'relative flex flex-col items-center justify-center gap-1.5 rounded-2xl px-4 py-2.5 text-[11px] font-bold tracking-tight transition-all duration-500',
-                  isActive
+                  'relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1.5 rounded-xl px-2 py-2.5 text-[10px] font-semibold tracking-wide transition-all duration-200',
+                  (isActive || isMoneyActive)
                     ? 'text-white'
-                    : 'text-muted-foreground hover:bg-white/5 hover:text-foreground',
+                    : 'text-muted-foreground hover:text-foreground',
                 )
               }
             >
-              {({ isActive }) => (
-                <>
-                  {isActive && (
-                    <motion.div 
-                      layoutId="nav-active"
-                      className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-primary/80 to-accent/80 shadow-[0_0_20px_rgba(var(--primary),0.3)] -z-10"
-                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                    />
-                  )}
-                  <Icon className={cn("h-5 w-5 transition-all duration-500", isActive ? "scale-110 drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" : "opacity-80")} />
-                  <span className="hidden sm:block text-[10px] font-black uppercase tracking-widest leading-none opacity-90">{item.label}</span>
-                </>
-              )}
+              {({ isActive }) => {
+                const active = isActive || isMoneyActive;
+                return (
+                  <>
+                    {active && (
+                      <motion.div 
+                        layoutId="nav-active"
+                        className="absolute inset-0 -z-10 rounded-xl bg-gradient-to-br from-primary/90 to-accent/85"
+                        transition={{ type: 'spring', bounce: 0.16, duration: 0.44 }}
+                      />
+                    )}
+                    <Icon className={cn('h-5 w-5 transition-all duration-200', active ? 'scale-105' : 'opacity-80')} strokeWidth={1.7} />
+                    <span className="leading-none">{item.label}</span>
+                  </>
+                );
+              }}
             </NavLink>
           );
         })}

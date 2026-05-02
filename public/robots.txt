@@ -1,3 +1,26 @@
 User-agent: *
-Allow: /
+Allow: /home
+Allow: /features
+Allow: /ai-task-manager
+Allow: /expense-tracker
+Allow: /shared-expenses
+Allow: /life-timeline
+Allow: /install-titan
+Allow: /blog
+Allow: /welcome
+Allow: /personal-life-os
+Allow: /split-expenses-app
+Allow: /what-is-titan
+Allow: /life-management-app
+
+# Disallow app routes (private data)
+Disallow: /onboarding/
+Disallow: /share/
+Disallow: /settings/
+Disallow: /timeline/
+Disallow: /splits/
+Disallow: /tasks/
+Disallow: /notes/
+Disallow: /finance/
+
 Sitemap: https://titanapp.qzz.io/sitemap.xml

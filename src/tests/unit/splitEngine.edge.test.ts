@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { splitEqual, splitWeighted, validateSplitShares, computeSettlements, calculateTotalOwed } from '@/lib/core/splitEngine';
+import { splitEqual, splitWeighted, computeSettlements, calculateTotalOwed } from '@/lib/core/splitEngine';
 
 describe('splitEngine edge cases', () => {
   it('splits equally with remainder distributed', () => {
@@ -23,7 +23,7 @@ describe('splitEngine edge cases', () => {
       { paidBy: 'user', participants: [{ id: 'user', amount: 50 }, { id: 'a', amount: 50 }] },
       { paidBy: 'a', participants: [{ id: 'user', amount: 30 }, { id: 'a', amount: 70 }] },
     ];
-    const total = calculateTotalOwed(shared as any, 'user');
+    const total = calculateTotalOwed(shared, 'user');
     expect(typeof total).toBe('number');
   });
 });

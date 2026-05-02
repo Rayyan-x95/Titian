@@ -1,4 +1,5 @@
 import type { Task, Note, Expense, SharedExpense, DailySnapshot, TimelineItem } from '@/core/store/types';
+import { toLocalDateString } from '@/utils/date';
 
 export function buildTimelineItems(
   tasks: Task[],
@@ -38,23 +39,23 @@ export function computeDailySnapshots(
   };
 
   tasks.filter(t => t.status === 'done').forEach(t => {
-    const date = t.createdAt.split('T')[0];
-    getSnapshot(date).tasksCompleted += 1;
+    const date = toLocalDateString(t.createdAt);
+    if (date) getSnapshot(date).tasksCompleted += 1;
   });
 
   expenses.filter(e => e.type === 'expense').forEach(e => {
-    const date = e.createdAt.split('T')[0];
-    getSnapshot(date).expensesTotal += e.amount;
+    const date = toLocalDateString(e.createdAt);
+    if (date) getSnapshot(date).expensesTotal += e.amount;
   });
 
   notes.forEach(n => {
-    const date = n.createdAt.split('T')[0];
-    getSnapshot(date).notesCreated += 1;
+    const date = toLocalDateString(n.createdAt);
+    if (date) getSnapshot(date).notesCreated += 1;
   });
 
   sharedExpenses.forEach(se => {
-    const date = se.createdAt.split('T')[0];
-    getSnapshot(date).splitsAdded += 1; // Count of splits, not amount
+    const date = toLocalDateString(se.createdAt);
+    if (date) getSnapshot(date).splitsAdded += 1; // Count of splits, not amount
   });
 
   return Array.from(snapshotMap.values());

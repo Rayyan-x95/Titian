@@ -17,7 +17,7 @@ export function createPwaUpdateController(): PwaUpdateController {
     }
   };
 
-  const ensureRegistered = async () => {
+  const ensureRegistered = () => {
     if (import.meta.env.DEV) return;
     if (!('serviceWorker' in navigator)) return;
     if (wb) return;
@@ -39,7 +39,7 @@ export function createPwaUpdateController(): PwaUpdateController {
     void wb.register();
   };
 
-  void ensureRegistered();
+  ensureRegistered();
 
   return {
     isUpdateAvailable: () => updateDetected,
@@ -49,7 +49,7 @@ export function createPwaUpdateController(): PwaUpdateController {
       return () => listeners.delete(listener);
     },
     applyUpdate: async () => {
-      await ensureRegistered();
+      ensureRegistered();
       if (!wb) {
         window.location.reload();
         return;
@@ -61,7 +61,11 @@ export function createPwaUpdateController(): PwaUpdateController {
       }
 
       const controllerChangePromise = new Promise<void>((resolve) => {
-        let timeoutId: number | undefined;
+        const timeoutId = window.setTimeout(() => {
+          navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
+          resolve();
+        }, 8000);
+
         const onControllerChange = () => {
           if (timeoutId !== undefined) {
             window.clearTimeout(timeoutId);
@@ -71,17 +75,14 @@ export function createPwaUpdateController(): PwaUpdateController {
         };
 
         navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
-        timeoutId = window.setTimeout(() => {
-          navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
-          resolve();
-        }, 8000);
       });
 
-      await wb.messageSkipWaiting();
+      if (wb) {
+        void wb.messageSkipWaiting();
+      }
+      
       await controllerChangePromise;
-
       window.location.reload();
     },
   };
 }
-

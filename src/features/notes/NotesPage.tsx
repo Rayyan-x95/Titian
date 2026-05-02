@@ -1,16 +1,15 @@
 import { useMemo, useState } from 'react';
-import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
+import { AnimatePresence, LayoutGroup } from 'framer-motion';
 import { Plus } from 'lucide-react';
 import { Button } from '@/shared/ui';
 import { PageShell } from '@/shared/components';
 import { cn } from '@/utils/cn';
+import { toLocalDateString } from '@/utils/date';
 import { useStore } from '@/core/store';
 import type { Note, Task } from '@/core/store/types';
 import { useSeo } from '@/seo';
 import { NoteEditor, type NoteEditorValues } from './NoteEditor';
 import { NoteItem } from './NoteItem';
-
-type TagFilter = 'all' | string;
 
 function normalizeTags(tags: string[]) {
   const deduped = new Set(tags.map((tag) => tag.trim()).filter(Boolean));
@@ -20,11 +19,15 @@ function normalizeTags(tags: string[]) {
 function createTaskTitleFromNote(content: string) {
   const firstLine = content.split('\n').map((line) => line.trim()).find(Boolean);
   if (!firstLine) return 'Untitled task';
-  return firstLine.length > 80 ? `${firstLine.slice(0, 80)}…` : firstLine;
+  return firstLine.length > 80 ? `${firstLine.slice(0, 80)}...` : firstLine;
 }
 
 export function NotesPage() {
-  useSeo({ title: 'Notes', description: 'Capture ideas, tag notes, and connect them to tasks in Titan.', path: '/notes' });
+  useSeo({ 
+    title: 'Thoughts', 
+    description: 'Capture ideas and build your knowledge base. Link thoughts to tasks and expenses for a truly connected life operating system.', 
+    path: '/thoughts' 
+  });
 
   const notes = useStore((state) => state.notes);
   const tasks = useStore((state) => state.tasks);
@@ -38,7 +41,7 @@ export function NotesPage() {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [tagFilter, setTagFilter] = useState<TagFilter>('all');
+  const [tagFilter, setTagFilter] = useState('all');
 
   const sortedNotes = useMemo(() => [...notes].sort((left, right) => { if (left.pinned !== right.pinned) return left.pinned ? -1 : 1; return right.createdAt.localeCompare(left.createdAt); }), [notes]);
   const allTags = useMemo(() => Array.from(new Set(notes.flatMap((note) => note.tags.map((tag) => tag.trim()).filter(Boolean)))).sort((left, right) => left.localeCompare(right)), [notes]);
@@ -79,7 +82,7 @@ export function NotesPage() {
       } else {
         const created = await addNote({ content: cleanedContent, tags: cleanedTags, linkedTaskIds: [], linkedNoteIds: values.linkedNoteIds, pinned: values.pinned, area: values.area });
         await syncTaskLinks(created.id, values.linkedTaskIds);
-        const today = new Date().toISOString().split('T')[0];
+        const today = toLocalDateString(new Date());
         await useStore.getState().updateSnapshot(today, 'note', 1);
       }
       setIsEditorOpen(false);
@@ -91,20 +94,73 @@ export function NotesPage() {
   const handleConvertToTask = async (note: Note) => addTask({ title: createTaskTitleFromNote(note.content), status: 'todo', noteId: note.id });
 
   return (
-    <PageShell title="Notes" description="Capture ideas in seconds, tag for retrieval, and connect thinking directly to execution.">
+    <PageShell
+      eyebrow="Knowledge"
+      title="Notes"
+      description="Capture quickly, connect with backlinks, and keep ideas structured and retrievable."
+    >
       <div className="flex items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-2">{/* tag filters */}
-          <button type="button" onClick={() => setTagFilter('all')} className={cn("rounded-full px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all", tagFilter === 'all' ? "bg-primary text-white shadow-glow-sm" : "bg-card border border-border text-muted-foreground hover:bg-secondary")}>All notes</button>
-          {allTags.map((tag) => (<button key={tag} type="button" onClick={() => setTagFilter(tag)} className={cn("rounded-full px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all", tagFilter === tag ? "bg-primary text-white shadow-glow-sm" : "bg-card border border-border text-muted-foreground hover:bg-secondary")}>#{tag}</button>))}
+        <div className="flex flex-wrap gap-2">
+          <button 
+            type="button" 
+            onClick={() => setTagFilter('all')} 
+            className={cn(
+              "rounded-full px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all", 
+              tagFilter === 'all' ? "bg-primary text-white shadow-glow" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            All
+          </button>
+          {allTags.map((tag) => (
+            <button 
+              key={tag} 
+              type="button" 
+              onClick={() => setTagFilter(tag)} 
+              className={cn(
+                "rounded-full px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all", 
+                tagFilter === tag ? "bg-primary text-white shadow-glow" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              #{tag}
+            </button>
+          ))}
         </div>
         <Button onClick={openCreateEditor} className="hidden sm:inline-flex shadow-glow" aria-label="Create note"><Plus className="h-4 w-4" /> New note</Button>
       </div>
 
-      {!hydrated ? (<article className="rounded-[2.5rem] border border-border bg-card/20 p-12 text-center animate-pulse"><p className="text-sm font-bold text-muted-foreground">Synchronizing your thoughts...</p></article>) : visibleNotes.length === 0 ? (<article className="rounded-[2.5rem] border border-dashed border-border bg-card/20 p-16 text-center"><p className="text-sm font-bold text-foreground">No notes found</p><p className="mt-1 text-xs text-muted-foreground">{tagFilter === 'all' ? 'Your knowledge base is empty. Start writing.' : `No notes tagged with #${tagFilter}`}</p></article>) : (<LayoutGroup><section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"><AnimatePresence mode="popLayout">{visibleNotes.map((note) => (<NoteItem key={note.id} note={note} linkedTasks={linkedTasksByNoteId.get(note.id) ?? []} onOpen={() => openEditEditor(note)} onDelete={() => handleDeleteNote(note)} onConvertToTask={async () => { await handleConvertToTask(note); }} />))}</AnimatePresence></section></LayoutGroup>)}
+      {!hydrated ? (
+        <article className="rounded-2xl border border-border bg-card p-12 text-center animate-pulse">
+          <p className="text-sm font-bold text-muted-foreground">Gathering your thoughts...</p>
+        </article>
+      ) : visibleNotes.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-6 py-20 text-center">
+          <img src="/icons/falcon.png" alt="Falcon" className="h-24 w-24 opacity-10 grayscale" />
+          <div className="space-y-1">
+            <p className="text-sm font-bold text-foreground">A clean mind</p>
+            <p className="text-xs text-muted-foreground">Capture your first thought or adjust filters.</p>
+          </div>
+        </div>
+      ) : (
+        <LayoutGroup>
+          <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <AnimatePresence mode="popLayout">
+              {visibleNotes.map((note) => (
+                <NoteItem 
+                  key={note.id} 
+                  note={note} 
+                  linkedTasks={linkedTasksByNoteId.get(note.id) ?? []} 
+                  onOpen={() => openEditEditor(note)} 
+                  onDelete={() => handleDeleteNote(note)} 
+                />
+              ))}
+            </AnimatePresence>
+          </section>
+        </LayoutGroup>
+      )}
 
       <Button onClick={openCreateEditor} className="fixed bottom-24 right-4 h-14 w-14 rounded-full shadow-xl sm:hidden" aria-label="Create note"><Plus className="h-5 w-5" /></Button>
 
-      <NoteEditor open={isEditorOpen} title={editingNote ? 'Edit note' : 'New note'} saveLabel={editingNote ? 'Save changes' : 'Save note'} tasks={tasks} isSaving={isSaving} initialValues={editingNote ? { content: editingNote.content, tags: editingNote.tags, linkedTaskIds: tasks.filter((task) => task.noteId === editingNote.id).map((task) => task.id), linkedNoteIds: editingNote.linkedNoteIds ?? [], pinned: editingNote.pinned ?? false, area: (editingNote as any).area || 'personal' } : undefined} onOpenChange={(nextOpen) => { if (!nextOpen) { closeEditor(); return; } setIsEditorOpen(true); }} onSave={handleSaveNote} onConvertToTask={editingNote ? async () => { await handleConvertToTask(editingNote); } : undefined} />
+      <NoteEditor open={isEditorOpen} title={editingNote ? 'Edit note' : 'New note'} saveLabel={editingNote ? 'Save changes' : 'Save note'} tasks={tasks} isSaving={isSaving} initialValues={editingNote ? { content: editingNote.content, tags: editingNote.tags, linkedTaskIds: tasks.filter((task) => task.noteId === editingNote.id).map((task) => task.id), linkedNoteIds: editingNote.linkedNoteIds ?? [], pinned: editingNote.pinned ?? false, area: editingNote.area || 'personal' } : undefined} onOpenChange={(nextOpen) => { if (!nextOpen) { closeEditor(); return; } setIsEditorOpen(true); }} onSave={handleSaveNote} onConvertToTask={editingNote ? async () => { await handleConvertToTask(editingNote); } : undefined} />
     </PageShell>
   );
 }

@@ -3,9 +3,11 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { ThemeProvider } from '@/core/theme';
-import { initializeCoreStore } from '@/core/store';
+import { useStore } from '@/core/store';
 import { registerPWA } from '@/pwa';
 import { APP_VERSION } from '@/core/version';
+import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import '@/styles/global.css';
 
 async function bootstrap() {
@@ -29,13 +31,15 @@ async function bootstrap() {
   };
 
   try {
-    await initializeCoreStore();
+    await useStore.getState().hydrate();
 
     ReactDOM.createRoot(rootElement).render(
       <React.StrictMode>
         <ThemeProvider>
           <BrowserRouter>
             <App />
+            <Analytics />
+            <SpeedInsights />
           </BrowserRouter>
         </ThemeProvider>
       </React.StrictMode>,

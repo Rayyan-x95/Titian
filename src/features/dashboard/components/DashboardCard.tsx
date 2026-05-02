@@ -11,8 +11,7 @@ interface DashboardCardProps {
 
 export function DashboardCard({ title, subtitle, children, action, icon }: DashboardCardProps) {
   return (
-    <Card className="relative overflow-hidden p-5">
-      <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-primary/10 blur-3xl opacity-60 transition-opacity duration-300 group-hover:opacity-100" />
+    <Card className="relative p-5 transition-all">
       <div className="relative z-10 flex items-start justify-between gap-3">
         <div className="flex items-center gap-2">
           {icon && (

@@ -62,7 +62,9 @@ function AddTaskForm({ onDone }: { onDone: () => void }) {
     try {
       await addTask({ title: title.trim(), status: 'todo', dueDate: dueDate || undefined });
       setSuccess(true);
-      setTimeout(onDone, 600);
+      setTitle('');
+      setDueDate('');
+      setTimeout(() => setSuccess(false), 3000);
     } finally {
       setLoading(false);
     }
@@ -76,7 +78,7 @@ function AddTaskForm({ onDone }: { onDone: () => void }) {
     <div className="space-y-3">
       <input ref={inputRef} autoFocus id="qa-task-title" type="text" value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={onKey} placeholder="Task title…" className="w-full rounded-xl border border-border/60 bg-secondary/40 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20" />
       <input id="qa-task-due" type="date" aria-label="Task due date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="w-full rounded-xl border border-border/60 bg-secondary/40 px-4 py-3 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20" />
-      <Button id="qa-task-submit" variant="primary" className="w-full" onClick={submit} disabled={!title.trim() || loading}>
+      <Button id="qa-task-submit" variant="primary" className="w-full" onClick={() => { void submit(); }} disabled={!title.trim() || loading}>
         {success ? (<><Check className="h-4 w-4" /> Task added!</>) : (<><Plus className="h-4 w-4" /> Add Task</>)}
       </Button>
     </div>
@@ -95,7 +97,8 @@ function AddNoteForm({ onDone }: { onDone: () => void }) {
     try {
       await addNote({ content: content.trim(), tags: [] });
       setSuccess(true);
-      setTimeout(onDone, 600);
+      setContent('');
+      setTimeout(() => setSuccess(false), 3000);
     } finally {
       setLoading(false);
     }
@@ -104,7 +107,7 @@ function AddNoteForm({ onDone }: { onDone: () => void }) {
   return (
     <div className="space-y-3">
       <textarea autoFocus id="qa-note-content" rows={4} value={content} onChange={(e) => setContent(e.target.value)} placeholder="Start writing your note…" className="w-full resize-none rounded-xl border border-border/60 bg-secondary/40 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20" />
-      <Button id="qa-note-submit" variant="primary" className="w-full" onClick={submit} disabled={!content.trim() || loading}>
+      <Button id="qa-note-submit" variant="primary" className="w-full" onClick={() => { void submit(); }} disabled={!content.trim() || loading}>
         {success ? (<><Check className="h-4 w-4" /> Note saved!</>) : (<><NotebookPen className="h-4 w-4" /> Save Note</>)}
       </Button>
     </div>
@@ -125,7 +128,9 @@ function AddExpenseForm({ onDone }: { onDone: () => void }) {
     try {
       await addExpense({ amountDollars: parsedAmount, category: category.trim() || 'Uncategorized' });
       setSuccess(true);
-      setTimeout(onDone, 600);
+      setAmount('');
+      setCategory('');
+      setTimeout(() => setSuccess(false), 3000);
     } finally {
       setLoading(false);
     }
@@ -139,7 +144,7 @@ function AddExpenseForm({ onDone }: { onDone: () => void }) {
     <div className="space-y-3">
       <input autoFocus id="qa-expense-amount" type="number" min="0" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} onKeyDown={onKey} placeholder="Amount (e.g. 500)" className="w-full rounded-xl border border-border/60 bg-secondary/40 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20" />
       <input id="qa-expense-category" type="text" value={category} onChange={(e) => setCategory(e.target.value)} onKeyDown={onKey} placeholder="Category (optional)" className="w-full rounded-xl border border-border/60 bg-secondary/40 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20" />
-      <Button id="qa-expense-submit" variant="primary" className="w-full" onClick={submit} disabled={!amount || Number.isNaN(parseFloat(amount)) || loading}>
+      <Button id="qa-expense-submit" variant="primary" className="w-full" onClick={() => { void submit(); }} disabled={!amount || Number.isNaN(parseFloat(amount)) || loading}>
         {success ? (<><Check className="h-4 w-4" /> Expense added!</>) : (<><Landmark className="h-4 w-4" /> Log Expense</>)}
       </Button>
     </div>
@@ -170,9 +175,8 @@ export function QuickActions() {
   const toggle = (type: ActionType) => setActive((prev) => (prev === type ? null : type));
   const close = () => setActive(null);
 
-  const handleDone = (type: Exclude<ActionType, null>) => {
+  const handleDone = (_type: Exclude<ActionType, null>) => {
     close();
-    setTimeout(() => navigate(`/${type === 'expense' ? 'finance' : type + 's'}`), 900);
   };
 
   return (

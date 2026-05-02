@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, UserPlus, Phone } from 'lucide-react';
+import { X, Phone } from 'lucide-react';
 import { Button } from '@/shared/ui';
 import { useStore } from '@/core/store';
 
@@ -32,7 +32,7 @@ export function AddFriendSheet({ open, onOpenChange }: AddFriendSheetProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 px-4 py-4 backdrop-blur-md sm:items-center">
       <button type="button" aria-label="Close add friend sheet" className="absolute inset-0 cursor-default" onClick={() => onOpenChange(false)} />
-      <form onSubmit={handleSave} className="relative z-10 w-full max-w-md overflow-hidden rounded-[2.5rem] border border-border bg-card shadow-2xl animate-in slide-in-from-bottom-8 duration-300">
+      <form onSubmit={(e) => { void handleSave(e); }} className="relative z-10 w-full max-w-md overflow-hidden rounded-[2.5rem] border border-border bg-card shadow-2xl animate-in slide-in-from-bottom-8 duration-300">
         <div className="flex items-center justify-between border-b border-border/50 bg-secondary/20 px-8 py-6">
           <div><p className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground">Contacts</p><h3 className="mt-1 text-2xl font-bold tracking-tight">Add Friend</h3></div>
           <button type="button" aria-label="Close add friend sheet" onClick={() => onOpenChange(false)} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary transition-colors"><X className="h-5 w-5 text-muted-foreground" /></button>

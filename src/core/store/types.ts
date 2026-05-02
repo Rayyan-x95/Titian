@@ -69,6 +69,7 @@ export interface Task {
   recurrence?: TaskRecurrence;
   tags?: string[];
   createdAt: string;
+  lastProcessedAt?: string;
 }
 
 export interface Note {
@@ -206,7 +207,7 @@ export type SharedExpenseUpdate = Partial<Omit<SharedExpense, 'id' | 'createdAt'
 export type TaskUpdate = Partial<Omit<Task, 'id' | 'createdAt'>>;
 export type NoteUpdate = Partial<Omit<Note, 'id' | 'createdAt'>>;
 export type AccountUpdate = Partial<Omit<Account, 'id' | 'createdAt'>>;
-export type ExpenseUpdate = Partial<Omit<Expense, 'id' | 'createdAt'>>;
+export type ExpenseUpdate = Partial<Omit<Expense, 'id'>>;
 export type BudgetUpdate = Partial<Omit<Budget, 'id'>>;
 
 export type TimelineItem =

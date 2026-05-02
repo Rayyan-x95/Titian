@@ -26,7 +26,7 @@ export type {
   SharedExpenseUpdate,
   GroupBalance,
 } from './types';
-export { initializeCoreStore, useStore } from './useStore';
+export { useStore } from './useStore';
 export type { TimelineItem } from './types';
 export {
   clearTaskNoteReference,

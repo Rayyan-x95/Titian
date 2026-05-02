@@ -7,32 +7,41 @@ function createTable<T extends { id: string }>() {
   const rows = new Map<string, T>();
 
   return {
-    async toArray() {
-      return Array.from(rows.values());
+    toArray() {
+      return Promise.resolve(Array.from(rows.values()));
     },
-    async put(value: T) {
+    put(value: T) {
       rows.set(value.id, value);
-      return value.id;
+      return Promise.resolve(value.id);
     },
-    async get(id: string) {
-      return rows.get(id);
+    get(id: string) {
+      return Promise.resolve(rows.get(id));
     },
-    async update(id: string, updates: Partial<T>) {
+    update(id: string, updates: Partial<T>) {
       const current = rows.get(id);
-      if (!current) return 0;
+      if (!current) return Promise.resolve(0);
       rows.set(id, { ...current, ...updates });
-      return 1;
+      return Promise.resolve(1);
     },
-    async delete(id: string) {
+    delete(id: string) {
       rows.delete(id);
+      return Promise.resolve();
     },
-    async clear() {
+    clear() {
       rows.clear();
+      return Promise.resolve();
     },
-    async bulkPut(values: T[]) {
+    bulkPut(values: T[]) {
       for (const value of values) {
         rows.set(value.id, value);
       }
+      return Promise.resolve();
+    },
+    bulkDelete(ids: string[]) {
+      for (const id of ids) {
+        rows.delete(id);
+      }
+      return Promise.resolve();
     },
   };
 }
@@ -54,6 +63,18 @@ vi.mock('@/core/db/db', () => ({
     budgets: tables.budgetsTable,
     accounts: tables.accountsTable,
     onboarding: tables.onboardingTable,
+    friends: { clear: () => Promise.resolve(), toArray: () => Promise.resolve([]), put: () => Promise.resolve(), bulkPut: () => Promise.resolve() },
+    groups: { clear: () => Promise.resolve(), toArray: () => Promise.resolve([]), put: () => Promise.resolve(), bulkPut: () => Promise.resolve() },
+    sharedExpenses: { clear: () => Promise.resolve(), toArray: () => Promise.resolve([]), put: () => Promise.resolve(), bulkPut: () => Promise.resolve() },
+    dailySnapshots: { clear: () => Promise.resolve(), toArray: () => Promise.resolve([]), put: () => Promise.resolve(), bulkPut: () => Promise.resolve() },
+    tables: [
+      tables.tasksTable,
+      tables.notesTable,
+      tables.expensesTable,
+      tables.budgetsTable,
+      tables.accountsTable,
+      tables.onboardingTable,
+    ],
     transaction: async (_mode: string, ...args: unknown[]) => {
       const callback = args[args.length - 1] as () => Promise<void>;
       await callback();
@@ -72,17 +93,19 @@ beforeEach(async () => {
   await tables.onboardingTable.clear();
 
   const createdAt = new Date().toISOString();
-  const defaultAccount: Account = { id: 'cash', name: 'Cash', balance: 0, createdAt };
+  const cashAccount: Account = { id: 'cash', name: 'Cash', balance: 0, createdAt };
+  const bankAccount: Account = { id: 'bank', name: 'Bank', balance: 0, createdAt };
 
   useStore.setState({
     tasks: [],
     notes: [],
     expenses: [],
     budgets: [],
-    accounts: [defaultAccount],
+    accounts: [cashAccount, bankAccount],
     hydrated: true,
   });
-  await tables.accountsTable.put(defaultAccount);
+  await tables.accountsTable.put(cashAccount);
+  await tables.accountsTable.put(bankAccount);
 });
 
 describe('core store stabilization behavior', () => {

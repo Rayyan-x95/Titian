@@ -1,9 +1,10 @@
 import { useMemo } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { CheckCircle2, Circle, Clock } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, LucideProps } from 'lucide-react';
 import { useStore } from '@/core/store';
 import type { Task, TaskStatus } from '@/core/store/types';
 import { cn } from '@/utils/cn';
+import { toLocalDateString } from '@/utils/date';
 import { format } from 'date-fns';
 
 interface TaskKanbanProps {
@@ -11,7 +12,7 @@ interface TaskKanbanProps {
   onEditTask: (task: Task) => void;
 }
 
-const COLUMNS: { id: TaskStatus; title: string; icon: any; color: string }[] = [
+const COLUMNS: { id: TaskStatus; title: string; icon: React.ComponentType<LucideProps>; color: string }[] = [
   { id: 'todo', title: 'To Do', icon: Circle, color: 'text-muted-foreground' },
   { id: 'doing', title: 'In Progress', icon: Clock, color: 'text-amber-500' },
   { id: 'done', title: 'Completed', icon: CheckCircle2, color: 'text-emerald-500' }
@@ -52,17 +53,17 @@ export function TaskKanban({ tasks, onEditTask }: TaskKanbanProps) {
       await updateTask(draggableId, { status: newStatus });
       
       if (newStatus === 'done') {
-        const today = new Date().toISOString().split('T')[0];
+        const today = toLocalDateString(new Date());
         await useStore.getState().updateSnapshot(today, 'task', 1);
       } else if (oldStatus === 'done') {
-        const today = new Date().toISOString().split('T')[0];
+        const today = toLocalDateString(new Date());
         await useStore.getState().updateSnapshot(today, 'task', -1);
       }
     }
   };
 
   return (
-    <DragDropContext onDragEnd={onDragEnd}>
+    <DragDropContext onDragEnd={(result) => { void onDragEnd(result); }}>
       <div className="flex flex-col md:flex-row gap-6 items-start h-full pb-10 overflow-x-auto custom-scrollbar">
         {COLUMNS.map(column => (
           <div key={column.id} className="flex-1 min-w-[300px] bg-card/20 border border-border/50 rounded-3xl p-5 flex flex-col h-[70vh]">

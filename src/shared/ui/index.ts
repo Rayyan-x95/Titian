@@ -10,3 +10,5 @@ export { PremiumInput } from '../../components/ui/PremiumInput';
 export { DatePicker } from '../../components/ui/DatePicker';
 export { Dropdown } from '../../components/ui/Dropdown';
 export { CategoryCombobox } from '../../components/ui/CategoryCombobox';
+export { Spinner } from '../../components/ui/Spinner';
+

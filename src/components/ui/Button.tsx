@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import type { HTMLMotionProps } from 'framer-motion';
 import { cn } from '@/utils/cn';
 
+import { Spinner } from './Spinner';
+
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'default' | 'outline' | 'danger';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
@@ -10,6 +12,7 @@ interface ButtonProps extends HTMLMotionProps<'button'> {
   variant?: ButtonVariant;
   size?: ButtonSize;
   children: ReactNode;
+  loading?: boolean;
 }
 
 const variants: Record<ButtonVariant, string> = {
@@ -33,22 +36,26 @@ export function Button({
   size = 'md',
   type = 'button',
   children,
+  loading,
+  disabled,
   ...props
 }: ButtonProps) {
   return (
     <motion.button
       type={type}
-      whileHover={{ scale: 1.01 }}
-      whileTap={{ scale: 0.97 }}
+      whileHover={loading ? {} : { scale: 1.005 }}
+      whileTap={loading ? {} : { scale: 0.985 }}
       transition={{ duration: 0.18, ease: [0.22, 0.61, 0.36, 1] }}
+      disabled={disabled || loading}
       className={cn(
-        'ui-button inline-flex items-center justify-center gap-2 rounded-xl font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/75 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50',
+        'ui-button inline-flex items-center justify-center gap-2 rounded-xl text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/75 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50',
         variants[variant],
         sizes[size],
         className,
       )}
       {...props}
     >
+      {loading && <Spinner size="sm" className="border-t-current" />}
       {children}
     </motion.button>
   );

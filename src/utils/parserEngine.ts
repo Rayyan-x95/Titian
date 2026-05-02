@@ -1,3 +1,4 @@
+
 import {
   normalizeParseResult,
   parseTextToTransaction,
@@ -7,27 +8,78 @@ import {
 
 export type { ParsedTransaction, ParseResult };
 
+let sharedWorker: any = null;
+let isInitializing = false;
+
+async function getWorker() {
+  try {
+    if (sharedWorker) return sharedWorker;
+    if (isInitializing) {
+      let attempts = 0;
+      while (isInitializing && attempts < 50) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+      }
+      if (sharedWorker) return sharedWorker;
+    }
+
+    isInitializing = true;
+    const { createWorker } = await import('tesseract.js');
+
+    // Use default local initialization to avoid CDN/Network errors
+    // Vite handles bundling these workers automatically when using the library normally
+    const worker = await createWorker('eng');
+
+    sharedWorker = worker;
+    return sharedWorker;
+  } catch (error) {
+    console.error('[OCR] Worker initialization failed:', error);
+    throw error;
+  } finally {
+    isInitializing = false;
+  }
+}
+
+export async function warmupOCR() {
+  try {
+    await getWorker();
+    console.log('[OCR] Engine pre-warmed and ready.');
+  } catch (e) {
+    console.warn('[OCR] Pre-warm failed, will retry on demand.');
+  }
+}
+
 export async function parseImage(file: File): Promise<ParseResult> {
   try {
-    const { createWorker } = await import('tesseract.js');
-    const worker = await createWorker('eng');
+    const worker = await getWorker();
+
+    if (!file.type.startsWith('image/')) {
+      return { transactions: [], errors: ['File is not a valid image.'] };
+    }
+
     const { data: { text } } = await worker.recognize(file);
-    await worker.terminate();
 
     if (!text || text.trim().length < 3) {
-      return { transactions: [], errors: ['No readable text found in image'] };
+      return { transactions: [], errors: ['Could not extract readable text. Try a clearer photo.'] };
     }
 
     const transaction = parseTextToTransaction(text, 'image');
     return normalizeParseResult({
-      transactions: transaction.amount > 0 || transaction.merchant ? [transaction] : [],
+      // Allow if we found at least an amount, merchant, or significant text
+      transactions: (transaction.amount > 0 || transaction.merchant || text.length > 20) ? [transaction] : [],
       errors: [],
     });
   } catch (error) {
     console.error('[Parser] Image parsing failed:', error);
+
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    if (errorMsg.includes('worker') || errorMsg.includes('terminate') || errorMsg.includes('NetworkError')) {
+      sharedWorker = null;
+    }
+
     return {
       transactions: [],
-      errors: [error instanceof Error ? error.message : 'Failed to process image'],
+      errors: [`Scan failed: ${errorMsg}. Please ensure you have an active internet connection for the first load, or try again.`],
     };
   }
 }
@@ -35,10 +87,12 @@ export async function parseImage(file: File): Promise<ParseResult> {
 export async function parsePDF(file: File): Promise<ParseResult> {
   try {
     const pdfjsLib = await import('pdfjs-dist');
-    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+    // Using a more robust local-first worker configuration for PDF.js
+    const workerSrc = new URL(
       'pdfjs-dist/build/pdf.worker.min.mjs',
-      import.meta.url,
+      import.meta.url
     ).toString();
+    pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -48,11 +102,16 @@ export async function parsePDF(file: File): Promise<ParseResult> {
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
       const textContent = await page.getTextContent();
-      fullText += textContent.items.map((item: any) => item.str).join(' ') + '\n';
+      fullText += textContent.items.map((item) => {
+        if (typeof item === 'object' && item !== null && 'str' in item) {
+          return (item as { str: string }).str;
+        }
+        return '';
+      }).join(' ') + '\n';
     }
 
     if (!fullText.trim()) {
-      return { transactions: [], errors: ['No readable text found in PDF'] };
+      return { transactions: [], errors: ['No readable text found in PDF.'] };
     }
 
     const transaction = parseTextToTransaction(fullText, 'pdf');
@@ -62,13 +121,13 @@ export async function parsePDF(file: File): Promise<ParseResult> {
 
     return normalizeParseResult({
       transactions,
-      errors: transactions.length === 0 ? ['Could not extract transaction data'] : [],
+      errors: transactions.length === 0 ? ['Could not extract transaction data.'] : [],
     });
   } catch (error) {
     console.error('[Parser] PDF parsing failed:', error);
     return {
       transactions: [],
-      errors: [error instanceof Error ? error.message : 'Failed to process PDF'],
+      errors: [`PDF Scan failed: ${error instanceof Error ? error.message : 'Unknown error'}`],
     };
   }
 }
@@ -77,7 +136,7 @@ export async function parseFile(file: File): Promise<ParseResult> {
   const fileType = file.type.toLowerCase();
   if (fileType.includes('image')) return parseImage(file);
   if (fileType.includes('pdf')) return parsePDF(file);
-  return { transactions: [], errors: ['Unsupported file type'] };
+  return { transactions: [], errors: [`Unsupported file type: ${file.type}`] };
 }
 
 export function parseText(text: string): ParseResult {

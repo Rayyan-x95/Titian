@@ -20,46 +20,25 @@ import { PageShell } from '@/shared/components';
 import { Card } from '@/shared/ui';
 import { useStore } from '@/core/store';
 import { useSettings, formatMoney } from '@/core/settings';
-import type { Note, Task, OnboardingProfile } from '@/core/store/types';
+import type { Note, Task } from '@/core/store/types';
 import { useSeo } from '@/seo';
 import { cn } from '@/utils/cn';
+import { isToday } from '@/utils/date';
 import { parseQuickCapture } from '@/lib/core/parserEngine';
 import { DashboardCard } from './components/DashboardCard';
 import { QuickActions } from './components/QuickActions';
-import { useTodayTasks, useTotalOwed, useSpentToday, useBudgetSummary } from '@/core/store/selectors';
+import { useTodayTasks, useTotalOwed, useSpentToday, useBudgetSummary, useCompletedTodayTasks, useNotesToday } from '@/core/store/selectors';
 
 const MAX_TASK_ITEMS = 5;
 const MAX_NOTE_ITEMS = 3;
 
-function toLocalDateString(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function getTodayTasks(tasks: Task[]): Task[] {
-  const today = toLocalDateString(new Date());
-  return tasks.filter((task) => {
-    if (!task.dueDate) return false;
-    const d = new Date(task.dueDate);
-    if (Number.isNaN(d.getTime())) return false;
-    return toLocalDateString(d) === today;
-  });
-}
+// Redundant toLocalDateString removed
 
 function getActiveTasks(tasks: Task[]): Task[] {
   return tasks.filter((t) => t.status === 'todo' || t.status === 'doing');
 }
 
-function getCompletedTodayTasks(tasks: Task[]): Task[] {
-  const today = toLocalDateString(new Date());
-  return tasks.filter((task) => {
-    if (task.status !== 'done') return false;
-    if (task.dueDate && toLocalDateString(new Date(task.dueDate)) === today) return true;
-    return toLocalDateString(new Date(task.createdAt)) === today;
-  });
-}
+// getCompletedTodayTasks moved to selectors or fixed with isToday
 
 function getRecentNotes(notes: Note[]): Note[] {
   return [...notes]
@@ -103,6 +82,7 @@ function QuickCapture() {
   const [value, setValue] = useState('');
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const inputRef = useRef<HTMLInputElement>(null);
+  const { currency } = useSettings();
   const addExpense = useStore((s) => s.addExpense);
   const addTask = useStore((s) => s.addTask);
 
@@ -117,15 +97,39 @@ function QuickCapture() {
     try {
       const parsed = parseQuickCapture(value);
 
-      const task = await addTask({
-        title: parsed.title,
-        status: 'todo',
-        dueDate: parsed.dueDate,
-      });
+      // Intelligence:
+      // 1. If only amount is present (no due date) -> Create Expense only
+      // 2. If no amount is present -> Create Task only
+      // 3. If both amount and due date are present -> Create both and link them
+      
+      const hasAmount = parsed.amount !== undefined;
+      const hasDueDate = !!parsed.dueDate;
 
-      if (parsed.amount !== undefined) {
+      if (hasAmount && !hasDueDate) {
+        // Just an expense
         await addExpense({
-          amount: parsed.amount,
+          amount: parsed.amount!,
+          category: parsed.category,
+          type: parsed.type,
+          note: parsed.note,
+        });
+      } else if (!hasAmount) {
+        // Just a task
+        await addTask({
+          title: parsed.title,
+          status: 'todo',
+          dueDate: parsed.dueDate,
+        });
+      } else {
+        // Both (linked)
+        const task = await addTask({
+          title: parsed.title,
+          status: 'todo',
+          dueDate: parsed.dueDate,
+        });
+
+        await addExpense({
+          amount: parsed.amount!,
           category: parsed.category,
           type: parsed.type,
           linkedTaskId: task.id,
@@ -135,9 +139,9 @@ function QuickCapture() {
 
       setValue('');
       setStatus('success');
-
       setTimeout(() => setStatus('idle'), 1800);
-    } catch {
+    } catch (error) {
+      console.error('[QuickCapture] Failed to process:', error);
       setStatus('error');
       setTimeout(() => setStatus('idle'), 2000);
     }
@@ -168,8 +172,8 @@ function QuickCapture() {
         type="text"
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder={`Capture anything… 'Buy groceries ${useSettings.getState().currency === 'INR' ? '₹' : '$'}500 tomorrow'`}
+        onKeyDown={(e) => { void handleKeyDown(e); }}
+        placeholder={`Capture anything… 'Buy groceries ${currency === 'INR' ? '₹' : '$'}500 tomorrow'`}
         className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
         aria-label="Quick capture"
         autoComplete="off"
@@ -297,18 +301,15 @@ function ContinueCard({ item }: { item: ContinueItem }) {
 
 function SnapshotCard() {
   const navigate = useNavigate();
-  const snapshots = useStore(state => state.dailySnapshots);
-  const tasks = useStore(state => state.tasks);
-  const notes = useStore(state => state.notes);
-  const expenses = useStore(state => state.expenses);
   const onboardingName = useStore(state => state.onboarding.name);
   const currency = useSettings(s => s.currency);
+  
+  const completedTasks = useCompletedTodayTasks();
+  const notesToday = useNotesToday();
+  const spentToday = useSpentToday();
 
-  const today = format(new Date(), 'yyyy-MM-dd');
-  const snapshot = snapshots.find(s => s.date === today);
-
-  const completedCount = tasks.filter(t => t.status === 'done' && t.createdAt.startsWith(today)).length;
-  const spentToday = expenses.filter(e => e.type === 'expense' && e.createdAt.startsWith(today)).reduce((sum, e) => sum + e.amount, 0);
+  const completedCount = completedTasks.length;
+  const notesCount = notesToday.length;
 
   return (
     <motion.div
@@ -341,7 +342,7 @@ function SnapshotCard() {
           <div className="space-y-1">
             <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Notes</p>
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black text-foreground">{notes.filter(n => n.createdAt.startsWith(today)).length}</span>
+              <span className="text-2xl font-black text-foreground">{notesCount}</span>
               <span className="text-[10px] font-bold text-blue-500 uppercase">New</span>
             </div>
           </div>
@@ -419,22 +420,19 @@ export function DashboardPage() {
   const currency = useSettings((s) => s.currency);
   const tasks = useStore((s) => s.tasks);
   const notes = useStore((s) => s.notes);
-  const expenses = useStore((s) => s.expenses);
-  const budgets = useStore((s) => s.budgets);
-  const sharedExpenses = useStore((s) => s.sharedExpenses);
   const hydrated = useStore((s) => s.hydrated);
   const processRecurringTasks = useStore((s) => s.processRecurringTasks);
 
   useEffect(() => {
     if (hydrated) {
-      processRecurringTasks();
+      void processRecurringTasks();
     }
   }, [hydrated, processRecurringTasks]);
 
   const todayTasks = useTodayTasks();
   const activeTasks = useMemo(() => getActiveTasks(tasks), [tasks]);
   const priorityTasks = useMemo(() => getPriorityTasks(tasks), [tasks]);
-  const completedToday = useMemo(() => getCompletedTodayTasks(tasks), [tasks]);
+  const completedToday = useCompletedTodayTasks();
   const recentNotes = useMemo(() => getRecentNotes(notes), [notes]);
   const todaySpendCents = useSpentToday();
   const totalOwed = useTotalOwed();

@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { cn } from '@/utils/cn';
+import { toLocalDateString } from '@/utils/date';
 import type { Task, TaskPriority } from '@/core/store/types';
 
 interface TaskCalendarProps {
@@ -57,7 +58,7 @@ export function TaskCalendar({ onDateClick, onEditTask }: TaskCalendarProps) {
     return items;
   }, [year, month, firstDay, daysInMonth]);
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = toLocalDateString(new Date());
 
   return (
     <div className="flex flex-col h-full overflow-hidden rounded-3xl border border-border bg-card/30 backdrop-blur-md shadow-xl">
@@ -97,7 +98,7 @@ export function TaskCalendar({ onDateClick, onEditTask }: TaskCalendarProps) {
 
       <div className="grid grid-cols-7 grid-rows-6 flex-[10]">
         {cells.map((cell, idx) => {
-          const dateStr = cell.date.toISOString().split('T')[0];
+          const dateStr = toLocalDateString(cell.date);
           const dayTasks = taskMap.get(dateStr) || [];
           const isToday = dateStr === todayStr;
 

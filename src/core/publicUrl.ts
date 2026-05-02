@@ -1,4 +1,4 @@
-const DEFAULT_PUBLIC_URL = 'https://rayyan-x95.github.io/titan';
+const DEFAULT_PUBLIC_URL = 'https://titanapp.qzz.io';
 
 function normalizeBaseUrl(value: string) {
   const trimmed = value.trim();
