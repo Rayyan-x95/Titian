@@ -2,13 +2,14 @@ import { StateCreator } from 'zustand';
 import { db } from '@/core/db/db';
 import type { Note, NoteInput, NoteUpdate } from '../types';
 import type { CoreStoreState } from '../useStore';
-import { 
-  clearTasksForDeletedNote, 
+import {
+  clearTasksForDeletedNote,
   syncNoteNoteReferences,
-  validateNoteReferences 
+  validateNoteReferences,
 } from '../taskNoteSync';
 import { normalizeNote } from '@/lib/core/noteEngine';
 import { upsertItem } from '../utils';
+import { toLocalDateString } from '@/utils/date';
 
 export interface NoteSlice {
   notes: Note[];
@@ -25,7 +26,7 @@ export const createNoteSlice: StateCreator<CoreStoreState, [], [], NoteSlice> = 
     // Note: syncNoteNoteReferences is called here but results are currently not used in addNote.
     // If we want to support backlinks for newly added notes, we should update other notes too.
     syncNoteNoteReferences(note, get().notes);
-    
+
     await db.transaction('rw', [db.notes], async () => {
       await db.notes.put(note);
     });
@@ -33,6 +34,10 @@ export const createNoteSlice: StateCreator<CoreStoreState, [], [], NoteSlice> = 
     set((state) => ({
       notes: upsertItem(state.notes, note),
     }));
+
+    // Activity tracking
+    const today = toLocalDateString(new Date());
+    await get().updateSnapshot(today, 'note', 1);
 
     return note;
   },
@@ -42,18 +47,22 @@ export const createNoteSlice: StateCreator<CoreStoreState, [], [], NoteSlice> = 
     if (!current) return undefined;
 
     const note = normalizeNote({ ...current, ...updates });
-    
+
     // Validate note references to prevent cycles and orphans
     const errors = validateNoteReferences(note, get().notes);
     if (errors.length > 0) throw new Error(errors.join('; '));
-    
+
     const updatedNotes = syncNoteNoteReferences(note, get().notes);
 
     await db.transaction('rw', [db.notes], async () => {
       // Update the primary note
       await db.notes.put(note);
       // Update any notes that had their backlinks changed
-      const touchedNotes = updatedNotes.filter(n => n.id !== note.id && n.linkedNoteIds !== get().notes.find(on => on.id === n.id)?.linkedNoteIds);
+      const touchedNotes = updatedNotes.filter(
+        (n) =>
+          n.id !== note.id &&
+          n.linkedNoteIds !== get().notes.find((on) => on.id === n.id)?.linkedNoteIds,
+      );
       if (touchedNotes.length > 0) {
         await db.notes.bulkPut(touchedNotes);
       }
@@ -68,32 +77,40 @@ export const createNoteSlice: StateCreator<CoreStoreState, [], [], NoteSlice> = 
 
   deleteNote: async (id) => {
     const tasks = clearTasksForDeletedNote(id, get().tasks);
-    const affectedTaskIds = get().tasks.filter(t => t.noteId === id).map(t => t.id);
-    
+    const affectedTaskIds = get()
+      .tasks.filter((t) => t.noteId === id)
+      .map((t) => t.id);
+
     // Clear linkedNoteId from any expenses that reference this note
-    const expenses = get().expenses.map(e =>
-      e.linkedNoteId === id ? { ...e, linkedNoteId: undefined } : e
+    const expenses = get().expenses.map((e) =>
+      e.linkedNoteId === id ? { ...e, linkedNoteId: undefined } : e,
     );
-    
+
     // Clear linkedNoteIds from other notes that reference this note
-    const notes = get().notes.filter(n => n.id !== id).map(n => ({
-      ...n,
-      linkedNoteIds: (n.linkedNoteIds ?? []).filter(nid => nid !== id),
-    }));
+    const notes = get()
+      .notes.filter((n) => n.id !== id)
+      .map((n) => ({
+        ...n,
+        linkedNoteIds: (n.linkedNoteIds ?? []).filter((nid) => nid !== id),
+      }));
 
     await db.transaction('rw', [db.notes, db.tasks, db.expenses], async () => {
       await db.notes.delete(id);
       if (affectedTaskIds.length > 0) {
-        await db.tasks.bulkPut(tasks.filter(t => affectedTaskIds.includes(t.id)));
+        await db.tasks.bulkPut(tasks.filter((t) => affectedTaskIds.includes(t.id)));
       }
       // Update expenses that referenced this note
-      const affectedExpenses = expenses.filter(e => e.linkedNoteId === undefined && get().expenses.find(oe => oe.id === e.id)?.linkedNoteId === id);
+      const affectedExpenses = expenses.filter(
+        (e) =>
+          e.linkedNoteId === undefined &&
+          get().expenses.find((oe) => oe.id === e.id)?.linkedNoteId === id,
+      );
       if (affectedExpenses.length > 0) {
         await db.expenses.bulkPut(affectedExpenses);
       }
       // Update notes that linked to this note
-      const linkedNotes = notes.filter(n => {
-        const originalNote = get().notes.find(on => on.id === n.id);
+      const linkedNotes = notes.filter((n) => {
+        const originalNote = get().notes.find((on) => on.id === n.id);
         return originalNote && (originalNote.linkedNoteIds ?? []).includes(id);
       });
       if (linkedNotes.length > 0) {
@@ -106,5 +123,9 @@ export const createNoteSlice: StateCreator<CoreStoreState, [], [], NoteSlice> = 
       tasks,
       expenses,
     }));
+
+    // Activity tracking
+    const today = toLocalDateString(new Date());
+    await get().updateSnapshot(today, 'note', -1);
   },
 });

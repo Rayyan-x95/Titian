@@ -16,7 +16,13 @@ interface DropdownProps<T extends string> {
   className?: string;
 }
 
-export function Dropdown<T extends string>({ label, value, options, onChange, className }: DropdownProps<T>) {
+export function Dropdown<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+  className,
+}: DropdownProps<T>) {
   const reactId = useId();
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -65,7 +71,10 @@ export function Dropdown<T extends string>({ label, value, options, onChange, cl
   }, [open]);
 
   useEffect(() => {
-    const index = Math.max(0, options.findIndex((option) => option.value === value));
+    const index = Math.max(
+      0,
+      options.findIndex((option) => option.value === value),
+    );
     setActiveIndex(index);
   }, [options, value]);
 
@@ -107,7 +116,9 @@ export function Dropdown<T extends string>({ label, value, options, onChange, cl
           }}
         >
           <span className="flex flex-col items-start text-left">
-            <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{label}</span>
+            <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+              {label}
+            </span>
             <span className="text-sm font-semibold text-foreground">{selected?.label ?? ''}</span>
           </span>
           <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 rotate-180" />
@@ -131,7 +142,9 @@ export function Dropdown<T extends string>({ label, value, options, onChange, cl
           }}
         >
           <span className="flex flex-col items-start text-left">
-            <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{label}</span>
+            <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+              {label}
+            </span>
             <span className="text-sm font-semibold text-foreground">{selected?.label ?? ''}</span>
           </span>
           <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200" />
@@ -235,7 +248,9 @@ export function Dropdown<T extends string>({ label, value, options, onChange, cl
                         tabIndex={activeIndex === index ? 0 : -1}
                         className={cn(
                           'flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors',
-                          activeIndex === index ? 'bg-primary/15 text-primary' : 'text-foreground hover:bg-secondary/70',
+                          activeIndex === index
+                            ? 'bg-primary/15 text-primary'
+                            : 'text-foreground hover:bg-secondary/70',
                         )}
                         onMouseEnter={() => setActiveIndex(index)}
                         onClick={() => {

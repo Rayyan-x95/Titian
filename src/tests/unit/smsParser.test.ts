@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 import { describe, expect, it } from 'vitest';
-import { getSmsExpenseCategory, parseSmsExpense } from './smsParser';
+import { getSmsExpenseCategory, parseSmsExpense } from '@/utils/smsParser';
 
 const referenceDate = new Date(2026, 3, 21, 9, 30, 0, 0);
 

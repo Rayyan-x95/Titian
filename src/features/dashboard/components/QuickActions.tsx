@@ -1,14 +1,23 @@
 import { useState, useRef, KeyboardEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Landmark, NotebookPen, Plus, SquareCheckBig, X, Check } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/shared/ui';
+import { Button } from '@/components/ui';
 import { useStore } from '@/core/store';
 import { cn } from '@/utils/cn';
 
 type ActionType = 'task' | 'note' | 'expense' | null;
 
-function BottomSheet({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: React.ReactNode; }) {
+function BottomSheet({
+  open,
+  onClose,
+  title,
+  children,
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <AnimatePresence>
       {open && (
@@ -17,8 +26,8 @@ function BottomSheet({ open, onClose, title, children }: { open: boolean; onClos
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.18 }}
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/55 backdrop-blur-md sm:items-center sm:p-4"
+          transition={{ duration: 0.3 }}
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-md sm:items-center sm:p-4"
           role="dialog"
           aria-modal="true"
           aria-label={title}
@@ -26,21 +35,39 @@ function BottomSheet({ open, onClose, title, children }: { open: boolean; onClos
         >
           <motion.div
             key="sheet"
-            initial={{ opacity: 0, y: 32 }}
+            initial={{ opacity: 0, y: '100%' }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            transition={{ duration: 0.22, ease: [0.22, 0.61, 0.36, 1] }}
-            className="ui-surface w-full max-w-lg rounded-t-3xl border border-border/70 bg-card p-5 pb-8 shadow-2xl sm:rounded-3xl"
+            exit={{ opacity: 0, y: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            drag="y"
+            dragConstraints={{ top: 0 }}
+            dragElastic={0.2}
+            onDragEnd={(_, info) => {
+              if (info.offset.y > 100) {
+                onClose();
+              }
+            }}
+            className="glass-panel w-full max-w-lg rounded-t-[2.5rem] p-8 pb-[calc(2rem+var(--safe-area-bottom))] shadow-2xl sm:rounded-[2.5rem] touch-none"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-border/60 sm:hidden" />
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-semibold tracking-tight text-foreground">{title}</h3>
-              <button type="button" className="flex h-8 w-8 items-center justify-center rounded-full border border-border/60 text-muted-foreground transition-colors hover:bg-secondary" onClick={onClose} aria-label="Close">
-                <X className="h-4 w-4" />
+            <div className="mx-auto mb-6 h-1.5 w-12 rounded-full bg-white/20 active:bg-white/40 transition-colors sm:hidden" />
+            <div className="flex items-center justify-between mb-8">
+              <div className="space-y-1">
+                <h3 className="titan-metric text-2xl text-white">{title}</h3>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                  Quick Capture
+                </p>
+              </div>
+              <button
+                type="button"
+                className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/5 bg-white/5 text-slate-400 transition-all hover:bg-white/10 hover:text-white active:scale-90"
+                onClick={onClose}
+                aria-label="Close"
+              >
+                <X className="h-6 w-6" />
               </button>
             </div>
-            <div className="mt-4">{children}</div>
+            <div className="relative z-10">{children}</div>
           </motion.div>
         </motion.div>
       )}
@@ -65,6 +92,7 @@ function AddTaskForm({ onDone }: { onDone: () => void }) {
       setTitle('');
       setDueDate('');
       setTimeout(() => setSuccess(false), 3000);
+      onDone();
     } finally {
       setLoading(false);
     }
@@ -76,10 +104,45 @@ function AddTaskForm({ onDone }: { onDone: () => void }) {
 
   return (
     <div className="space-y-3">
-      <input ref={inputRef} autoFocus id="qa-task-title" type="text" value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={onKey} placeholder="Task title…" className="w-full rounded-xl border border-border/60 bg-secondary/40 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20" />
-      <input id="qa-task-due" type="date" aria-label="Task due date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="w-full rounded-xl border border-border/60 bg-secondary/40 px-4 py-3 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20" />
-      <Button id="qa-task-submit" variant="primary" className="w-full" onClick={() => { void submit(); }} disabled={!title.trim() || loading}>
-        {success ? (<><Check className="h-4 w-4" /> Task added!</>) : (<><Plus className="h-4 w-4" /> Add Task</>)}
+      <input
+        ref={inputRef}
+        autoFocus
+        id="qa-task-title"
+        type="text"
+        inputMode="text"
+        enterKeyHint="done"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        onKeyDown={onKey}
+        placeholder="What needs to be done?"
+        className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-base font-medium text-white placeholder:text-slate-500 focus:border-blue-500/50 focus:outline-none focus:shadow-glow-blue transition-all"
+      />
+      <input
+        id="qa-task-due"
+        type="date"
+        aria-label="Task due date"
+        value={dueDate}
+        onChange={(e) => setDueDate(e.target.value)}
+        className="w-full rounded-xl border border-border/60 bg-secondary/40 px-4 py-3 text-sm text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+      />
+      <Button
+        id="qa-task-submit"
+        variant="primary"
+        className="w-full"
+        onClick={() => {
+          void submit();
+        }}
+        disabled={!title.trim() || loading}
+      >
+        {success ? (
+          <>
+            <Check className="h-4 w-4" /> Task added!
+          </>
+        ) : (
+          <>
+            <Plus className="h-4 w-4" /> Add Task
+          </>
+        )}
       </Button>
     </div>
   );
@@ -99,6 +162,7 @@ function AddNoteForm({ onDone }: { onDone: () => void }) {
       setSuccess(true);
       setContent('');
       setTimeout(() => setSuccess(false), 3000);
+      onDone();
     } finally {
       setLoading(false);
     }
@@ -106,9 +170,35 @@ function AddNoteForm({ onDone }: { onDone: () => void }) {
 
   return (
     <div className="space-y-3">
-      <textarea autoFocus id="qa-note-content" rows={4} value={content} onChange={(e) => setContent(e.target.value)} placeholder="Start writing your note…" className="w-full resize-none rounded-xl border border-border/60 bg-secondary/40 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20" />
-      <Button id="qa-note-submit" variant="primary" className="w-full" onClick={() => { void submit(); }} disabled={!content.trim() || loading}>
-        {success ? (<><Check className="h-4 w-4" /> Note saved!</>) : (<><NotebookPen className="h-4 w-4" /> Save Note</>)}
+      <textarea
+        autoFocus
+        id="qa-note-content"
+        rows={4}
+        inputMode="text"
+        enterKeyHint="enter"
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        placeholder="Start writing your note…"
+        className="w-full resize-none rounded-xl border border-border/60 bg-secondary/40 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+      />
+      <Button
+        id="qa-note-submit"
+        variant="primary"
+        className="w-full"
+        onClick={() => {
+          void submit();
+        }}
+        disabled={!content.trim() || loading}
+      >
+        {success ? (
+          <>
+            <Check className="h-4 w-4" /> Note saved!
+          </>
+        ) : (
+          <>
+            <NotebookPen className="h-4 w-4" /> Save Note
+          </>
+        )}
       </Button>
     </div>
   );
@@ -126,11 +216,15 @@ function AddExpenseForm({ onDone }: { onDone: () => void }) {
     if (Number.isNaN(parsedAmount) || parsedAmount <= 0) return;
     setLoading(true);
     try {
-      await addExpense({ amountDollars: parsedAmount, category: category.trim() || 'Uncategorized' });
+      await addExpense({
+        amountDollars: parsedAmount,
+        category: category.trim() || 'Uncategorized',
+      });
       setSuccess(true);
       setAmount('');
       setCategory('');
       setTimeout(() => setSuccess(false), 3000);
+      onDone();
     } finally {
       setLoading(false);
     }
@@ -142,22 +236,86 @@ function AddExpenseForm({ onDone }: { onDone: () => void }) {
 
   return (
     <div className="space-y-3">
-      <input autoFocus id="qa-expense-amount" type="number" min="0" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} onKeyDown={onKey} placeholder="Amount (e.g. 500)" className="w-full rounded-xl border border-border/60 bg-secondary/40 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20" />
-      <input id="qa-expense-category" type="text" value={category} onChange={(e) => setCategory(e.target.value)} onKeyDown={onKey} placeholder="Category (optional)" className="w-full rounded-xl border border-border/60 bg-secondary/40 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20" />
-      <Button id="qa-expense-submit" variant="primary" className="w-full" onClick={() => { void submit(); }} disabled={!amount || Number.isNaN(parseFloat(amount)) || loading}>
-        {success ? (<><Check className="h-4 w-4" /> Expense added!</>) : (<><Landmark className="h-4 w-4" /> Log Expense</>)}
+      <input
+        autoFocus
+        id="qa-expense-amount"
+        type="number"
+        inputMode="decimal"
+        enterKeyHint="next"
+        min="0"
+        step="0.01"
+        value={amount}
+        onChange={(e) => setAmount(e.target.value)}
+        onKeyDown={onKey}
+        placeholder="Amount (e.g. 500)"
+        className="w-full rounded-xl border border-border/60 bg-secondary/40 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+      />
+      <input
+        id="qa-expense-category"
+        type="text"
+        value={category}
+        onChange={(e) => setCategory(e.target.value)}
+        onKeyDown={onKey}
+        placeholder="Category (optional)"
+        className="w-full rounded-xl border border-border/60 bg-secondary/40 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+      />
+      <Button
+        id="qa-expense-submit"
+        variant="primary"
+        className="w-full"
+        onClick={() => {
+          void submit();
+        }}
+        disabled={!amount || Number.isNaN(parseFloat(amount)) || loading}
+      >
+        {success ? (
+          <>
+            <Check className="h-4 w-4" /> Expense added!
+          </>
+        ) : (
+          <>
+            <Landmark className="h-4 w-4" /> Log Expense
+          </>
+        )}
       </Button>
     </div>
   );
 }
 
-interface ActionButtonProps { label: string; Icon: React.ElementType; active: boolean; onClick: () => void; id: string; }
+interface ActionButtonProps {
+  label: string;
+  Icon: React.ElementType;
+  active: boolean;
+  onClick: () => void;
+  id: string;
+}
 
 function ActionButton({ label, Icon, active, onClick, id }: ActionButtonProps) {
   return (
-    <motion.button id={id} type="button" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.96 }} transition={{ duration: 0.16, ease: [0.22, 0.61, 0.36, 1] }} onClick={onClick} className={cn('flex h-16 flex-col items-center justify-center gap-1.5 rounded-2xl border text-xs font-semibold transition-colors', active ? 'border-primary/50 bg-primary/15 text-primary' : 'border-border/60 bg-secondary/40 text-muted-foreground hover:border-primary/30 hover:bg-secondary/70 hover:text-foreground')} aria-label={`Add ${label}`} aria-pressed={active}>
-      <Icon className="h-5 w-5" />
-      {label}
+    <motion.button
+      id={id}
+      type="button"
+      whileHover={{ scale: 1.05, translateY: -2 }}
+      whileTap={{ scale: 0.92, rotate: -1 }}
+      onClick={onClick}
+      className={cn(
+        'flex h-28 flex-col items-center justify-center gap-2 rounded-[2.5rem] border transition-all duration-300 active:bg-white/10',
+        active
+          ? 'border-blue-500/50 bg-blue-500/10 text-blue-400 shadow-glow-blue'
+          : 'glass-panel border-white/5 bg-white/5 text-slate-500 hover:border-white/10 hover:text-slate-300',
+      )}
+      aria-label={`Add ${label}`}
+      aria-pressed={active}
+    >
+      <div
+        className={cn(
+          'flex h-10 w-10 items-center justify-center rounded-2xl transition-colors',
+          active ? 'bg-blue-500/20' : 'bg-white/5',
+        )}
+      >
+        <Icon className="h-5 w-5" />
+      </div>
+      <span className="text-[10px] font-black uppercase tracking-[0.2em]">{label}</span>
     </motion.button>
   );
 }
@@ -169,7 +327,6 @@ const sheetConfig: Record<Exclude<ActionType, null>, { title: string; descriptio
 };
 
 export function QuickActions() {
-  const navigate = useNavigate();
   const [active, setActive] = useState<ActionType>(null);
 
   const toggle = (type: ActionType) => setActive((prev) => (prev === type ? null : type));
@@ -182,13 +339,36 @@ export function QuickActions() {
   return (
     <>
       <div className="grid grid-cols-3 gap-3">
-        <ActionButton id="qa-btn-task" label="Task" Icon={SquareCheckBig} active={active === 'task'} onClick={() => toggle('task')} />
-        <ActionButton id="qa-btn-note" label="Note" Icon={NotebookPen} active={active === 'note'} onClick={() => toggle('note')} />
-        <ActionButton id="qa-btn-expense" label="Expense" Icon={Landmark} active={active === 'expense'} onClick={() => toggle('expense')} />
+        <ActionButton
+          id="qa-btn-task"
+          label="Task"
+          Icon={SquareCheckBig}
+          active={active === 'task'}
+          onClick={() => toggle('task')}
+        />
+        <ActionButton
+          id="qa-btn-note"
+          label="Note"
+          Icon={NotebookPen}
+          active={active === 'note'}
+          onClick={() => toggle('note')}
+        />
+        <ActionButton
+          id="qa-btn-expense"
+          label="Expense"
+          Icon={Landmark}
+          active={active === 'expense'}
+          onClick={() => toggle('expense')}
+        />
       </div>
 
       {(['task', 'note', 'expense'] as const).map((type) => (
-        <BottomSheet key={type} open={active === type} onClose={close} title={sheetConfig[type].title}>
+        <BottomSheet
+          key={type}
+          open={active === type}
+          onClose={close}
+          title={sheetConfig[type].title}
+        >
           {type === 'task' && <AddTaskForm onDone={() => handleDone('task')} />}
           {type === 'note' && <AddNoteForm onDone={() => handleDone('note')} />}
           {type === 'expense' && <AddExpenseForm onDone={() => handleDone('expense')} />}

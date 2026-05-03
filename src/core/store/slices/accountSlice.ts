@@ -13,27 +13,30 @@ export interface AccountSlice {
   deleteAccount: (id: string) => Promise<void>;
 }
 
-export const createAccountSlice: StateCreator<CoreStoreState, [], [], AccountSlice> = (set, get) => ({
+export const createAccountSlice: StateCreator<CoreStoreState, [], [], AccountSlice> = (
+  set,
+  get,
+) => ({
   accounts: [],
 
   addAccount: async (input) => {
     const account: Account = {
       id: input.id ?? createId(),
-        name: sanitizeString(input.name || 'Account', 100),
+      name: sanitizeString(input.name || 'Account', 100),
       balance: dollarsToCentsSafe(input.balanceDollars),
       createdAt: new Date().toISOString(),
     };
     await db.accounts.put(account);
-    set(state => ({ accounts: upsertItem(state.accounts, account) }));
+    set((state) => ({ accounts: upsertItem(state.accounts, account) }));
     return account;
   },
 
   updateAccount: async (id, updates) => {
-    const current = get().accounts.find(a => a.id === id);
+    const current = get().accounts.find((a) => a.id === id);
     if (!current) return undefined;
     const next = { ...current, ...updates };
     await db.accounts.put(next);
-    set(state => ({ accounts: upsertItem(state.accounts, next) }));
+    set((state) => ({ accounts: upsertItem(state.accounts, next) }));
     return next;
   },
 

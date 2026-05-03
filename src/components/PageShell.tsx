@@ -9,25 +9,23 @@ interface PageShellProps {
 
 export function PageShell({ title, description, eyebrow, children }: PageShellProps) {
   return (
-    <section className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+    <section className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {(title || description) && (
-        <div className="space-y-3 rounded-2xl border border-border/60 bg-card/40 p-5 backdrop-blur-sm sm:p-6">
-          <p className="titan-eyebrow">{eyebrow || 'Titan Workspace'}</p>
-          {title && (
-            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-[2.65rem] lg:leading-tight">
-              {title}
-            </h2>
-          )}
-          {description && (
-            <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
-              {description}
+        <div className="glass-panel relative p-8 md:p-10 border-white/10 overflow-hidden">
+          <div className="relative z-10 space-y-2">
+            <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-blue-400/80">
+              {eyebrow || 'Titan Workspace'}
             </p>
-          )}
+            {title && <h2 className="titan-metric text-5xl md:text-6xl text-white tracking-tight">{title}</h2>}
+            {description && (
+              <p className="max-w-2xl text-base font-medium leading-relaxed text-slate-400">
+                {description}
+              </p>
+            )}
+          </div>
         </div>
       )}
-      <div className="relative z-10 space-y-4">
-        {children}
-      </div>
+      <div className="relative z-10 space-y-4">{children}</div>
     </section>
   );
 }

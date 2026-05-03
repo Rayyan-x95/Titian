@@ -7,11 +7,21 @@ import type { Task, Note } from '@/core/store/types';
 describe('integration flows', () => {
   it('generates next recurring tasks when completed', () => {
     const tasks = [
-      { id: 't1', title: 'Pay subscription', status: 'done', priority: 'medium', energy: 'medium', area: 'personal', recurrence: { type: 'monthly', interval: 1 }, createdAt: '2024-01-01T00:00:00Z', dueDate: '2024-01-01' },
+      {
+        id: 't1',
+        title: 'Pay subscription',
+        status: 'done',
+        priority: 'medium',
+        energy: 'medium',
+        area: 'personal',
+        recurrence: { type: 'monthly', interval: 1 },
+        createdAt: '2024-01-01T00:00:00Z',
+        dueDate: '2024-01-01',
+      },
     ] as Task[];
 
     const { newTasks, updatedTasks } = generateNextRecurringTasks(tasks);
-    expect(updatedTasks.map(t => t.id)).toContain('t1');
+    expect(updatedTasks.map((t) => t.id)).toContain('t1');
     expect(newTasks.length).toBeGreaterThan(0);
   });
 

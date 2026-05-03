@@ -1,17 +1,17 @@
 import { useMemo, useState, useEffect } from 'react';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { Plus, List, CalendarDays } from 'lucide-react';
-import { Button, Calendar } from '@/shared/ui';
-import { PageShell } from '@/shared/components';
+import { Calendar } from '@/components/ui';
+import { PageShell } from '@/components';
 import { useStore } from '@/core/store';
 import type { Task, TaskStatus } from '@/core/store/types';
-import { useSeo } from '@/seo';
+import { useSeo } from '@/hooks/useSeo';
 import { TaskForm } from '../components/TaskForm';
 import { TaskItem } from '../components/TaskItem';
 import { TaskCalendar } from '../components/TaskCalendar';
 import { TaskKanban } from '../components/TaskKanban';
 import { cn } from '@/utils/cn';
-import { toLocalDateString } from '@/utils/date';
+import { useTaskTree } from '../hooks/useTaskTree';
 
 type TaskFilter = 'all' | 'active' | 'completed';
 type TaskView = 'list' | 'calendar' | 'kanban';
@@ -19,7 +19,8 @@ type TaskView = 'list' | 'calendar' | 'kanban';
 export function TasksPage() {
   useSeo({
     title: 'Tasks',
-    description: 'Master your productivity with smart task management. Organize workflows, set priorities, and connect tasks to your notes and finances.',
+    description:
+      'Master your productivity with smart task management. Organize workflows, set priorities, and connect tasks to your notes and finances.',
     path: '/tasks',
   });
 
@@ -47,70 +48,58 @@ export function TasksPage() {
     [tasks],
   );
 
-  const taskTree = useMemo(() => {
-    let filtered = [...tasks];
-    if (filter === 'active') filtered = filtered.filter((t) => t.status !== 'done');
-    else if (filter === 'completed') filtered = filtered.filter((t) => t.status === 'done');
-
-    if (selectedDate) {
-      const y = selectedDate.getFullYear();
-      const m = String(selectedDate.getMonth() + 1).padStart(2, '0');
-      const d = String(selectedDate.getDate()).padStart(2, '0');
-      const ymd = `${y}-${m}-${d}`;
-      filtered = filtered.filter((t) => t.dueDate === ymd);
-    }
-
-    const map = new Map<string, Task[]>();
-    filtered.forEach(t => {
-      if (t.parentTaskId) {
-        const children = map.get(t.parentTaskId) || [];
-        children.push(t);
-        map.set(t.parentTaskId, children);
-      }
-    });
-
-    const filteredIds = new Set(filtered.map(t => t.id));
-    const topLevel = filtered.filter(t => !t.parentTaskId || !filteredIds.has(t.parentTaskId));
-
-    topLevel.sort((a, b) => {
-      const pMap: Record<string, number> = { high: 0, medium: 1, low: 2 };
-      if (pMap[a.priority] !== pMap[b.priority]) return pMap[a.priority] - pMap[b.priority];
-      return b.createdAt.localeCompare(a.createdAt);
-    });
-
-    return { topLevel, childrenMap: map };
-  }, [filter, selectedDate, tasks]);
+  const taskTree = useTaskTree({ tasks, filter, selectedDate });
 
   const handleCreateTask = async (values: import('@/core/store/types').TaskInput) => {
-    await addTask({ ...values, title: values.title.trim() });
-    setIsFormOpen(false);
+    try {
+      await addTask({ ...values, title: values.title.trim() });
+      setIsFormOpen(false);
+    } catch (err) {
+      console.error('[Tasks] Failed to create task:', err);
+      // For now using alert as fallback, ideally should use a toast component
+      alert(err instanceof Error ? err.message : 'Failed to create task');
+    }
   };
 
   const handleUpdateTask = async (values: import('@/core/store/types').TaskInput) => {
     if (!editingTask) return;
-    await updateTask(editingTask.id, { ...values, title: values.title.trim() });
-    setEditingTask(null);
+    try {
+      await updateTask(editingTask.id, { ...values, title: values.title.trim() });
+      setEditingTask(null);
+    } catch (err) {
+      console.error('[Tasks] Failed to update task:', err);
+      alert(err instanceof Error ? err.message : 'Failed to update task');
+    }
   };
 
   const handleToggleStatus = async (task: Task) => {
-    const nextStatus: TaskStatus = task.status === 'todo' ? 'doing' : task.status === 'doing' ? 'done' : 'todo';
-    await updateTask(task.id, { status: nextStatus });
-    
-    if (nextStatus === 'done') {
-      const today = toLocalDateString(new Date());
-      await useStore.getState().updateSnapshot(today, 'task', 1);
-    } else if (task.status === 'done') {
-      const today = toLocalDateString(new Date());
-      await useStore.getState().updateSnapshot(today, 'task', -1);
+    const nextStatus: TaskStatus =
+      task.status === 'todo' ? 'doing' : task.status === 'doing' ? 'done' : 'todo';
+    try {
+      await updateTask(task.id, { status: nextStatus });
+    } catch (err) {
+      console.error('[Tasks] Failed to toggle status:', err);
+      alert(err instanceof Error ? err.message : 'Failed to update status');
     }
   };
 
   const handleDeleteTask = async (task: Task) => {
-    await deleteTask(task.id);
+    try {
+      await deleteTask(task.id);
+    } catch (err) {
+      console.error('[Tasks] Failed to delete task:', err);
+      alert(err instanceof Error ? err.message : 'Failed to delete task');
+    }
   };
 
-  const openCreateForm = () => { setEditingTask(null); setIsFormOpen(true); };
-  const openEditForm = (task: Task) => { setEditingTask(task); setIsFormOpen(true); };
+  const openCreateForm = () => {
+    setEditingTask(null);
+    setIsFormOpen(true);
+  };
+  const openEditForm = (task: Task) => {
+    setEditingTask(task);
+    setIsFormOpen(true);
+  };
   const handleAddSubtask = (parentId: string) => {
     setEditingTask({ parentTaskId: parentId } as Task);
     setIsFormOpen(true);
@@ -133,49 +122,84 @@ export function TasksPage() {
 
         <div className="flex-1 min-w-0 space-y-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+            <div className="flex w-full sm:w-auto items-center gap-3 overflow-x-auto pb-2 sm:pb-0 scrollbar-hide no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 select-none">
               {(['all', 'active', 'completed'] as const).map((item) => (
                 <button
                   key={item}
                   onClick={() => setFilter(item)}
                   className={cn(
-                    "px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all",
-                    filter === item ? "bg-primary text-white shadow-glow" : "text-muted-foreground hover:text-foreground"
+                    'whitespace-nowrap px-6 py-2.5 rounded-full text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 flex-shrink-0',
+                    filter === item
+                      ? 'bg-blue-600 text-white shadow-glow-blue border border-blue-500/50 scale-105 active:scale-95'
+                      : 'glass-panel text-slate-500 hover:text-slate-300 hover:border-white/20 hover:bg-white/5 active:scale-95',
                   )}
                 >
                   {item}
                 </button>
               ))}
             </div>
-            
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <div className="flex rounded-xl border border-border/70 bg-card p-1">
-                <button 
-                  onClick={() => setView('list')} 
+
+            <div className="flex items-center gap-4 w-full sm:w-auto">
+              <div className="flex rounded-full glass-panel p-1 border-white/5">
+                <button
+                  onClick={() => setView('list')}
                   aria-label="List view"
-                  className={cn("p-1.5 rounded-lg transition-all", view === 'list' ? "bg-secondary text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+                  className={cn(
+                    'p-2 rounded-xl transition-all duration-300',
+                    view === 'list'
+                      ? 'bg-white/10 text-blue-400 shadow-glow'
+                      : 'text-slate-500 hover:text-slate-300',
+                  )}
                 >
-                  <List className="h-4 w-4" />
+                  <List className="h-5 w-5" />
                 </button>
-                <button 
-                  onClick={() => setView('calendar')} 
+                <button
+                  onClick={() => setView('calendar')}
                   aria-label="Calendar view"
-                  className={cn("p-1.5 rounded-lg transition-all", view === 'calendar' ? "bg-secondary text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+                  className={cn(
+                    'p-2 rounded-xl transition-all duration-300',
+                    view === 'calendar'
+                      ? 'bg-white/10 text-blue-400 shadow-glow'
+                      : 'text-slate-500 hover:text-slate-300',
+                  )}
                 >
-                  <CalendarDays className="h-4 w-4" />
+                  <CalendarDays className="h-5 w-5" />
                 </button>
-                <button 
-                  onClick={() => setView('kanban')} 
+                <button
+                  onClick={() => setView('kanban')}
                   aria-label="Kanban view"
-                  className={cn("p-1.5 rounded-lg transition-all", view === 'kanban' ? "bg-secondary text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+                  className={cn(
+                    'p-2 rounded-xl transition-all duration-300',
+                    view === 'kanban'
+                      ? 'bg-white/10 text-blue-400 shadow-glow'
+                      : 'text-slate-500 hover:text-slate-300',
+                  )}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M8 7v7"/><path d="M12 7v4"/><path d="M16 7v9"/></svg>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <rect width="18" height="18" x="3" y="3" rx="2" />
+                    <path d="M8 7v7" />
+                    <path d="M12 7v4" />
+                    <path d="M16 7v9" />
+                  </svg>
                 </button>
               </div>
-              <Button onClick={openCreateForm} className="flex-1 sm:flex-none shadow-glow">
-                <Plus className="h-4 w-4" />
+              <button
+                onClick={openCreateForm}
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-br from-blue-600 to-cyan-500 text-white font-bold text-sm shadow-glow-blue active:scale-95 transition-all"
+              >
+                <Plus className="h-5 w-5" strokeWidth={3} />
                 <span>New</span>
-              </Button>
+              </button>
             </div>
           </div>
 
@@ -188,29 +212,48 @@ export function TasksPage() {
               transition={{ duration: 0.2 }}
             >
               {view === 'calendar' ? (
-                <TaskCalendar onDateClick={(d) => { setSelectedDate(d); setView('list'); }} onEditTask={openEditForm} />
+                <TaskCalendar
+                  onDateClick={(d) => {
+                    setSelectedDate(d);
+                    setView('list');
+                  }}
+                  onEditTask={openEditForm}
+                />
               ) : view === 'kanban' ? (
                 <TaskKanban tasks={taskTree.topLevel} onEditTask={openEditForm} />
               ) : (
                 <LayoutGroup>
                   <div className="space-y-4">
-                    {taskTree.topLevel.map(task => (
+                    {taskTree.topLevel.map((task) => (
                       <TaskItem
                         key={task.id}
                         task={task}
                         subtasks={taskTree.childrenMap.get(task.id)}
                         onEdit={openEditForm}
-                        onToggleStatus={(t) => { void handleToggleStatus(t); }}
-                        onDelete={(t) => { void handleDeleteTask(t); }}
+                        onToggleStatus={(t) => {
+                          void handleToggleStatus(t);
+                        }}
+                        onDelete={(t) => {
+                          void handleDeleteTask(t);
+                        }}
                         onAddSubtask={handleAddSubtask}
                       />
                     ))}
                     {taskTree.topLevel.length === 0 && (
-                      <div className="flex flex-col items-center justify-center gap-6 py-20 text-center">
-                        <img src="/icons/falcon.png" alt="Falcon" className="h-24 w-24 opacity-10 grayscale" />
-                        <div className="space-y-1">
-                          <p className="text-sm font-bold text-foreground">A clean horizon</p>
-                          <p className="text-xs text-muted-foreground">Adjust filters or start a new quest.</p>
+                      <div className="flex flex-col items-center justify-center gap-8 py-24 text-center">
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full animate-pulse" />
+                          <img
+                            src="/icons/falcon.png"
+                            alt="Falcon"
+                            className="relative h-32 w-32 opacity-20 grayscale hover:opacity-40 transition-opacity duration-700"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <p className="text-xl font-black text-white tracking-tighter">A Clean Horizon</p>
+                          <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">
+                            Adjust filters or start a new quest.
+                          </p>
                         </div>
                       </div>
                     )}

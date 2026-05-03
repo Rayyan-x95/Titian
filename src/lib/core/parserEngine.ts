@@ -66,20 +66,164 @@ const datePatterns = [
 ];
 
 const categoryRules = [
-  { category: 'Salary', keywords: ['salary', 'pay', 'slip', 'employee', 'employer', 'professor', 'assistant', 'department'] },
-  { category: 'Food', keywords: ['swiggy', 'zomato', 'restaurant', 'cafe', 'starbucks', 'mcdonald', 'kfc', 'pizza', 'burger', 'bake', 'coffee', 'tea', 'grill', 'kitchen', 'dining'] },
-  { category: 'Transport', keywords: ['uber', 'ola', 'taxi', 'metro', 'rail', 'fuel', 'petrol', 'parking', 'garage', 'airline', 'flight', 'hotel', 'stay', 'indigo', 'airtel', 'recharge'] },
-  { category: 'Shopping', keywords: ['amazon', 'flipkart', 'myntra', 'walmart', 'target', 'mall', 'store', 'retail', 'fashion', 'clothing', 'shoe', 'nike', 'adidas'] },
-  { category: 'Entertainment', keywords: ['netflix', 'spotify', 'cinema', 'movie', 'theater', 'game', 'steam', 'pvr', 'inox', 'bookmyshow'] },
-  { category: 'Utilities', keywords: ['electricity', 'water', 'gas', 'internet', 'phone', 'mobile', 'bill', 'bescom', 'bsnl', 'jio', 'vi '] },
-  { category: 'Healthcare', keywords: ['pharmacy', 'medical', 'hospital', 'clinic', 'doctor', 'medicine', 'apollo', 'pharmeasy'] },
-  { category: 'Groceries', keywords: ['grocery', 'supermarket', 'mart', 'fresh', 'vegetable', 'fruit', 'bigbasket', 'blinkit', 'zepto'] },
+  {
+    category: 'Salary',
+    keywords: [
+      'salary',
+      'pay',
+      'slip',
+      'employee',
+      'employer',
+      'professor',
+      'assistant',
+      'department',
+    ],
+  },
+  {
+    category: 'Food',
+    keywords: [
+      'swiggy',
+      'zomato',
+      'restaurant',
+      'cafe',
+      'starbucks',
+      'mcdonald',
+      'kfc',
+      'pizza',
+      'burger',
+      'bake',
+      'coffee',
+      'tea',
+      'grill',
+      'kitchen',
+      'dining',
+    ],
+  },
+  {
+    category: 'Transport',
+    keywords: [
+      'uber',
+      'ola',
+      'taxi',
+      'metro',
+      'rail',
+      'fuel',
+      'petrol',
+      'parking',
+      'garage',
+      'airline',
+      'flight',
+      'hotel',
+      'stay',
+      'indigo',
+      'airtel',
+      'recharge',
+    ],
+  },
+  {
+    category: 'Shopping',
+    keywords: [
+      'amazon',
+      'flipkart',
+      'myntra',
+      'walmart',
+      'target',
+      'mall',
+      'store',
+      'retail',
+      'fashion',
+      'clothing',
+      'shoe',
+      'nike',
+      'adidas',
+    ],
+  },
+  {
+    category: 'Entertainment',
+    keywords: [
+      'netflix',
+      'spotify',
+      'cinema',
+      'movie',
+      'theater',
+      'game',
+      'steam',
+      'pvr',
+      'inox',
+      'bookmyshow',
+    ],
+  },
+  {
+    category: 'Utilities',
+    keywords: [
+      'electricity',
+      'water',
+      'gas',
+      'internet',
+      'phone',
+      'mobile',
+      'bill',
+      'bescom',
+      'bsnl',
+      'jio',
+      'vi ',
+    ],
+  },
+  {
+    category: 'Healthcare',
+    keywords: [
+      'pharmacy',
+      'medical',
+      'hospital',
+      'clinic',
+      'doctor',
+      'medicine',
+      'apollo',
+      'pharmeasy',
+    ],
+  },
+  {
+    category: 'Groceries',
+    keywords: [
+      'grocery',
+      'supermarket',
+      'mart',
+      'fresh',
+      'vegetable',
+      'fruit',
+      'bigbasket',
+      'blinkit',
+      'zepto',
+    ],
+  },
 ];
 
-const incomeKeywords = ['salary', 'income', 'bonus', 'received', 'plus', 'dividend', 'credited', 'cr', 'net pay', 'gross pay', 'pay slip'];
+const incomeKeywords = [
+  'salary',
+  'income',
+  'bonus',
+  'received',
+  'plus',
+  'dividend',
+  'credited',
+  'cr',
+  'net pay',
+  'gross pay',
+  'pay slip',
+];
 
 const categoriesMap: Record<string, string[]> = {
-  Food: ['swiggy', 'zomato', 'restaurant', 'cafe', 'food', 'groceries', 'dinner', 'lunch', 'breakfast'],
+  Food: [
+    'swiggy',
+    'zomato',
+    'restaurant',
+    'cafe',
+    'food',
+    'groceries',
+    'dinner',
+    'lunch',
+    'breakfast',
+  ],
   Travel: ['uber', 'ola', 'rapido', 'fuel', 'petrol', 'flight', 'train', 'bus', 'travel'],
   Rent: ['rent', 'maintenance'],
   Utilities: ['electricity', 'water', 'internet', 'recharge', 'bill'],
@@ -88,13 +232,12 @@ const categoriesMap: Record<string, string[]> = {
   Entertainment: ['movie', 'netflix', 'prime', 'game', 'party'],
 };
 
-function normalizeText(text: string): string {
-  return text.replace(/\s+/g, ' ').trim();
-}
-
 function stripAmounts(text: string): string {
   return text
-    .replace(/(?:[\u20B9\u0024\u20AC\u00A3\u00A5]|rs\.?|inr)\s*[\d,]+(?:\.\d{1,2})?|[\d,]+(?:\.\d{1,2})\s*(?:[\u20B9\u0024\u20AC\u00A3\u00A5]|rs\.?|inr)/gi, '')
+    .replace(
+      /(?:[\u20B9\u0024\u20AC\u00A3\u00A5]|rs\.?|inr)\s*[\d,]+(?:\.\d{1,2})?|[\d,]+(?:\.\d{1,2})\s*(?:[\u20B9\u0024\u20AC\u00A3\u00A5]|rs\.?|inr)/gi,
+      '',
+    )
     .replace(/(?:\s|^)[\d,]+(?:\.\d{2})?(?:\s|$)/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
@@ -102,7 +245,7 @@ function stripAmounts(text: string): string {
 
 function parseAmountFromText(text: string): number {
   const matches: number[] = [];
-  
+
   for (const pattern of amountPatterns) {
     const allMatches = text.matchAll(new RegExp(pattern.source, pattern.flags + 'g'));
     for (const match of allMatches) {
@@ -130,8 +273,22 @@ function parseMerchantFromText(text: string): string {
   const fallbackMatch = text.match(merchantPatterns[merchantPatterns.length - 1]);
   if (fallbackMatch && fallbackMatch[1]) {
     const merchant = stripAmounts(fallbackMatch[1].trim());
-    const noise = ['tax', 'invoice', 'receipt', 'bill', 'date', 'total', 'tel', 'phone', 'spent', 'paid', 'at', 'rs', 'inr'];
-    if (!noise.some(n => merchant.toLowerCase().includes(n)) && merchant.length > 3) {
+    const noise = [
+      'tax',
+      'invoice',
+      'receipt',
+      'bill',
+      'date',
+      'total',
+      'tel',
+      'phone',
+      'spent',
+      'paid',
+      'at',
+      'rs',
+      'inr',
+    ];
+    if (!noise.some((n) => merchant.toLowerCase().includes(n)) && merchant.length > 3) {
       return merchant;
     }
   }
@@ -164,7 +321,7 @@ function categorizeTransaction(merchant: string, text: string): string {
 
 function detectTypeFromText(text: string): 'expense' | 'income' {
   const lower = text.toLowerCase();
-  if (incomeKeywords.some(keyword => lower.includes(keyword))) {
+  if (incomeKeywords.some((keyword) => lower.includes(keyword))) {
     return 'income';
   }
   return 'expense';
@@ -174,8 +331,6 @@ export function parseTextToTransaction(
   text: string,
   source: 'sms' | 'image' | 'pdf',
 ): ParsedTransaction {
-  const normalizedText = normalizeText(text);
-
   if (source === 'sms') {
     const smsResult = parseSmsExpense(text);
     return {
@@ -224,7 +379,9 @@ export function parseQuickCapture(input: string, now = new Date()): QuickParseRe
     let category = 'Uncategorized';
     let dueDate: string | undefined;
 
-    const amountMatch = input.match(/(?:[\u20B9\u0024\u20AC\u00A3\u00A5]|rs\.?|inr)\s*([\d,]+(?:\.\d{1,2})?)|([\d,]+(?:\.\d{1,2})?)\s*(?:[\u20B9\u0024\u20AC\u00A3\u00A5]|rs\.?|inr)|(?:\b|^)([\d,]+(?:\.\d{1,2})?)(?:\b|$)/i);
+    const amountMatch = input.match(
+      /(?:[\u20B9\u0024\u20AC\u00A3\u00A5]|rs\.?|inr)\s*([\d,]+(?:\.\d{1,2})?)|([\d,]+(?:\.\d{1,2})?)\s*(?:[\u20B9\u0024\u20AC\u00A3\u00A5]|rs\.?|inr)|(?:\b|^)([\d,]+(?:\.\d{1,2})?)(?:\b|$)/i,
+    );
     if (amountMatch) {
       const amountStr = amountMatch[1] || amountMatch[2] || amountMatch[3];
       const parsed = Number.parseFloat(amountStr.replace(/,/g, ''));

@@ -15,10 +15,30 @@ export function sanitizeString(value: unknown, maxLength = MAX_STRING_LENGTH): s
 }
 
 /**
- * Strips HTML tags to prevent XSS
+ * Strips HTML tags safely using the browser's DOM parser
  */
 export function stripHtml(value: string): string {
-  return value.replace(/<[^>]*>?/gm, '');
+  if (!value) return '';
+  try {
+    const doc = new Parser().parseFromString(value, 'text/html');
+    return doc.body.textContent || '';
+  } catch {
+    // Fallback for environments where DOMParser is not available (e.g., SSR or tests)
+    return value.replace(/<[^>]*>?/gm, '');
+  }
+}
+
+// Internal helper to avoid creating a new parser every time
+class Parser {
+  private parser: DOMParser | null = null;
+  parseFromString(string: string, type: DOMParserSupportedType): Document {
+    if (!this.parser && typeof DOMParser !== 'undefined') {
+      this.parser = new DOMParser();
+    }
+    if (this.parser) return this.parser.parseFromString(string, type);
+    // Return a mock document-like object if no parser
+    return { body: { textContent: string } } as Document;
+  }
 }
 
 /**

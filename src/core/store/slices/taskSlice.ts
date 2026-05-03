@@ -2,16 +2,14 @@ import { StateCreator } from 'zustand';
 import { db } from '@/core/db/db';
 import type { Task, TaskInput, TaskUpdate } from '../types';
 import type { CoreStoreState } from '../useStore';
-import { 
-  syncTaskNoteReference, 
-  clearTaskNoteReference 
-} from '../taskNoteSync';
-import { 
-  normalizeTask, 
-  validateTaskRelationships, 
-  generateNextRecurringTasks 
+import { syncTaskNoteReference } from '../taskNoteSync';
+import {
+  normalizeTask,
+  validateTaskRelationships,
+  generateNextRecurringTasks,
 } from '@/lib/core/taskEngine';
 import { upsertItem } from '../utils';
+import { toLocalDateString } from '@/utils/date';
 
 function findAllSubtaskIds(parentId: string, tasks: Task[]): Set<string> {
   const subtaskIds = new Set<string>();
@@ -19,8 +17,8 @@ function findAllSubtaskIds(parentId: string, tasks: Task[]): Set<string> {
 
   while (queue.length > 0) {
     const currentId = queue.shift()!;
-    const children = tasks.filter(t => t.parentTaskId === currentId);
-    children.forEach(child => {
+    const children = tasks.filter((t) => t.parentTaskId === currentId);
+    children.forEach((child) => {
       if (!subtaskIds.has(child.id)) {
         subtaskIds.add(child.id);
         queue.push(child.id);
@@ -30,7 +28,6 @@ function findAllSubtaskIds(parentId: string, tasks: Task[]): Set<string> {
 
   return subtaskIds;
 }
-
 
 export interface TaskSlice {
   tasks: Task[];
@@ -49,12 +46,12 @@ export const createTaskSlice: StateCreator<CoreStoreState, [], [], TaskSlice> = 
     if (errors.length > 0) throw new Error(errors.join(' '));
 
     const notes = syncTaskNoteReference(task, get().notes, get().tasks);
-    const affectedNoteIds = new Set(notes.filter(n => n.id === task.noteId).map(n => n.id));
+    const affectedNoteIds = new Set(notes.filter((n) => n.id === task.noteId).map((n) => n.id));
 
     await db.transaction('rw', [db.tasks, db.notes], async () => {
       await db.tasks.put(task);
       if (affectedNoteIds.size > 0) {
-        await db.notes.bulkPut(notes.filter(n => affectedNoteIds.has(n.id)));
+        await db.notes.bulkPut(notes.filter((n) => affectedNoteIds.has(n.id)));
       }
     });
 
@@ -62,6 +59,9 @@ export const createTaskSlice: StateCreator<CoreStoreState, [], [], TaskSlice> = 
       tasks: upsertItem(state.tasks, task),
       notes,
     }));
+
+    const today = toLocalDateString(new Date());
+    await get().updateSnapshot(today, 'task', 1);
 
     return task;
   },
@@ -84,7 +84,7 @@ export const createTaskSlice: StateCreator<CoreStoreState, [], [], TaskSlice> = 
     await db.transaction('rw', [db.tasks, db.notes], async () => {
       await db.tasks.put(task);
       if (affectedNoteIds.size > 0) {
-        await db.notes.bulkPut(notes.filter(n => affectedNoteIds.has(n.id)));
+        await db.notes.bulkPut(notes.filter((n) => affectedNoteIds.has(n.id)));
       }
     });
 
@@ -92,6 +92,14 @@ export const createTaskSlice: StateCreator<CoreStoreState, [], [], TaskSlice> = 
       tasks: upsertItem(state.tasks, task),
       notes,
     }));
+
+    if (current.status !== 'done' && task.status === 'done') {
+      const today = toLocalDateString(new Date());
+      await get().updateSnapshot(today, 'task', 1);
+    } else if (current.status === 'done' && task.status !== 'done') {
+      const today = toLocalDateString(new Date());
+      await get().updateSnapshot(today, 'task', -1);
+    }
 
     return task;
   },
@@ -105,19 +113,19 @@ export const createTaskSlice: StateCreator<CoreStoreState, [], [], TaskSlice> = 
     const deleteSet = new Set(allTaskIdsToDelete);
 
     const notes = get().notes.map((note) => {
-      const linkedTaskIds = (note.linkedTaskIds || []).filter(tid => !deleteSet.has(tid));
+      const linkedTaskIds = (note.linkedTaskIds || []).filter((tid) => !deleteSet.has(tid));
       return linkedTaskIds.length !== (note.linkedTaskIds || []).length
         ? { ...note, linkedTaskIds }
         : note;
     });
-    
-    const expenses = get().expenses.map(e => 
-      e.linkedTaskId && deleteSet.has(e.linkedTaskId) ? { ...e, linkedTaskId: undefined } : e
+
+    const expenses = get().expenses.map((e) =>
+      e.linkedTaskId && deleteSet.has(e.linkedTaskId) ? { ...e, linkedTaskId: undefined } : e,
     );
-    
+
     await db.transaction('rw', [db.tasks, db.notes, db.expenses], async () => {
       await db.tasks.bulkDelete(allTaskIdsToDelete);
-      
+
       const affectedNotes = notes.filter((n, i) => n !== get().notes[i]);
       if (affectedNotes.length > 0) {
         await db.notes.bulkPut(affectedNotes);
@@ -129,11 +137,20 @@ export const createTaskSlice: StateCreator<CoreStoreState, [], [], TaskSlice> = 
       }
     });
 
+    // Update snapshot if the deleted task (or its subtasks) were done
+    const tasksToDelete = get().tasks.filter((t) => deleteSet.has(t.id));
+    const doneTasksCount = tasksToDelete.filter((t) => t.status === 'done').length;
+
     set((state) => ({
       tasks: state.tasks.filter((t) => !deleteSet.has(t.id)),
       notes,
       expenses,
     }));
+
+    if (doneTasksCount > 0) {
+      const today = toLocalDateString(new Date());
+      await get().updateSnapshot(today, 'task', -doneTasksCount);
+    }
   },
 
   processRecurringTasks: async () => {
@@ -149,7 +166,9 @@ export const createTaskSlice: StateCreator<CoreStoreState, [], [], TaskSlice> = 
 
     set((state) => {
       let nextTasks = [...state.tasks];
-      updatedTasks.forEach(t => { nextTasks = upsertItem(nextTasks, t); });
+      updatedTasks.forEach((t) => {
+        nextTasks = upsertItem(nextTasks, t);
+      });
       return { tasks: [...nextTasks, ...newTasks] };
     });
   },

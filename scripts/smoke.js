@@ -1,5 +1,8 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 function checkDist() {
   const distPath = path.resolve(__dirname, '..', 'dist');
@@ -14,13 +17,13 @@ function checkDist() {
     process.exit(2);
   }
 
-  console.log('dist/ exists and contains index.html — smoke check passed');
+  console.log('✅ dist/ exists and contains index.html — smoke check passed');
 }
 
 try {
   checkDist();
   process.exit(0);
 } catch (err) {
-  console.error('Smoke check failed', err);
+  console.error('❌ Smoke check failed', err);
   process.exit(2);
 }

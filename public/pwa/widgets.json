@@ -29,9 +29,7 @@
       "description": "Your life timeline view",
       "icon": "calendar",
       "color": "#8b5cf6",
-      "actions": [
-        { "type": "view", "url": "/timeline" }
-      ]
+      "actions": [{ "type": "view", "url": "/timeline" }]
     },
     {
       "id": "quick-add",
@@ -39,9 +37,7 @@
       "description": "Quickly add tasks and expenses",
       "icon": "plus",
       "color": "#f59e0b",
-      "actions": [
-        { "type": "capture", "url": "/" }
-      ]
+      "actions": [{ "type": "capture", "url": "/" }]
     }
   ]
 }

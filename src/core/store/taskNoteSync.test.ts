@@ -58,7 +58,10 @@ describe('task-note synchronization', () => {
   });
 
   it('clears references when a task is deleted or a note is deleted', () => {
-    const notes = [createNote({ linkedTaskIds: ['task-1', 'task-2'] }), createNote({ id: 'note-2' })];
+    const notes = [
+      createNote({ linkedTaskIds: ['task-1', 'task-2'] }),
+      createNote({ id: 'note-2' }),
+    ];
     const tasks = [createTask(), createTask({ id: 'task-2', noteId: 'note-1' })];
 
     expect(clearTaskNoteReference('task-1', notes)[0].linkedTaskIds).toEqual(['task-2']);
@@ -66,7 +69,10 @@ describe('task-note synchronization', () => {
   });
 
   it('reconciles stale records on hydration', () => {
-    const tasks = [createTask({ noteId: 'missing-note' }), createTask({ id: 'task-2', noteId: 'note-1' })];
+    const tasks = [
+      createTask({ noteId: 'missing-note' }),
+      createTask({ id: 'task-2', noteId: 'note-1' }),
+    ];
     const notes = [createNote({ id: 'note-1', linkedTaskIds: ['stale-task'] })];
 
     const reconciled = reconcileTaskNoteReferences(tasks, notes);

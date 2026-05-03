@@ -9,13 +9,12 @@ import { createOnboardingSlice, type OnboardingSlice } from './slices/onboarding
 import { createSplitSlice, type SplitSlice } from './slices/splitSlice';
 import { createSystemSlice, type SystemSlice } from './slices/systemSlice';
 
-export type CoreStoreState = 
-  TaskSlice & 
-  NoteSlice & 
-  FinanceSlice & 
-  AccountSlice & 
-  OnboardingSlice & 
-  SplitSlice & 
+export type CoreStoreState = TaskSlice &
+  NoteSlice &
+  FinanceSlice &
+  AccountSlice &
+  OnboardingSlice &
+  SplitSlice &
   SystemSlice;
 
 export const useStore = create<CoreStoreState>()((...a) => ({

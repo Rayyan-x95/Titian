@@ -11,8 +11,13 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useSettings } from '@/core/settings';
-import { useStore, type FinancialGoal, type OnboardingProfile, type OnboardingUpdate } from '@/core/store';
-import { useSeo } from '@/seo';
+import {
+  useStore,
+  type FinancialGoal,
+  type OnboardingProfile,
+  type OnboardingUpdate,
+} from '@/core/store';
+import { useSeo } from '@/hooks/useSeo';
 import { OnboardingControls } from './components/OnboardingControls';
 import { OnboardingStepper } from './components/OnboardingStepper';
 import {
@@ -27,9 +32,13 @@ import {
 import { validateUpiId } from '@/utils/upi';
 import type { OnboardingStepProps } from './types';
 
-const stepComponents: Record<OnboardingStepId, LazyExoticComponent<ComponentType<OnboardingStepProps>>> = {
+const stepComponents: Record<
+  OnboardingStepId,
+  LazyExoticComponent<ComponentType<OnboardingStepProps>>
+> = {
   welcome: lazy(() => import('./steps/WelcomeStep')),
   name: lazy(() => import('./steps/NameStep')),
+  currency: lazy(() => import('./steps/CurrencyStep')),
   phone: lazy(() => import('./steps/PhoneStep')),
   dob: lazy(() => import('./steps/DobStep')),
   income: lazy(() => import('./steps/IncomeStep')),
@@ -39,7 +48,10 @@ const stepComponents: Record<OnboardingStepId, LazyExoticComponent<ComponentType
   ready: lazy(() => import('./steps/ReadyStep')),
 };
 
-function mergeOnboardingProfile(current: OnboardingProfile, updates: OnboardingUpdate): OnboardingProfile {
+function mergeOnboardingProfile(
+  current: OnboardingProfile,
+  updates: OnboardingUpdate,
+): OnboardingProfile {
   return {
     ...current,
     ...updates,
@@ -168,14 +180,17 @@ export function OnboardingPage() {
         income: incomeCents,
         avgExpense: expenseCents,
         goals: profile.goals,
+        currency: profile.currency,
         preferences: profile.preferences,
       });
 
+      setCurrency(profile.currency);
       void setNotifications(profile.preferences.notifications);
-      void setCurrency('INR');
       void navigate('/', { replace: true });
     } catch (completeError) {
-      setError(completeError instanceof Error ? completeError.message : 'Could not finish onboarding.');
+      setError(
+        completeError instanceof Error ? completeError.message : 'Could not finish onboarding.',
+      );
     } finally {
       setIsSaving(false);
     }
@@ -233,21 +248,27 @@ export function OnboardingPage() {
   const skipDisabled = isSaving || (activeStep <= phoneStepIndex && !hasValidUpi);
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-background text-foreground">
+    <main className="relative min-h-screen overflow-hidden bg-black text-white">
+      {/* Premium Backdrop Blobs */}
+      <div className="absolute top-[-10%] left-[-10%] h-[40%] w-[40%] rounded-full bg-blue-600/10 blur-[120px] animate-blob-morph" />
+      <div className="absolute bottom-[-10%] right-[-10%] h-[40%] w-[40%] rounded-full bg-purple-600/10 blur-[120px] animate-blob-morph animate-delay-3000" />
+
       <div
-        className="pointer-events-none absolute inset-0 opacity-[0.16]"
+        className="pointer-events-none absolute inset-0 opacity-[0.05]"
         style={{
           backgroundImage:
-            'linear-gradient(rgba(255,255,255,0.14) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.14) 1px, transparent 1px)',
-          backgroundSize: '72px 72px',
+            'linear-gradient(rgba(255,255,255,0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.2) 1px, transparent 1px)',
+          backgroundSize: '80px 80px',
         }}
       />
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
       <section className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 py-5 sm:px-8">
         <OnboardingStepper
           currentStep={activeStep}
           totalSteps={onboardingSteps.length}
-          onSkip={() => { void handleSkip(); }}
+          onSkip={() => {
+            void handleSkip();
+          }}
           disabled={skipDisabled}
         />
 
@@ -258,7 +279,7 @@ export function OnboardingPage() {
                 key={`${step.id}-eyebrow`}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-[10px] font-bold uppercase tracking-[0.32em] text-primary"
+                className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-400"
               >
                 {step.eyebrow}
               </motion.p>
@@ -267,7 +288,7 @@ export function OnboardingPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.04 }}
-                className="mt-3 text-3xl font-black tracking-tight text-foreground sm:text-5xl"
+                className="titan-metric mt-4 text-4xl tracking-tighter text-white sm:text-6xl"
               >
                 {step.title}
               </motion.h1>
@@ -276,7 +297,7 @@ export function OnboardingPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.08 }}
-                className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base"
+                className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-slate-500 font-bold sm:text-base"
               >
                 {step.subtitle}
               </motion.p>
@@ -292,7 +313,7 @@ export function OnboardingPage() {
               >
                 <Suspense
                   fallback={
-                    <div className="mx-auto h-40 max-w-xl animate-pulse rounded-lg border border-border/60 bg-secondary/30" />
+                    <div className="glass-panel mx-auto h-48 max-w-xl animate-pulse rounded-[2.5rem] border-white/5 bg-white/5" />
                   }
                 >
                   <StepComponent {...stepProps} />
@@ -301,7 +322,10 @@ export function OnboardingPage() {
             </AnimatePresence>
 
             {error && activeStep > 0 && activeStep < onboardingSteps.length - 1 ? (
-              <p aria-live="polite" className="mt-8 text-center text-sm font-semibold text-amber-300">
+              <p
+                aria-live="polite"
+                className="mt-8 text-center text-sm font-semibold text-amber-300"
+              >
                 {error}
               </p>
             ) : null}
@@ -314,7 +338,9 @@ export function OnboardingPage() {
           isSaving={isSaving}
           onBack={handleBack}
           onNext={handleNext}
-          onComplete={() => { void handleComplete(); }}
+          onComplete={() => {
+            void handleComplete();
+          }}
         />
       </section>
     </main>

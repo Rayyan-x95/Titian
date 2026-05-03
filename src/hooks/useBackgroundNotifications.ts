@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useStore } from '@/core/store';
-import { createNotificationHandler } from '@/lib/notifications';
+import { createNotificationHandler } from '@/lib/core/notifications';
 import { useSettings } from '@/core/settings';
 import { calculateBudgetUsage } from '@/lib/core/financeEngine';
 
@@ -19,7 +19,7 @@ export function useBackgroundNotifications() {
 
     const checkInterval = setInterval(() => {
       const now = new Date();
-      
+
       // Check tasks
       tasks.forEach((task) => {
         if (task.status === 'done' || !task.dueDate) return;

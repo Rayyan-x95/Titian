@@ -10,6 +10,7 @@ type NotificationType = 'task.due' | 'task.completed' | 'budget.alert' | 'shared
  * Create a notification handler using Zustand
  */
 export function createNotificationHandler() {
+  const { currency } = useSettings.getState();
   const canNotify = () => 'Notification' in window && Notification.permission === 'granted';
 
   const send = (title: string, options: NotificationOptions) => {
@@ -28,10 +29,13 @@ export function createNotificationHandler() {
 
     send('Task Due Soon', {
       body: `${task.title} is due in ${hoursLeft} hours`,
-      icon: '/icons/titan-icon-192.png',
-      badge: '/icons/titan-icon-192.png',
+      icon: '/icons/falcon.png',
+      badge: '/icons/falcon.png',
       tag: `task-${task.id || task.title}`,
-      data: { action: 'task', view: `/tasks?filter=due=${format(new Date(task.due), 'yyyy-MM-dd')}` },
+      data: {
+        action: 'task',
+        view: `/tasks?filter=due=${format(new Date(task.due), 'yyyy-MM-dd')}`,
+      },
     });
   };
 
@@ -41,8 +45,8 @@ export function createNotificationHandler() {
 
     send('Task Completed', {
       body: `Great job! "${task.title}" is complete.`,
-      icon: '/icons/titan-icon-192.png',
-      badge: '/icons/titan-icon-192.png',
+      icon: '/icons/falcon.png',
+      badge: '/icons/falcon.png',
       tag: `task-${task.id || task.title}`,
     });
   };
@@ -55,9 +59,9 @@ export function createNotificationHandler() {
     const urgency = percent > 85 ? 'Over 85%' : 'Nearly there';
 
     send('Budget Alert', {
-      body: `${budget.category}: ${urgency} (${formatMoney(budget.spent)} / ${formatMoney(budget.limit)})`,
-      icon: '/icons/titan-icon-192.png',
-      badge: '/icons/titan-icon-192.png',
+      body: `${budget.category}: ${urgency} (${formatMoney(budget.spent, currency)} / ${formatMoney(budget.limit, currency)})`,
+      icon: '/icons/falcon.png',
+      badge: '/icons/falcon.png',
       tag: `budget-${budget.category}`,
       data: { action: 'budget', view: '/finance' },
     });
@@ -68,9 +72,9 @@ export function createNotificationHandler() {
     if (!notificationSettings.sharedBalance) return;
 
     send('Shared Payment Detected', {
-      body: `You shared ${formatMoney(expense.amount)} with ${expense.merchant}`,
-      icon: '/icons/titan-icon-192.png',
-      badge: '/icons/titan-icon-192.png',
+      body: `You shared ${formatMoney(expense.amount, currency)} with ${expense.merchant}`,
+      icon: '/icons/falcon.png',
+      badge: '/icons/falcon.png',
       tag: `expense-${expense.merchant}`,
       data: { action: 'expense', view: '/finance?new=1' },
     });
@@ -116,11 +120,9 @@ export function createNotificationHandler() {
 /**
  * Format money for notifications
  */
-function formatMoney(cents: number): string {
-  const formatted = new Intl.NumberFormat('en-IN', {
+function formatMoney(cents: number, currency: string): string {
+  return new Intl.NumberFormat(undefined, {
     style: 'currency',
-    currency: 'INR',
+    currency: currency || 'USD',
   }).format(cents / 100);
-
-  return formatted;
 }

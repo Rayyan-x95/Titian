@@ -9,7 +9,12 @@ interface TagInputProps {
   className?: string;
 }
 
-export function TagInput({ tags, onChange, placeholder = 'Add tags...', className }: TagInputProps) {
+export function TagInput({
+  tags,
+  onChange,
+  placeholder = 'Add tags...',
+  className,
+}: TagInputProps) {
   const [inputValue, setInputValue] = useState('');
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -26,13 +31,21 @@ export function TagInput({ tags, onChange, placeholder = 'Add tags...', classNam
   };
 
   const removeTag = (tagToRemove: string) => {
-    onChange(tags.filter(t => t !== tagToRemove));
+    onChange(tags.filter((t) => t !== tagToRemove));
   };
 
   return (
-    <div className={cn("flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-background p-2 transition-all focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10", className)}>
-      {tags.map(tag => (
-        <span key={tag} className="flex items-center gap-1 rounded-lg bg-primary/10 px-2 py-1 text-xs font-bold text-primary">
+    <div
+      className={cn(
+        'flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-background p-2 transition-all focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10',
+        className,
+      )}
+    >
+      {tags.map((tag) => (
+        <span
+          key={tag}
+          className="flex items-center gap-1 rounded-lg bg-primary/10 px-2 py-1 text-xs font-bold text-primary"
+        >
           #{tag}
           <button
             type="button"

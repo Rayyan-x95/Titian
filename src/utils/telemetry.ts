@@ -1,28 +1,29 @@
-export function trackEvent(name: string, props: Record<string, unknown> = {}) {
-  // Lightweight telemetry shim. Replace with your provider (Amplitude, GA, Sentry) later.
+import { useStore } from '@/core/store';
+
+/**
+ * Titan Local Observability
+ * Replaces external telemetry with localized event logging.
+ */
+export function trackEvent(category: string, message: string, level: 'info' | 'warn' | 'error' = 'info') {
   if (typeof window === 'undefined') return;
+  
+  // 1. Log to console for developer visibility
+  const prefix = `[Titan:${category}]`;
+  const consoleMethod = level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'log';
+  // eslint-disable-next-line no-console
+  console[consoleMethod](`${prefix} ${message}`);
+
+  // 2. Add to persistent store (if hydrated)
   try {
-    // Use navigator.sendBeacon when available for reliability
-    const payload = { name, props, ts: new Date().toISOString() };
-    if (navigator && typeof navigator.sendBeacon === 'function') {
-      const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
-      navigator.sendBeacon('/_telemetry', blob);
-    } else {
-      // Fallback to async fetch (no await)
-      fetch('/_telemetry', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        keepalive: true,
-      }).catch(() => {});
+    const store = useStore.getState();
+    if (store && typeof store.addLog === 'function') {
+      store.addLog(level, category, message);
     }
   } catch {
-    // swallow errors — telemetry must not break app
+    // Fail silently - observability should never crash the app
   }
 }
 
-export function initTelemetry(enable = false) {
-  // Placeholder init
-  if (!enable) return;
-  trackEvent('telemetry_initialized', { enabled: true });
+export function initTelemetry() {
+  trackEvent('System', 'Local observability initialized');
 }

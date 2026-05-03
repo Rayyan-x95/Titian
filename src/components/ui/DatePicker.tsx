@@ -92,8 +92,15 @@ export function DatePicker({
             )}
           >
             <div className="flex min-w-0 flex-1 items-center gap-3">
-              <CalendarDays className={cn('h-4 w-4 shrink-0 transition-colors', hasValue ? 'text-primary' : 'text-muted-foreground group-hover:text-primary')} />
-              <span className={cn('truncate', hasValue ? 'text-foreground' : 'text-muted-foreground')}>
+              <CalendarDays
+                className={cn(
+                  'h-4 w-4 shrink-0 transition-colors',
+                  hasValue ? 'text-primary' : 'text-muted-foreground group-hover:text-primary',
+                )}
+              />
+              <span
+                className={cn('truncate', hasValue ? 'text-foreground' : 'text-muted-foreground')}
+              >
                 {hasValue ? formatDisplay(value!) : placeholder}
               </span>
             </div>
@@ -112,8 +119,15 @@ export function DatePicker({
             )}
           >
             <div className="flex min-w-0 flex-1 items-center gap-3">
-              <CalendarDays className={cn('h-4 w-4 shrink-0 transition-colors', hasValue ? 'text-primary' : 'text-muted-foreground group-hover:text-primary')} />
-              <span className={cn('truncate', hasValue ? 'text-foreground' : 'text-muted-foreground')}>
+              <CalendarDays
+                className={cn(
+                  'h-4 w-4 shrink-0 transition-colors',
+                  hasValue ? 'text-primary' : 'text-muted-foreground group-hover:text-primary',
+                )}
+              />
+              <span
+                className={cn('truncate', hasValue ? 'text-foreground' : 'text-muted-foreground')}
+              >
                 {hasValue ? formatDisplay(value!) : placeholder}
               </span>
             </div>

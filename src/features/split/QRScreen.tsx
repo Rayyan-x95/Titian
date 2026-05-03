@@ -1,112 +1,223 @@
-import { useState, useRef } from 'react';
-import { X, Copy, Share2, CheckCircle2 } from 'lucide-react';
-import { QRCodeCanvas } from 'qrcode.react';
-import { Button } from '@/shared/ui';
-import { buildUpiLink } from '@/utils/upi';
-import { formatMoney, useSettings } from '@/core/settings';
+import { useState, useMemo } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
+import { ArrowLeft, Share2, Copy, Check, ShieldCheck, AlertCircle, QrCode } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui';
+import { useClipboard } from '@/hooks/useClipboard';
+import { generateShareableQR } from '@/utils/qrUtils';
 
-interface QRScreenProps { open: boolean; onOpenChange: (open: boolean) => void; upiId: string; payeeName: string; amount: number; note?: string; onSettled?: () => void; }
+interface QRScreenProps {
+  upiId: string;
+  payeeName: string;
+  amount: number;
+  note?: string;
+  onBack: () => void;
+  onSettled?: () => void;
+}
 
-export function QRScreen({ open, onOpenChange, upiId, payeeName, amount, note, onSettled }: QRScreenProps) {
-  const { currency } = useSettings();
-  const [copied, setCopied] = useState(false);
-  const [isSharing, setIsSharing] = useState(false);
-  const qrRef = useRef<HTMLCanvasElement>(null);
+export function QRScreen({ upiId, payeeName, amount, note, onBack, onSettled }: QRScreenProps) {
+  const [sharing, setSharing] = useState(false);
+  const { copied, copy } = useClipboard();
 
-  if (!open) return null;
-
-  const upiLink = buildUpiLink(upiId, payeeName, amount / 100, note);
-
-  const handleCopyUpi = async () => {
-    try {
-      await navigator.clipboard.writeText(upiId);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy UPI ID', err);
-    }
-  };
+  const upiUrl = useMemo(() => {
+    const amountInRs = (amount / 100).toString();
+    const cleanNote = note ? encodeURIComponent(note) : 'Titan Payment';
+    return `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${amountInRs}&tn=${cleanNote}&cu=INR`;
+  }, [upiId, payeeName, amount, note]);
 
   const handleShare = async () => {
-    if (!qrRef.current) return;
-    setIsSharing(true);
     try {
-      const canvas = document.createElement('canvas');
-      canvas.width = 1080;
-      canvas.height = 1350;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('Failed to get canvas context');
-      ctx.fillStyle = '#09090b';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      const gradient = ctx.createRadialGradient(canvas.width / 2, 0, 100, canvas.width / 2, 0, 800);
-      gradient.addColorStop(0, 'rgba(56, 189, 248, 0.15)');
-      gradient.addColorStop(1, 'rgba(9, 9, 11, 0)');
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 48px Inter, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('TITAN', canvas.width / 2, 120);
-      ctx.fillStyle = '#a1a1aa';
-      ctx.font = '500 40px Inter, sans-serif';
-      ctx.fillText(`Paying ${payeeName}`, canvas.width / 2, 280);
-      ctx.fillStyle = '#38bdf8';
-      ctx.font = '900 110px Inter, sans-serif';
-      ctx.fillText(formatMoney(amount, currency), canvas.width / 2, 400);
-      const qrSize = 600;
-      const qrX = (canvas.width - qrSize) / 2;
-      const qrY = 500;
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.roundRect(qrX - 40, qrY - 40, qrSize + 80, qrSize + 80, 40);
-      ctx.fill();
-      ctx.drawImage(qrRef.current, qrX, qrY, qrSize, qrSize);
-      ctx.fillStyle = '#a1a1aa';
-      ctx.font = '600 36px Inter, sans-serif';
-      ctx.fillText(upiId, canvas.width / 2, qrY + qrSize + 100);
-      if (note) {
-        ctx.font = 'italic 32px Inter, sans-serif';
-        ctx.fillStyle = '#71717a';
-        ctx.fillText(`"${note}"`, canvas.width / 2, qrY + qrSize + 160);
-      }
-      const blob = await new Promise<Blob | null>((resolve) => { canvas.toBlob(resolve, 'image/png'); });
-      if (!blob) throw new Error('Failed to generate image');
-      const file = new File([blob], `titan-payment-${payeeName.replace(/\s+/g, '-').toLowerCase()}.png`, { type: 'image/png' });
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ title: `Payment to ${payeeName}`, text: `Pay ${formatMoney(amount, currency)} via UPI${note ? ` for ${note}` : ''}`, files: [file] });
+      setSharing(true);
+      const dataUrl = await generateShareableQR(upiUrl, amount, note);
+      const blob = await (await fetch(dataUrl)).blob();
+      const file = new File([blob], 'titan-payment.png', { type: 'image/png' });
+
+      if (navigator.share && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'Titan Payment QR',
+          text: `Pay ${amount / 100} via Titan`,
+        });
       } else {
-        await navigator.clipboard.writeText(upiLink);
-        alert('Payment link copied. Share API not supported on this device.');
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = 'titan-payment.png';
+        link.click();
       }
     } catch (err) {
-      console.error('Error sharing QR', err);
+      console.error('Share failed:', err);
     } finally {
-      setIsSharing(false);
+      setSharing(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/80 px-4 py-4 backdrop-blur-md sm:items-center">
-      <div className="relative z-10 w-full max-w-sm overflow-hidden rounded-[2.5rem] border border-border bg-card shadow-2xl animate-in zoom-in-95 duration-300">
-        <div className="flex items-center justify-between border-b border-border/50 bg-secondary/20 px-8 py-5">
-          <div><p className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground">UPI Payment</p><h3 className="text-lg font-bold tracking-tight">Scan to Pay</h3></div>
-          <button type="button" onClick={() => onOpenChange(false)} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary transition-colors"><X className="h-5 w-5 text-muted-foreground" /></button>
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 1.05 }}
+      className="fixed inset-0 z-50 flex flex-col bg-slate-950 text-white"
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between p-6">
+        <button
+          type="button"
+          aria-label="Go back"
+          title="Go back"
+          onClick={onBack}
+          className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 transition-colors hover:bg-white/10"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        <div className="flex flex-col items-center">
+          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-400">
+            Secure Payment
+          </span>
+          <h2 className="text-sm font-bold">UPI QR Code</h2>
         </div>
-        <div className="flex flex-col items-center px-8 py-8 space-y-6">
-          <div className="text-center space-y-1"><p className="text-sm font-medium text-muted-foreground">Paying {payeeName}</p><p className="text-4xl font-black tracking-tighter text-primary">{formatMoney(amount, currency)}</p></div>
-          <div className="rounded-3xl bg-white p-6 shadow-sm border-4 border-secondary/20">
-            <QRCodeCanvas ref={qrRef} value={upiLink} size={240} level="H" includeMargin={false} imageSettings={{ src: '/icons/titan-logo.png', height: 56, width: 56, excavate: true }} />
-          </div>
-          <div className="flex items-center justify-center gap-2 rounded-xl bg-secondary/30 px-4 py-2 border border-border/50 w-full">
-            <span className="text-sm font-semibold truncate max-w-[200px]">{upiId}</span>
-            <button type="button" onClick={() => void handleCopyUpi()} className="ml-auto text-primary hover:text-primary/80 transition-colors" title="Copy UPI ID">{copied ? <CheckCircle2 className="h-5 w-5 text-emerald-500" /> : <Copy className="h-5 w-5" />}</button>
-          </div>
+        <div className="w-10" />
+      </div>
+
+      <div className="flex flex-1 flex-col items-center justify-center px-6 pb-20">
+        {/* QR Container */}
+        <div className="relative mb-12">
+          <div className="absolute -inset-10 animate-pulse bg-blue-500/20 blur-3xl" />
+
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.1 }}
+            className="relative overflow-hidden rounded-[3rem] border border-white/10 bg-white p-8 shadow-2xl"
+          >
+            <div className="relative">
+              <QRCodeSVG
+                value={upiUrl}
+                size={240}
+                level="H"
+                includeMargin={false}
+                imageSettings={{
+                  src: '/icons/falcon.png',
+                  x: undefined,
+                  y: undefined,
+                  height: 48,
+                  width: 48,
+                  excavate: true,
+                }}
+              />
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: 'spring', delay: 0.3 }}
+            className="absolute -right-4 -top-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500 shadow-lg shadow-blue-500/40"
+          >
+            <ShieldCheck className="h-6 w-6 text-white" />
+          </motion.div>
         </div>
-        <div className="flex flex-col gap-3 border-t border-border/50 bg-secondary/10 px-8 py-6">
-          <Button onClick={() => void handleShare()} disabled={isSharing} className="w-full gap-2 rounded-full py-6"><Share2 className="h-5 w-5" />{isSharing ? 'Sharing...' : 'Share QR'}</Button>
-          {onSettled && (<Button variant="outline" onClick={onSettled} className="w-full rounded-full border-primary/20 hover:bg-primary/5 text-primary">Mark as Settled</Button>)}
+
+        {/* Info */}
+        <div className="mb-12 text-center">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">
+              Requesting
+            </p>
+            <div className="mt-2 flex items-baseline justify-center gap-1">
+              <span className="text-5xl font-black tracking-tighter">
+                ₹{(amount / 100).toLocaleString()}
+              </span>
+            </div>
+            {payeeName && (
+              <p className="mt-2 text-xs text-slate-400 font-bold uppercase tracking-widest">
+                Pay to: {payeeName}
+              </p>
+            )}
+            {note && <p className="mt-4 text-sm font-medium text-slate-400 italic">“{note}”</p>}
+          </motion.div>
+        </div>
+
+        {/* Actions */}
+        <div className="grid w-full max-w-sm grid-cols-2 gap-4">
+          <Button
+            variant="secondary"
+            size="lg"
+            className="h-14 rounded-2xl bg-white/5 border-white/10 hover:bg-white/10"
+            onClick={() => void copy(upiId)}
+          >
+            <AnimatePresence mode="wait">
+              {copied ? (
+                <motion.div
+                  key="check"
+                  initial={{ scale: 0.5, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 1.5, opacity: 0 }}
+                  className="flex items-center gap-2"
+                >
+                  <Check className="h-5 w-5 text-emerald-400" />
+                  <span className="text-emerald-400">Copied</span>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="copy"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex items-center gap-2"
+                >
+                  <Copy className="h-5 w-5" />
+                  <span>Copy ID</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </Button>
+
+          <Button
+            variant="primary"
+            size="lg"
+            className="h-14 rounded-2xl shadow-glow shadow-blue-500/20"
+            onClick={() => void handleShare()}
+            disabled={sharing}
+          >
+            {sharing ? (
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                <span>Processing</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Share2 className="h-5 w-5" />
+                <span>Share QR</span>
+              </div>
+            )}
+          </Button>
+        </div>
+
+        {/* Guidelines */}
+        <div className="mt-12 flex flex-col gap-4 w-full max-w-sm">
+          {onSettled && (
+            <Button
+              variant="outline"
+              className="w-full h-12 rounded-2xl border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+              onClick={onSettled}
+            >
+              <Check className="h-4 w-4 mr-2" />
+              Mark as Settled
+            </Button>
+          )}
+          <div className="flex items-center gap-3 rounded-2xl bg-white/5 px-6 py-4">
+            <AlertCircle className="h-5 w-5 text-slate-500" />
+            <p className="text-[11px] font-medium leading-relaxed text-slate-400">
+              Recipient will see your name and UPI ID. Only share this code with people you trust.
+            </p>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Footer Branding */}
+      <div className="flex items-center justify-center gap-2 pb-10 opacity-40">
+        <QrCode className="h-4 w-4" />
+        <span className="text-[10px] font-black uppercase tracking-[0.4em]">Powered by Titan</span>
+      </div>
+    </motion.div>
   );
 }

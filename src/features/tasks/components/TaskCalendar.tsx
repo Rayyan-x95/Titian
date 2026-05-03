@@ -46,7 +46,11 @@ export function TaskCalendar({ onDateClick, onEditTask }: TaskCalendarProps) {
     const items = [];
     const prevMonthLastDay = new Date(year, month, 0).getDate();
     for (let i = firstDay - 1; i >= 0; i--) {
-      items.push({ day: prevMonthLastDay - i, current: false, date: new Date(year, month - 1, prevMonthLastDay - i) });
+      items.push({
+        day: prevMonthLastDay - i,
+        current: false,
+        date: new Date(year, month - 1, prevMonthLastDay - i),
+      });
     }
     for (let d = 1; d <= daysInMonth; d++) {
       items.push({ day: d, current: true, date: new Date(year, month, d) });
@@ -90,7 +94,10 @@ export function TaskCalendar({ onDateClick, onEditTask }: TaskCalendarProps) {
 
       <div className="grid grid-cols-7 flex-1 border-b border-border/50">
         {DAYS.map((d) => (
-          <div key={d} className="p-2 text-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground border-r border-border/50 last:border-r-0">
+          <div
+            key={d}
+            className="p-2 text-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground border-r border-border/50 last:border-r-0"
+          >
             {d}
           </div>
         ))}
@@ -107,26 +114,33 @@ export function TaskCalendar({ onDateClick, onEditTask }: TaskCalendarProps) {
               key={idx}
               onClick={() => onDateClick(cell.date)}
               className={cn(
-                "group relative p-2 border-r border-b border-border/50 last:border-r-0 transition-colors cursor-pointer hover:bg-secondary/20",
-                !cell.current && "bg-secondary/5 opacity-40",
-                isToday && "bg-primary/5"
+                'group relative p-2 border-r border-b border-border/50 last:border-r-0 transition-colors cursor-pointer hover:bg-secondary/20',
+                !cell.current && 'bg-secondary/5 opacity-40',
+                isToday && 'bg-primary/5',
               )}
             >
-              <span className={cn(
-                "text-xs font-medium",
-                isToday ? "flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-glow" : "text-muted-foreground group-hover:text-foreground"
-              )}>
+              <span
+                className={cn(
+                  'text-xs font-medium',
+                  isToday
+                    ? 'flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-glow'
+                    : 'text-muted-foreground group-hover:text-foreground',
+                )}
+              >
                 {cell.day}
               </span>
-              
+
               <div className="mt-1 space-y-1">
-                {dayTasks.slice(0, 3).map(task => (
-                  <div 
+                {dayTasks.slice(0, 3).map((task) => (
+                  <div
                     key={task.id}
-                    onClick={(e) => { e.stopPropagation(); onEditTask(task); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEditTask(task);
+                    }}
                     className="flex items-center gap-1.5 px-1.5 py-0.5 rounded-md bg-secondary/40 text-[9px] font-medium truncate hover:bg-secondary"
                   >
-                    <span className={cn("h-1 w-1 rounded-full", priorityColors[task.priority])} />
+                    <span className={cn('h-1 w-1 rounded-full', priorityColors[task.priority])} />
                     {task.title}
                   </div>
                 ))}

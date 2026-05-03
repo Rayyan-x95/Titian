@@ -9,7 +9,13 @@ interface LargeMoneyInputProps {
   autoFocus?: boolean;
 }
 
-export function LargeMoneyInput({ value, placeholder, onChange, helper, autoFocus }: LargeMoneyInputProps) {
+export function LargeMoneyInput({
+  value,
+  placeholder,
+  onChange,
+  helper,
+  autoFocus,
+}: LargeMoneyInputProps) {
   return (
     <div className="mx-auto max-w-xl text-center">
       <CircleDollarSign className="mx-auto h-10 w-10 text-primary" aria-hidden="true" />
@@ -27,7 +33,9 @@ export function LargeMoneyInput({ value, placeholder, onChange, helper, autoFocu
           className="min-w-0 max-w-[min(24rem,68vw)] bg-transparent text-center text-5xl font-black tracking-tight text-foreground outline-none placeholder:text-muted-foreground/25 sm:text-7xl"
         />
       </label>
-      <p className="mx-auto mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">{helper}</p>
+      <p className="mx-auto mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
+        {helper}
+      </p>
     </div>
   );
 }

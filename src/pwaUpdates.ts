@@ -80,7 +80,7 @@ export function createPwaUpdateController(): PwaUpdateController {
       if (wb) {
         void wb.messageSkipWaiting();
       }
-      
+
       await controllerChangePromise;
       window.location.reload();
     },

@@ -1,6 +1,15 @@
 import { useState, useEffect, useMemo, useCallback, type ComponentType } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Calendar, FileText, CreditCard, Settings, ArrowRight, CheckCircle2, History } from 'lucide-react';
+import {
+  Search,
+  Calendar,
+  FileText,
+  CreditCard,
+  Settings,
+  ArrowRight,
+  CheckCircle2,
+  History,
+} from 'lucide-react';
 import { useStore } from '@/core/store';
 import { formatMoney } from '@/core/settings';
 import { useSettings } from '@/core/settings';
@@ -19,7 +28,7 @@ export function CommandPalette() {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
-  
+
   const navigate = useNavigate();
   const tasks = useStore((state) => state.tasks);
   const notes = useStore((state) => state.notes);
@@ -50,10 +59,42 @@ export function CommandPalette() {
   const results = useMemo<CommandPaletteItem[]>(() => {
     if (!query.trim()) {
       return [
-        { id: 'nav-tasks', title: 'Go to Tasks', icon: Calendar, action: () => { void navigate('/tasks'); }, type: 'action' as const },
-        { id: 'nav-notes', title: 'Go to Notes', icon: FileText, action: () => { void navigate('/notes'); }, type: 'action' as const },
-        { id: 'nav-finance', title: 'Go to Finance', icon: CreditCard, action: () => { void navigate('/finance'); }, type: 'action' as const },
-        { id: 'nav-settings', title: 'Settings', icon: Settings, action: () => { void navigate('/settings'); }, type: 'action' as const },
+        {
+          id: 'nav-tasks',
+          title: 'Go to Tasks',
+          icon: Calendar,
+          action: () => {
+            void navigate('/tasks');
+          },
+          type: 'action' as const,
+        },
+        {
+          id: 'nav-notes',
+          title: 'Go to Notes',
+          icon: FileText,
+          action: () => {
+            void navigate('/notes');
+          },
+          type: 'action' as const,
+        },
+        {
+          id: 'nav-finance',
+          title: 'Go to Finance',
+          icon: CreditCard,
+          action: () => {
+            void navigate('/finance');
+          },
+          type: 'action' as const,
+        },
+        {
+          id: 'nav-settings',
+          title: 'Settings',
+          icon: Settings,
+          action: () => {
+            void navigate('/settings');
+          },
+          type: 'action' as const,
+        },
       ];
     }
 
@@ -61,19 +102,66 @@ export function CommandPalette() {
     const list: CommandPaletteItem[] = [];
 
     // Search Tasks
-    tasks.filter(t => t.title.toLowerCase().includes(lowQuery) || (t.tags && t.tags.some(tag => tag.toLowerCase().includes(lowQuery)))).slice(0, 5).forEach(t => {
-      list.push({ id: `task-${t.id}`, title: t.title, icon: CheckCircle2, action: () => { void navigate('/tasks'); }, type: 'task', subtitle: t.status });
-    });
+    tasks
+      .filter(
+        (t) =>
+          t.title.toLowerCase().includes(lowQuery) ||
+          (t.tags && t.tags.some((tag) => tag.toLowerCase().includes(lowQuery))),
+      )
+      .slice(0, 5)
+      .forEach((t) => {
+        list.push({
+          id: `task-${t.id}`,
+          title: t.title,
+          icon: CheckCircle2,
+          action: () => {
+            void navigate('/tasks');
+          },
+          type: 'task',
+          subtitle: t.status,
+        });
+      });
 
     // Search Notes
-    notes.filter(n => n.content.toLowerCase().includes(lowQuery) || (n.tags && n.tags.some(tag => tag.toLowerCase().includes(lowQuery)))).slice(0, 5).forEach(n => {
-      list.push({ id: `note-${n.id}`, title: n.content.split('\n')[0] || 'Untitled Note', icon: FileText, action: () => { void navigate('/notes'); }, type: 'note' });
-    });
+    notes
+      .filter(
+        (n) =>
+          n.content.toLowerCase().includes(lowQuery) ||
+          (n.tags && n.tags.some((tag) => tag.toLowerCase().includes(lowQuery))),
+      )
+      .slice(0, 5)
+      .forEach((n) => {
+        list.push({
+          id: `note-${n.id}`,
+          title: n.content.split('\n')[0] || 'Untitled Note',
+          icon: FileText,
+          action: () => {
+            void navigate('/notes');
+          },
+          type: 'note',
+        });
+      });
 
     // Search Expenses
-    expenses.filter(e => e.category.toLowerCase().includes(lowQuery) || (e.note && e.note.toLowerCase().includes(lowQuery)) || (e.tags && e.tags.some(tag => tag.toLowerCase().includes(lowQuery)))).slice(0, 5).forEach(e => {
-      list.push({ id: `expense-${e.id}`, title: `${e.category}: ${formatMoney(e.amount, currency)}`, icon: History, action: () => { void navigate('/finance'); }, type: 'finance' });
-    });
+    expenses
+      .filter(
+        (e) =>
+          e.category.toLowerCase().includes(lowQuery) ||
+          (e.note && e.note.toLowerCase().includes(lowQuery)) ||
+          (e.tags && e.tags.some((tag) => tag.toLowerCase().includes(lowQuery))),
+      )
+      .slice(0, 5)
+      .forEach((e) => {
+        list.push({
+          id: `expense-${e.id}`,
+          title: `${e.category}: ${formatMoney(e.amount, currency)}`,
+          icon: History,
+          action: () => {
+            void navigate('/finance');
+          },
+          type: 'finance',
+        });
+      });
 
     return list;
   }, [query, tasks, notes, expenses, currency, navigate]);
@@ -104,32 +192,34 @@ export function CommandPalette() {
   if (!isOpen) return null;
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-[100] flex items-start justify-center bg-black/60 pt-[15vh] px-4 backdrop-blur-md animate-in fade-in duration-200"
       onClick={close}
     >
-      <div 
+      <div
         role="dialog"
         aria-modal="true"
         aria-label="Command Palette"
-        className="w-full max-w-2xl overflow-hidden rounded-[2rem] border border-white/10 bg-card/70 shadow-2xl backdrop-blur-2xl animate-in zoom-in-95 duration-200"
+        className="glass-panel w-full max-w-2xl overflow-hidden rounded-[2.5rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] border-white/10 animate-in zoom-in-95 duration-200"
         onKeyDown={handleKeyDown}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-3 border-b border-white/5 px-6 py-5">
-          <Search className="h-5 w-5 text-muted-foreground" />
+        <div className="flex items-center gap-4 border-b border-white/5 px-8 py-6">
+          <Search className="h-6 w-6 text-slate-500" />
           <input
             autoFocus
             placeholder="Search tasks, notes, or run commands..."
-            className="flex-1 bg-transparent text-lg text-foreground outline-none placeholder:text-muted-foreground/60"
+            className="flex-1 bg-transparent text-xl font-medium text-white outline-none placeholder:text-slate-600"
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
               setSelectedIndex(0);
             }}
           />
-          <div className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2 py-1">
-            <span className="text-[10px] font-bold text-muted-foreground">ESC</span>
+          <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 shadow-inner">
+            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+              ESC
+            </span>
           </div>
         </div>
 
@@ -146,33 +236,51 @@ export function CommandPalette() {
                 return (
                   <button
                     key={item.id}
-                    onClick={() => { item.action(); close(); }}
+                    onClick={() => {
+                      item.action();
+                      close();
+                    }}
                     className={cn(
-                      "flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-left transition-all",
-                      isSelected ? "bg-primary text-primary-foreground shadow-glow" : "hover:bg-white/5"
+                      'flex w-full items-center gap-5 rounded-3xl px-5 py-4 text-left transition-all duration-300',
+                      isSelected
+                        ? 'bg-blue-600 text-white shadow-glow-blue scale-[1.02]'
+                        : 'hover:bg-white/5',
                     )}
                   >
-                    <div className={cn(
-                      "flex h-10 w-10 items-center justify-center rounded-xl",
-                      isSelected ? "bg-white/20" : "bg-secondary"
-                    )}>
-                      <Icon className="h-5 w-5" />
+                    <div
+                      className={cn(
+                        'flex h-12 w-12 items-center justify-center rounded-2xl border transition-all duration-300',
+                        isSelected
+                          ? 'bg-white/20 border-white/20'
+                          : 'bg-white/5 border-white/5 text-slate-500',
+                      )}
+                    >
+                      <Icon className="h-6 w-6" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <p className="font-semibold tracking-tight truncate">{item.title}</p>
-                        {isSelected && <ArrowRight className="h-4 w-4 opacity-70" />}
+                        <p className="text-base font-black tracking-tight truncate">{item.title}</p>
+                        {isSelected && <ArrowRight className="h-5 w-5 opacity-70" />}
                       </div>
                       {item.subtitle && (
-                        <p className={cn("text-[10px] uppercase tracking-widest font-bold", isSelected ? "text-primary-foreground/70" : "text-muted-foreground")}>
+                        <p
+                          className={cn(
+                            'text-[10px] uppercase tracking-[0.2em] font-black mt-0.5',
+                            isSelected ? 'text-white/70' : 'text-slate-600',
+                          )}
+                        >
                           {item.subtitle}
                         </p>
                       )}
                     </div>
-                    <span className={cn(
-                      "text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md",
-                      isSelected ? "bg-white/20" : "bg-secondary text-muted-foreground"
-                    )}>
+                    <span
+                      className={cn(
+                        'text-[9px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-full border',
+                        isSelected
+                          ? 'bg-white/20 border-white/10 text-white'
+                          : 'bg-white/5 border-white/5 text-slate-600',
+                      )}
+                    >
                       {item.type}
                     </span>
                   </button>
@@ -182,18 +290,28 @@ export function CommandPalette() {
           )}
         </div>
 
-        <div className="flex items-center justify-between border-t border-white/5 bg-white/5 px-6 py-3">
-          <div className="flex gap-4">
-            <div className="flex items-center gap-1.5">
-              <span className="rounded bg-white/10 px-1.5 py-0.5 text-[9px] font-bold">↑↓</span>
-              <span className="text-[10px] text-muted-foreground">Navigate</span>
+        <div className="flex items-center justify-between border-t border-white/5 bg-white/5 px-8 py-4">
+          <div className="flex gap-6">
+            <div className="flex items-center gap-2">
+              <span className="rounded-lg bg-white/10 px-2 py-1 text-[10px] font-black uppercase text-white border border-white/5 shadow-inner">
+                ↑↓
+              </span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">
+                Navigate
+              </span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="rounded bg-white/10 px-1.5 py-0.5 text-[9px] font-bold">ENTER</span>
-              <span className="text-[10px] text-muted-foreground">Select</span>
+            <div className="flex items-center gap-2">
+              <span className="rounded-lg bg-white/10 px-2 py-1 text-[10px] font-black uppercase text-white border border-white/5 shadow-inner">
+                ENTER
+              </span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">
+                Select
+              </span>
             </div>
           </div>
-          <p className="text-[10px] font-bold text-primary tracking-wider uppercase">Titan Search</p>
+          <p className="text-[10px] font-black text-blue-400 tracking-[0.3em] uppercase">
+            Titan Intelligence
+          </p>
         </div>
       </div>
     </div>

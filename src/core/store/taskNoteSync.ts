@@ -1,6 +1,5 @@
 import type { Note, Task, Friend, Group, Expense, SharedExpense } from './types';
 
-
 function uniqueStrings(values: string[]) {
   return Array.from(new Set(values));
 }
@@ -26,14 +25,18 @@ export function validateTaskNoteReference(task: Task, notes: Note[]) {
   }
 }
 
-export function validateExpenseReferences(expense: { linkedTaskId?: string; linkedNoteId?: string }, tasks: Task[], notes: Note[]): string[] {
+export function validateExpenseReferences(
+  expense: { linkedTaskId?: string; linkedNoteId?: string },
+  tasks: Task[],
+  notes: Note[],
+): string[] {
   const errors: string[] = [];
 
-  if (expense.linkedTaskId && !tasks.some(t => t.id === expense.linkedTaskId)) {
+  if (expense.linkedTaskId && !tasks.some((t) => t.id === expense.linkedTaskId)) {
     errors.push(`Linked task ${expense.linkedTaskId} does not exist`);
   }
 
-  if (expense.linkedNoteId && !notes.some(n => n.id === expense.linkedNoteId)) {
+  if (expense.linkedNoteId && !notes.some((n) => n.id === expense.linkedNoteId)) {
     errors.push(`Linked note ${expense.linkedNoteId} does not exist`);
   }
 
@@ -70,10 +73,15 @@ export function syncTaskNoteReference(task: Task, noteStore: Note[], taskStore: 
 export function syncNoteNoteReferences(note: Note, noteStore: Note[]) {
   const previousNote = noteStore.find((item) => item.id === note.id);
   // Filter out self-references
-  const safePreviousLinks = new Set((previousNote?.linkedNoteIds ?? []).filter(id => id !== note.id));
-  const safeCurrentLinks = new Set((note.linkedNoteIds ?? []).filter(id => id !== note.id));
+  const safePreviousLinks = new Set(
+    (previousNote?.linkedNoteIds ?? []).filter((id) => id !== note.id),
+  );
+  const safeCurrentLinks = new Set((note.linkedNoteIds ?? []).filter((id) => id !== note.id));
 
-  const normalizedNote = normalizeNoteFields({ ...note, linkedNoteIds: Array.from(safeCurrentLinks) });
+  const normalizedNote = normalizeNoteFields({
+    ...note,
+    linkedNoteIds: Array.from(safeCurrentLinks),
+  });
   const baseNotes = noteStore.map(normalizeNoteFields);
   const noteIndex = baseNotes.findIndex((item) => item.id === normalizedNote.id);
   let nextNotes =
@@ -84,10 +92,10 @@ export function syncNoteNoteReferences(note: Note, noteStore: Note[]) {
   // Remove backlinks for links that were removed
   safePreviousLinks.forEach((id) => {
     if (!safeCurrentLinks.has(id)) {
-      nextNotes = nextNotes.map((n) => 
-        n.id === id 
+      nextNotes = nextNotes.map((n) =>
+        n.id === id
           ? { ...n, linkedNoteIds: n.linkedNoteIds.filter((linkId) => linkId !== note.id) }
-          : n
+          : n,
       );
     }
   });
@@ -95,10 +103,8 @@ export function syncNoteNoteReferences(note: Note, noteStore: Note[]) {
   // Add backlinks for new links
   safeCurrentLinks.forEach((id) => {
     if (!safePreviousLinks.has(id)) {
-      nextNotes = nextNotes.map((n) => 
-        n.id === id 
-          ? { ...n, linkedNoteIds: uniqueStrings([...n.linkedNoteIds, note.id]) }
-          : n
+      nextNotes = nextNotes.map((n) =>
+        n.id === id ? { ...n, linkedNoteIds: uniqueStrings([...n.linkedNoteIds, note.id]) } : n,
       );
     }
   });
@@ -147,7 +153,9 @@ export function reconcileTaskNoteReferences(tasks: Task[], notes: Note[]) {
     const fields = normalizeNoteFields(note);
     return {
       ...fields,
-      linkedTaskIds: sanitizedTasks.filter((task) => task.noteId === note.id).map((task) => task.id),
+      linkedTaskIds: sanitizedTasks
+        .filter((task) => task.noteId === note.id)
+        .map((task) => task.id),
       linkedNoteIds: fields.linkedNoteIds.filter((id) => noteIds.has(id)),
     };
   });
@@ -175,7 +183,7 @@ export function detectNoteReferenceCycle(noteId: string, notes: Note[]): string 
     visited.add(id);
     recursionStack.add(id);
 
-    const note = notes.find(n => n.id === id);
+    const note = notes.find((n) => n.id === id);
     const linkedIds = note?.linkedNoteIds ?? [];
 
     for (const linkedId of linkedIds) {
@@ -199,8 +207,8 @@ export function detectNoteReferenceCycle(noteId: string, notes: Note[]): string 
  */
 export function validateNoteReferences(note: Note, noteStore: Note[]): string[] {
   const errors: string[] = [];
-  const noteIds = new Set(noteStore.map(n => n.id));
-  
+  const noteIds = new Set(noteStore.map((n) => n.id));
+
   // Check that all linked notes exist
   const linkedIds = note.linkedNoteIds ?? [];
   for (const linkedId of linkedIds) {
@@ -208,13 +216,16 @@ export function validateNoteReferences(note: Note, noteStore: Note[]): string[] 
       errors.push(`Linked note ${linkedId} does not exist`);
     }
   }
-  
+
   // Check for circular references
-  const cycleError = detectNoteReferenceCycle(note.id, [...noteStore.filter(n => n.id !== note.id), note]);
+  const cycleError = detectNoteReferenceCycle(note.id, [
+    ...noteStore.filter((n) => n.id !== note.id),
+    note,
+  ]);
   if (cycleError) {
     errors.push(cycleError);
   }
-  
+
   return errors;
 }
 
@@ -223,47 +234,52 @@ export function validateNoteReferences(note: Note, noteStore: Note[]): string[] 
  * Prunes orphaned IDs and ensures data consistency after hydration or bulk imports.
  */
 export function reconcileIntegrity(
-  tasks: Task[], 
-  notes: Note[], 
-  expenses: Expense[], 
+  tasks: Task[],
+  notes: Note[],
+  expenses: Expense[],
   sharedExpenses: SharedExpense[],
   groups: Group[],
-  friends: Friend[]
+  friends: Friend[],
 ) {
   // 1. Task-Note integrity
   const { tasks: cleanTasks, notes: cleanNotes } = reconcileTaskNoteReferences(tasks, notes);
-  
+
   // 2. Expense integrity
-  const cleanExpenses = expenses.map(e => ({
+  const cleanExpenses = expenses.map((e) => ({
     ...e,
-    linkedTaskId: e.linkedTaskId && cleanTasks.some(t => t.id === e.linkedTaskId) ? e.linkedTaskId : undefined,
-    linkedNoteId: e.linkedNoteId && cleanNotes.some(n => n.id === e.linkedNoteId) ? e.linkedNoteId : undefined,
+    linkedTaskId:
+      e.linkedTaskId && cleanTasks.some((t) => t.id === e.linkedTaskId)
+        ? e.linkedTaskId
+        : undefined,
+    linkedNoteId:
+      e.linkedNoteId && cleanNotes.some((n) => n.id === e.linkedNoteId)
+        ? e.linkedNoteId
+        : undefined,
   }));
-  
+
   // 3. Shared Expense integrity
-  const friendIds = new Set(['user', ...friends.map(f => f.id)]);
-  const groupIds = new Set(groups.map(g => g.id));
-  
-  const cleanSharedExpenses = sharedExpenses.map(se => ({
+  const friendIds = new Set(['user', ...friends.map((f) => f.id)]);
+  const groupIds = new Set(groups.map((g) => g.id));
+
+  const cleanSharedExpenses = sharedExpenses.map((se) => ({
     ...se,
     groupId: se.groupId && groupIds.has(se.groupId) ? se.groupId : undefined,
     paidBy: friendIds.has(se.paidBy) ? se.paidBy : 'user',
-    participants: se.participants.filter(p => friendIds.has(p.id)),
+    participants: se.participants.filter((p) => friendIds.has(p.id)),
   }));
-  
+
   // 4. Group integrity
-  const cleanGroups = groups.map(g => ({
+  const cleanGroups = groups.map((g) => ({
     ...g,
-    memberIds: g.memberIds.filter(mid => friendIds.has(mid)),
+    memberIds: g.memberIds.filter((mid) => friendIds.has(mid)),
   }));
-  
-  return { 
-    tasks: cleanTasks, 
-    notes: cleanNotes, 
-    expenses: cleanExpenses, 
-    sharedExpenses: cleanSharedExpenses, 
+
+  return {
+    tasks: cleanTasks,
+    notes: cleanNotes,
+    expenses: cleanExpenses,
+    sharedExpenses: cleanSharedExpenses,
     groups: cleanGroups,
-    friends
+    friends,
   };
 }
-

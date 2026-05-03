@@ -9,20 +9,20 @@ import {
   PieChart,
   Pie,
   Cell,
-  Legend
+  Legend,
 } from 'recharts';
 import { format, subDays } from 'date-fns';
 import { useSettings, formatMoney } from '@/core/settings';
 
 const COLORS = [
-  '#3b82f6', // blue-500
-  '#a855f7', // purple-500
-  '#ec4899', // pink-500
-  '#f59e0b', // amber-500
-  '#10b981', // emerald-500
-  '#ef4444', // red-500
-  '#06b6d4', // cyan-500
-  '#f97316', // orange-500
+  '#60a5fa', // blue-400
+  '#c084fc', // purple-400
+  '#fb7185', // rose-400
+  '#fbbf24', // amber-400
+  '#34d399', // emerald-400
+  '#f87171', // red-400
+  '#22d3ee', // cyan-400
+  '#fb923c', // orange-400
 ];
 
 interface ExpenseData {
@@ -34,6 +34,15 @@ interface ExpenseData {
 
 interface SpendingTrendChartProps {
   expenses: ExpenseData[];
+}
+
+function normalizeTooltipValue(value: unknown) {
+  if (Array.isArray(value)) {
+    const firstValue = value[0] as number | string | undefined;
+    return typeof firstValue === 'number' ? firstValue : Number(firstValue || 0);
+  }
+
+  return typeof value === 'number' ? value : Number(value || 0);
 }
 
 export function SpendingTrendChart({ expenses }: SpendingTrendChartProps) {
@@ -66,25 +75,50 @@ export function SpendingTrendChart({ expenses }: SpendingTrendChartProps) {
     <div className="h-64 w-full text-xs font-bold font-sans">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-          <XAxis 
-            dataKey="date" 
-            axisLine={false} 
-            tickLine={false} 
+          <XAxis
+            dataKey="date"
+            axisLine={false}
+            tickLine={false}
             tick={{ fill: '#888888' }}
             dy={10}
           />
-          <YAxis 
-            axisLine={false} 
-            tickLine={false} 
+          <YAxis
+            axisLine={false}
+            tickLine={false}
             tick={{ fill: '#888888' }}
             tickFormatter={(val) => `$${val}`}
           />
-          <Tooltip 
-            cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
-            contentStyle={{ backgroundColor: '#09090b', borderColor: '#27272a', borderRadius: '12px' }}
-            formatter={((value: any) => [formatMoney((Number(value) || 0) * 100, currency), 'Spent']) as any}
+          <Tooltip
+            cursor={{ fill: 'rgba(255, 255, 255, 0.03)' }}
+            contentStyle={{
+              backgroundColor: 'rgba(15, 23, 42, 0.8)',
+              backdropFilter: 'blur(16px)',
+              borderColor: 'rgba(255, 255, 255, 0.05)',
+              borderRadius: '20px',
+              borderWidth: '1px',
+              padding: '12px 16px',
+              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
+            }}
+            labelStyle={{
+              fontWeight: 900,
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+              marginBottom: '4px',
+              color: '#64748b',
+            }}
+            itemStyle={{ fontWeight: 900, color: '#fff' }}
+            formatter={(value) => [
+              formatMoney(normalizeTooltipValue(value) * 100, currency),
+              'Spent',
+            ]}
           />
-          <Bar dataKey="amount" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="amount" fill="url(#barGradient)" radius={[6, 6, 0, 0]} barSize={24} />
+          <defs>
+            <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.8} />
+              <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.2} />
+            </linearGradient>
+          </defs>
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -115,7 +149,9 @@ export function CategoryPieChart({ expenses }: CategoryPieChartProps) {
   if (data.length === 0) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">No data available</p>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
+          No data available
+        </p>
       </div>
     );
   }
@@ -138,16 +174,29 @@ export function CategoryPieChart({ expenses }: CategoryPieChartProps) {
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>
-          <Tooltip 
-            contentStyle={{ backgroundColor: '#09090b', borderColor: '#27272a', borderRadius: '12px', color: '#fff' }}
-            itemStyle={{ color: '#fff' }}
-            formatter={((value: any) => formatMoney((Number(value) || 0) * 100, currency)) as any}
+          <Tooltip
+            contentStyle={{
+              backgroundColor: 'rgba(15, 23, 42, 0.8)',
+              backdropFilter: 'blur(16px)',
+              borderColor: 'rgba(255, 255, 255, 0.05)',
+              borderRadius: '20px',
+              borderWidth: '1px',
+              padding: '12px 16px',
+              color: '#fff',
+              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
+            }}
+            itemStyle={{ fontWeight: 900, color: '#fff' }}
+            formatter={(value) => formatMoney(normalizeTooltipValue(value) * 100, currency)}
           />
-          <Legend 
-            verticalAlign="bottom" 
-            height={36} 
+          <Legend
+            verticalAlign="bottom"
+            height={48}
             iconType="circle"
-            formatter={(value) => <span className="text-foreground/80">{value}</span>}
+            formatter={(value) => (
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 mx-2">
+                {value}
+              </span>
+            )}
           />
         </PieChart>
       </ResponsiveContainer>

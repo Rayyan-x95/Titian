@@ -1,5 +1,5 @@
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { Button } from '@/shared/ui';
+import { Button } from '@/components/ui';
 import type { OnboardingStepId } from '../onboardingFlow';
 
 interface OnboardingControlsProps {
@@ -34,7 +34,13 @@ export function OnboardingControls({
         onClick={isReady ? onComplete : onNext}
         className="px-7 shadow-glow"
       >
-        {isReady ? (isSaving ? 'Setting up...' : 'Enter Titan') : stepId === 'welcome' ? 'Start' : 'Next'}
+        {isReady
+          ? isSaving
+            ? 'Setting up...'
+            : 'Enter Titan'
+          : stepId === 'welcome'
+            ? 'Start'
+            : 'Next'}
         <ArrowRight className="h-4 w-4" />
       </Button>
     </footer>

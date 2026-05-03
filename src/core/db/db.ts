@@ -1,5 +1,16 @@
 import Dexie, { type Table } from 'dexie';
-import type { Account, Budget, DailySnapshot, Expense, Note, OnboardingProfile, Task, Friend, Group, SharedExpense } from '@/core/store/types';
+import type {
+  Account,
+  Budget,
+  DailySnapshot,
+  Expense,
+  Note,
+  OnboardingProfile,
+  Task,
+  Friend,
+  Group,
+  SharedExpense,
+} from '@/core/store/types';
 
 class TitanDatabase extends Dexie {
   tasks!: Table<Task, string>;

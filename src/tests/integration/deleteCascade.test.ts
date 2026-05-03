@@ -6,8 +6,8 @@ import type { Note, Task } from '@/core/store/types';
 describe('delete cascade and hierarchy', () => {
   it('removes task id from notes when deleted', () => {
     const notes = [
-      { id: 'n1', linkedTaskIds: ['t1', 't2'] }, 
-      { id: 'n2', linkedTaskIds: [] }
+      { id: 'n1', linkedTaskIds: ['t1', 't2'] },
+      { id: 'n2', linkedTaskIds: [] },
     ] as Note[];
     const updated = clearTaskNoteReference('t1', notes);
     expect(updated[0].linkedTaskIds).toEqual(['t2']);
@@ -15,8 +15,8 @@ describe('delete cascade and hierarchy', () => {
 
   it('clears noteId on tasks when note deleted', () => {
     const tasks = [
-      { id: 't1', noteId: 'n1' }, 
-      { id: 't2', noteId: undefined }
+      { id: 't1', noteId: 'n1' },
+      { id: 't2', noteId: undefined },
     ] as Task[];
     const updated = clearTasksForDeletedNote('n1', tasks);
     expect(updated[0].noteId).toBeUndefined();

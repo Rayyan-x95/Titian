@@ -1,499 +1,57 @@
-import { useMemo, useState, useRef, useEffect, KeyboardEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Users,
-  Activity,
   Zap,
   ArrowRight,
   CheckCircle2,
   Clock,
   Landmark,
   TrendingDown,
-  Search,
   ChevronRight,
   NotebookPen,
-  SquareCheckBig,
 } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { format } from 'date-fns';
-import { PageShell } from '@/shared/components';
-import { Card } from '@/shared/ui';
-import { useStore } from '@/core/store';
-import { useSettings, formatMoney } from '@/core/settings';
-import type { Note, Task } from '@/core/store/types';
-import { useSeo } from '@/seo';
+import { PageShell } from '@/components';
+import { formatMoney } from '@/core/settings';
 import { cn } from '@/utils/cn';
-import { isToday } from '@/utils/date';
-import { parseQuickCapture } from '@/lib/core/parserEngine';
 import { DashboardCard } from './components/DashboardCard';
 import { QuickActions } from './components/QuickActions';
-import { useTodayTasks, useTotalOwed, useSpentToday, useBudgetSummary, useCompletedTodayTasks, useNotesToday } from '@/core/store/selectors';
-
-const MAX_TASK_ITEMS = 5;
-const MAX_NOTE_ITEMS = 3;
-
-// Redundant toLocalDateString removed
-
-function getActiveTasks(tasks: Task[]): Task[] {
-  return tasks.filter((t) => t.status === 'todo' || t.status === 'doing');
-}
-
-// getCompletedTodayTasks moved to selectors or fixed with isToday
-
-function getRecentNotes(notes: Note[]): Note[] {
-  return [...notes]
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    .slice(0, MAX_NOTE_ITEMS);
-}
-
-function noteTitle(content: string): string {
-  const firstLine = content.split('\n')[0]?.trim() ?? '';
-  return firstLine.length > 60 ? `${firstLine.slice(0, 60)}…` : firstLine || 'Untitled note';
-}
-
-function notePreview(content: string): string {
-  const lines = content.split('\n').map((l) => l.trim()).filter(Boolean);
-  const snippet = lines.slice(1).join(' ').slice(0, 80);
-  return snippet ? `${snippet}…` : '';
-}
-
-function getPriorityTasks(tasks: Task[]): Task[] {
-  return [...tasks]
-    .filter((t) => t.status !== 'done')
-    .sort((a, b) => {
-      const pMap = { high: 0, medium: 1, low: 2 };
-      if (pMap[a.priority] !== pMap[b.priority]) return pMap[a.priority] - pMap[b.priority];
-      if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
-      if (a.dueDate) return -1;
-      if (b.dueDate) return 1;
-      return b.createdAt.localeCompare(a.createdAt);
-    })
-    .slice(0, 3);
-}
-
-function getGreeting(): string {
-  const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 17) return 'Good afternoon';
-  return 'Good evening';
-}
-
-function QuickCapture() {
-  const [value, setValue] = useState('');
-  const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const inputRef = useRef<HTMLInputElement>(null);
-  const { currency } = useSettings();
-  const addExpense = useStore((s) => s.addExpense);
-  const addTask = useStore((s) => s.addTask);
-
-  useEffect(() => {
-    const timer = setTimeout(() => inputRef.current?.focus(), 300);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const handleKeyDown = async (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key !== 'Enter' || !value.trim()) return;
-
-    try {
-      const parsed = parseQuickCapture(value);
-
-      // Intelligence:
-      // 1. If only amount is present (no due date) -> Create Expense only
-      // 2. If no amount is present -> Create Task only
-      // 3. If both amount and due date are present -> Create both and link them
-      
-      const hasAmount = parsed.amount !== undefined;
-      const hasDueDate = !!parsed.dueDate;
-
-      if (hasAmount && !hasDueDate) {
-        // Just an expense
-        await addExpense({
-          amount: parsed.amount!,
-          category: parsed.category,
-          type: parsed.type,
-          note: parsed.note,
-        });
-      } else if (!hasAmount) {
-        // Just a task
-        await addTask({
-          title: parsed.title,
-          status: 'todo',
-          dueDate: parsed.dueDate,
-        });
-      } else {
-        // Both (linked)
-        const task = await addTask({
-          title: parsed.title,
-          status: 'todo',
-          dueDate: parsed.dueDate,
-        });
-
-        await addExpense({
-          amount: parsed.amount!,
-          category: parsed.category,
-          type: parsed.type,
-          linkedTaskId: task.id,
-          note: parsed.note,
-        });
-      }
-
-      setValue('');
-      setStatus('success');
-      setTimeout(() => setStatus('idle'), 1800);
-    } catch (error) {
-      console.error('[QuickCapture] Failed to process:', error);
-      setStatus('error');
-      setTimeout(() => setStatus('idle'), 2000);
-    }
-  };
-
-  const ringClass =
-    status === 'success'
-      ? 'ring-2 ring-emerald-500/60 border-emerald-500/40'
-      : status === 'error'
-        ? 'ring-2 ring-destructive/60 border-destructive/40'
-        : 'focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary/50';
-
-  return (
-    <div
-      className={`relative flex items-center gap-3 rounded-2xl border border-border/50 bg-card/60 px-4 py-3.5 backdrop-blur-md transition-all duration-200 ${ringClass}`}
-    >
-      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10">
-        {status === 'success' ? (
-          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-        ) : (
-          <Search className="h-4 w-4 text-primary" />
-        )}
-      </div>
-
-      <input
-        ref={inputRef}
-        id="quick-capture-input"
-        type="text"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={(e) => { void handleKeyDown(e); }}
-        placeholder={`Capture anything… 'Buy groceries ${currency === 'INR' ? '₹' : '$'}500 tomorrow'`}
-        className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
-        aria-label="Quick capture"
-        autoComplete="off"
-        spellCheck={false}
-      />
-
-      {value.trim() ? (
-        <kbd className="hidden rounded-lg border border-border/60 bg-muted/60 px-2 py-1 text-[10px] font-medium text-muted-foreground sm:block">
-          ↵ Enter
-        </kbd>
-      ) : (
-        <span className="hidden text-[11px] font-medium text-muted-foreground/50 sm:block">
-          Press ↵
-        </span>
-      )}
-    </div>
-  );
-}
-
-const statusConfig = {
-  todo: { label: 'To Do', dot: 'bg-muted-foreground/60' },
-  doing: { label: 'Doing', dot: 'bg-primary' },
-  done: { label: 'Done', dot: 'bg-emerald-500' },
-} as const;
-
-function TaskStatusBadge({ status }: { status: Task['status'] }) {
-  const config = statusConfig[status];
-  return (
-    <span className="flex items-center gap-1.5">
-      <span className={`h-1.5 w-1.5 rounded-full ${config.dot}`} />
-      <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-        {config.label}
-      </span>
-    </span>
-  );
-}
-
-function TaskRow({ task, onClick }: { task: Task; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      id={`dashboard-task-${task.id}`}
-      onClick={onClick}
-      className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-secondary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-    >
-      <SquareCheckBig className="h-4 w-4 flex-shrink-0 text-primary/70" />
-      <span className="flex-1 truncate text-sm text-foreground">{task.title}</span>
-      <TaskStatusBadge status={task.status} />
-      <ChevronRight className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5" />
-    </button>
-  );
-}
-
-function NoteRow({ note, onClick }: { note: Note; onClick: () => void }) {
-  const title = noteTitle(note.content);
-  const preview = notePreview(note.content);
-  return (
-    <button
-      type="button"
-      id={`dashboard-note-${note.id}`}
-      onClick={onClick}
-      className="group flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-secondary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-    >
-      <NotebookPen className="mt-0.5 h-4 w-4 flex-shrink-0 text-accent/70" />
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-foreground">{title}</p>
-        {preview && (
-          <p className="mt-0.5 truncate text-xs text-muted-foreground">{preview}</p>
-        )}
-      </div>
-      <ChevronRight className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5" />
-    </button>
-  );
-}
-
-interface ContinueItem {
-  type: 'task' | 'note';
-  id: string;
-  title: string;
-  to: string;
-}
-
-function ContinueCard({ item }: { item: ContinueItem }) {
-  const navigate = useNavigate();
-  const Icon = item.type === 'task' ? SquareCheckBig : NotebookPen;
-  const accentClass = item.type === 'task' ? 'text-primary' : 'text-accent';
-  const bgClass = item.type === 'task' ? 'bg-primary/10' : 'bg-accent/10';
-
-  return (
-    <div
-      role="button"
-      tabIndex={0}
-      id={`dashboard-continue-${item.id}`}
-      onClick={() => navigate(item.to)}
-      onKeyDown={(e) => e.key === 'Enter' && navigate(item.to)}
-      className="group cursor-pointer rounded-3xl"
-    >
-    <Card
-      className="border-primary/20 bg-primary/5 p-4 shadow-[0_0_20px_rgba(var(--primary),0.06)] transition-colors group-hover:bg-primary/10"
-    >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Activity className="h-3.5 w-3.5 text-primary" />
-          <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-primary">
-            Jump back in
-          </span>
-        </div>
-        <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-      </div>
-      <div className="mt-3 flex items-start gap-2.5">
-        <div className={`mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg ${bgClass}`}>
-          <Icon className={`h-3.5 w-3.5 ${accentClass}`} />
-        </div>
-        <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-            {item.type}
-          </p>
-          <p className="mt-0.5 truncate text-sm font-medium text-foreground">{item.title}</p>
-        </div>
-      </div>
-    </Card>
-    </div>
-  );
-}
-
-function SnapshotCard() {
-  const navigate = useNavigate();
-  const onboardingName = useStore(state => state.onboarding.name);
-  const currency = useSettings(s => s.currency);
-  
-  const completedTasks = useCompletedTodayTasks();
-  const notesToday = useNotesToday();
-  const spentToday = useSpentToday();
-
-  const completedCount = completedTasks.length;
-  const notesCount = notesToday.length;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="relative group cursor-pointer overflow-hidden rounded-[2.5rem] border border-primary/20 bg-card p-8 shadow-glass transition-all hover:shadow-glow-sm"
-      onClick={() => navigate('/timeline')}
-    >
-      <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/10 blur-[80px]" />
-      
-      <div className="relative z-10">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/80">Life Snapshot</p>
-            <h2 className="mt-2 text-3xl font-black tracking-tight text-foreground">{getGreeting()}, {onboardingName || 'there'}</h2>
-          </div>
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-glow-sm">
-            <Activity className="h-6 w-6" />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
-          <div className="space-y-1">
-            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Tasks</p>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black text-foreground">{completedCount}</span>
-              <span className="text-[10px] font-bold text-emerald-500 uppercase">Done</span>
-            </div>
-          </div>
-          <div className="space-y-1">
-            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Notes</p>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black text-foreground">{notesCount}</span>
-              <span className="text-[10px] font-bold text-blue-500 uppercase">New</span>
-            </div>
-          </div>
-          <div className="space-y-1">
-            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Spending</p>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black text-foreground">{formatMoney(spentToday, currency)}</span>
-            </div>
-          </div>
-          <div className="space-y-1">
-            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Energy</p>
-            <div className="flex items-baseline gap-2">
-              <Zap className="h-4 w-4 text-amber-500" />
-              <span className="text-sm font-black text-foreground uppercase">Stable</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-8 flex items-center justify-between rounded-2xl bg-secondary/30 p-4">
-          <div className="flex items-center gap-3">
-            <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-            <p className="text-xs font-bold text-muted-foreground">Viewing your life narrative in Feed</p>
-          </div>
-          <ArrowRight className="h-4 w-4 text-primary transition-transform group-hover:translate-x-1" />
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-function InsightCard({
-  label,
-  value,
-  icon: Icon,
-  accent,
-  progress,
-}: {
-  label: string;
-  value: string | number;
-  icon: React.ElementType;
-  accent: string;
-  progress?: number;
-}) {
-  return (
-    <div className="relative overflow-hidden rounded-2xl border border-border/40 bg-card/40 p-4 backdrop-blur-sm">
-      <div
-        className={`pointer-events-none absolute -right-4 -top-4 h-16 w-16 rounded-full blur-2xl opacity-30 ${accent}`}
-      />
-      <div className="relative z-10">
-        <div className={`mb-2 flex h-8 w-8 items-center justify-center rounded-xl ${accent.replace('bg-', 'bg-').replace('/30', '/15')}`}>
-          <Icon className={`h-4 w-4 ${accent.replace('bg-', 'text-').replace('/30', '')}`} />
-        </div>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-          {label}
-        </p>
-        <p className="mt-1 text-2xl font-bold tracking-tight text-foreground">{value}</p>
-        
-        {progress !== undefined && (
-          <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-secondary/50">
-            <div 
-              className={`h-full transition-all duration-500 ${progress > 100 ? 'bg-destructive' : 'bg-primary'}`}
-              style={{ width: `${Math.min(progress, 100)}%` }}
-            />
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+import { QuickCapture } from './components/QuickCapture';
+import { SnapshotCard } from './components/SnapshotCard';
+import { InsightCard } from './components/InsightCard';
+import { TaskRow, NoteRow } from './components/DashboardRow';
+import { ContinueCard } from './components/ContinueCard';
+import { useDashboard } from './hooks/useDashboard';
 
 export function DashboardPage() {
-  useSeo({ title: 'Dashboard', description: 'Your personal command center for tasks, notes, and finance.' });
-
   const navigate = useNavigate();
-  const currency = useSettings((s) => s.currency);
-  const tasks = useStore((s) => s.tasks);
-  const notes = useStore((s) => s.notes);
-  const hydrated = useStore((s) => s.hydrated);
-  const processRecurringTasks = useStore((s) => s.processRecurringTasks);
-
-  useEffect(() => {
-    if (hydrated) {
-      void processRecurringTasks();
-    }
-  }, [hydrated, processRecurringTasks]);
-
-  const todayTasks = useTodayTasks();
-  const activeTasks = useMemo(() => getActiveTasks(tasks), [tasks]);
-  const priorityTasks = useMemo(() => getPriorityTasks(tasks), [tasks]);
-  const completedToday = useCompletedTodayTasks();
-  const recentNotes = useMemo(() => getRecentNotes(notes), [notes]);
-  const todaySpendCents = useSpentToday();
-  const totalOwed = useTotalOwed();
-  const budgetSummary = useBudgetSummary();
-
-  const dashboardTasks = useMemo(() => {
-    const seen = new Set<string>();
-    const merged: Task[] = [];
-    for (const t of [...todayTasks, ...activeTasks]) {
-      if (!seen.has(t.id)) {
-        seen.add(t.id);
-        merged.push(t);
-      }
-      if (merged.length >= MAX_TASK_ITEMS) break;
-    }
-    return merged;
-  }, [todayTasks, activeTasks]);
-
-  const continueItem = useMemo<ContinueItem | null>(() => {
-    const lastTask = tasks.length
-      ? [...tasks].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]
-      : null;
-    const lastNote = notes.length
-      ? [...notes].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]
-      : null;
-
-    if (!lastTask && !lastNote) return null;
-
-    if (lastTask && lastNote) {
-      const useTask = lastTask.createdAt >= lastNote.createdAt;
-      return useTask
-        ? { type: 'task', id: lastTask.id, title: lastTask.title, to: '/tasks' }
-        : { type: 'note', id: lastNote.id, title: noteTitle(lastNote.content), to: '/notes' };
-    }
-
-    if (lastTask) return { type: 'task', id: lastTask.id, title: lastTask.title, to: '/tasks' };
-    if (lastNote) return { type: 'note', id: lastNote.id, title: noteTitle(lastNote!.content), to: '/notes' };
-    return null;
-  }, [tasks, notes]);
-
-  const greeting = useMemo(() => getGreeting(), []);
-  const today = useMemo(
-    () =>
-      new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }),
-    [],
-  );
-
-  const pendingCount = activeTasks.length;
-  const formattedSpend = formatMoney(todaySpendCents, currency);
+  const {
+    dashboardTasks,
+    continueItem,
+    todayString,
+    formattedSpend,
+    totalOwed,
+    budgetSummary,
+    completedTodayCount,
+    pendingCount,
+    priorityTasks,
+    recentNotes,
+    notesTotal,
+    currency,
+  } = useDashboard();
 
   return (
     <PageShell title="" description="">
       <SnapshotCard />
 
-      <div className="flex items-center justify-between">
-        <span className="rounded-full border border-border/50 bg-card/60 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground backdrop-blur-sm">
-          {today}
+      <div className="flex items-center justify-between px-2">
+        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">
+          {todayString}
         </span>
-        <button 
-          onClick={() => navigate('/timeline')}
-          className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline"
+        <button
+          onClick={() => {
+            void navigate('/timeline');
+          }}
+          className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-400 hover:text-blue-300 transition-colors"
         >
           View Story
         </button>
@@ -501,33 +59,22 @@ export function DashboardPage() {
 
       <section aria-label="Quick capture">
         <QuickCapture />
-        <p className="mt-2 px-1 text-[11px] text-muted-foreground/60">
-          Type a task, add an amount (e.g. {useSettings.getState().currency === 'INR' ? '₹' : '$'}500) for expenses, mention &apos;today&apos; or &apos;tomorrow&apos; for due dates
-        </p>
       </section>
 
-      <section aria-label="Today&apos;s insights">
-        <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-          Today
-        </p>
-        <div className="grid grid-cols-3 gap-3">
+      <section aria-label="Today's insights">
+        <div className="grid grid-cols-3 gap-4">
           <InsightCard
             label="Done"
-            value={completedToday.length}
+            value={completedTodayCount}
             icon={CheckCircle2}
             accent="bg-emerald-500/30"
           />
-          <InsightCard
-            label="Pending"
-            value={pendingCount}
-            icon={Clock}
-            accent="bg-primary/30"
-          />
+          <InsightCard label="Pending" value={pendingCount} icon={Clock} accent="bg-blue-500/30" />
           <InsightCard
             label="Spent"
             value={formattedSpend}
             icon={TrendingDown}
-            accent="bg-accent/30"
+            accent="bg-red-500/30"
             progress={budgetSummary.limit > 0 ? budgetSummary.percent : undefined}
           />
         </div>
@@ -535,43 +82,44 @@ export function DashboardPage() {
 
       {totalOwed !== 0 && (
         <section aria-label="Shared balances">
-          <div 
-            role="button"
-            tabIndex={0}
-            onClick={() => navigate('/split')}
-            onKeyDown={(e) => e.key === 'Enter' && navigate('/split')}
-            className="group cursor-pointer"
+          <button
+            onClick={() => {
+              void navigate('/split');
+            }}
+            className="group w-full text-left focus:outline-none"
           >
-            <Card className="relative overflow-hidden border-primary/20 bg-primary/5 p-5 transition-colors hover:bg-primary/10">
-              <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-primary/10 blur-2xl" />
+            <div className="glass-panel relative overflow-hidden p-6 transition-all group-hover:shadow-glow-blue group-focus-visible:ring-2 group-focus-visible:ring-blue-500/50">
+              <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-blue-500/10 blur-3xl" />
               <div className="relative z-10 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/15 text-primary">
-                    <Users className="h-6 w-6" />
+                <div className="flex items-center gap-6">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/10 transition-colors group-hover:border-blue-500/30">
+                    <Users className="h-7 w-7" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                      {totalOwed < 0 ? 'Pending Settlement' : 'Shared Balance'}
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                      {totalOwed < 0 ? 'Settlement' : 'Shared Balance'}
                     </p>
-                    <p className={cn(
-                      "mt-1 text-2xl font-black tracking-tight",
-                      totalOwed > 0 ? "text-emerald-400" : "text-rose-400"
-                    )}>
-                      {totalOwed < 0 
-                        ? `Pending ${formatMoney(Math.abs(totalOwed), currency)} to settle` 
-                        : `+${formatMoney(totalOwed, currency)}`}
+                    <p
+                      className={cn(
+                        'titan-metric mt-1',
+                        totalOwed > 0 ? 'text-emerald-400' : 'text-red-400',
+                      )}
+                    >
+                      {totalOwed < 0
+                        ? formatMoney(Math.abs(totalOwed), currency)
+                        : formatMoney(totalOwed, currency)}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-primary/80">
-                    {totalOwed > 0 ? 'To receive' : 'To pay'}
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-blue-400/80">
+                    {totalOwed > 0 ? 'Receive' : 'Pay'}
                   </span>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
+                  <ChevronRight className="h-5 w-5 text-slate-600 transition-transform group-hover:translate-x-1 group-hover:text-blue-400" />
                 </div>
               </div>
-            </Card>
-          </div>
+            </div>
+          </button>
         </section>
       )}
 
@@ -579,21 +127,23 @@ export function DashboardPage() {
         <DashboardCard
           title="Priority Focus"
           subtitle="Top urgent tasks"
-          icon={<Zap className="h-4 w-4 text-amber-500" />}
+          icon={<Zap className="h-5 w-5 text-amber-400" />}
         >
-          <div className="space-y-0.5">
+          <div className="space-y-1">
             {priorityTasks.map((task) => (
               <TaskRow
                 key={task.id}
                 task={task}
-                onClick={() => navigate('/tasks')}
+                onClick={() => {
+                  void navigate('/tasks');
+                }}
               />
             ))}
           </div>
         </DashboardCard>
       )}
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_260px]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_300px]">
         <DashboardCard
           title="Tasks"
           subtitle={`${dashboardTasks.length} active`}
@@ -601,33 +151,41 @@ export function DashboardPage() {
             <button
               type="button"
               id="dashboard-view-all-tasks"
-              onClick={() => navigate('/tasks')}
-              className="flex items-center gap-1 text-[11px] font-semibold text-primary opacity-80 transition-opacity hover:opacity-100"
+              onClick={() => {
+                void navigate('/tasks');
+              }}
+              className="group flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-blue-400"
             >
-              All <ArrowRight className="h-3 w-3" />
+              All <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
             </button>
           }
         >
           {dashboardTasks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
-              <SquareCheckBig className="h-8 w-8 text-muted-foreground/30" />
-              <p className="text-sm text-muted-foreground">No tasks for today</p>
+            <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-white/5 border border-white/5 text-slate-600">
+                <CheckCircle2 className="h-8 w-8" />
+              </div>
+              <p className="text-sm font-medium text-slate-500">No tasks for today</p>
               <button
                 type="button"
                 id="dashboard-add-first-task"
-                onClick={() => navigate('/tasks')}
-                className="mt-1 rounded-xl border border-primary/30 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+                onClick={() => {
+                  void navigate('/tasks');
+                }}
+                className="rounded-2xl border border-blue-500/30 bg-blue-500/10 px-6 py-2.5 text-xs font-bold text-blue-400 transition-all hover:bg-blue-500/20"
               >
-                Add your first task
+                Create Task
               </button>
             </div>
           ) : (
-            <div className="space-y-0.5">
+            <div className="space-y-1">
               {dashboardTasks.map((task) => (
                 <TaskRow
                   key={task.id}
                   task={task}
-                  onClick={() => navigate('/tasks')}
+                  onClick={() => {
+                    void navigate('/tasks');
+                  }}
                 />
               ))}
             </div>
@@ -635,94 +193,78 @@ export function DashboardPage() {
         </DashboardCard>
 
         {continueItem && (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-6">
             <ContinueCard item={continueItem} />
 
-            <Card className="relative overflow-hidden border-accent/20 bg-gradient-to-br from-accent/10 to-primary/5 p-5">
-              <div className="pointer-events-none absolute -right-6 -bottom-6 h-24 w-24 rounded-full bg-accent/20 blur-2xl" />
+            <div className="glass-panel relative overflow-hidden p-6 transition-all hover:shadow-glow-blue">
+              <div className="pointer-events-none absolute -right-6 -bottom-6 h-24 w-24 rounded-full bg-blue-500/10 blur-2xl" />
               <div className="relative z-10">
-                <div className="flex items-center gap-2">
-                  <Landmark className="h-4 w-4 text-accent/80" />
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                    Today&apos;s Spend
+                <div className="flex items-center gap-3">
+                  <Landmark className="h-4 w-4 text-blue-400" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">
+                    Spent
                   </span>
                 </div>
-                <p className="mt-2 text-3xl font-bold tracking-tight text-foreground">
-                  {formattedSpend}
-                </p>
+                <p className="titan-metric mt-3 text-white">{formattedSpend}</p>
                 <button
                   type="button"
                   id="dashboard-view-finance"
-                  onClick={() => navigate('/finance')}
-                  className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-accent/80 transition-colors hover:text-accent"
+                  onClick={() => {
+                    void navigate('/finance');
+                  }}
+                  className="group mt-4 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-blue-400"
                 >
-                  View Finance <ArrowRight className="h-3 w-3" />
+                  Finance{' '}
+                  <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
                 </button>
               </div>
-            </Card>
-          </div>
-        )}
-
-        {!continueItem && (
-          <Card className="relative overflow-hidden border-accent/20 bg-gradient-to-br from-accent/10 to-primary/5 p-5">
-            <div className="pointer-events-none absolute -right-6 -bottom-6 h-24 w-24 rounded-full bg-accent/20 blur-2xl" />
-            <div className="relative z-10">
-              <div className="flex items-center gap-2">
-                <Landmark className="h-4 w-4 text-accent/80" />
-                <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                  Today&apos;s Spend
-                </span>
-              </div>
-              <p className="mt-2 text-3xl font-bold tracking-tight text-foreground">
-                {formattedSpend}
-              </p>
-              <button
-                type="button"
-                id="dashboard-view-finance-alt"
-                onClick={() => navigate('/finance')}
-                className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-accent/80 transition-colors hover:text-accent"
-              >
-                View Finance <ArrowRight className="h-3 w-3" />
-              </button>
             </div>
-          </Card>
+          </div>
         )}
       </div>
 
       <DashboardCard
         title="Recent Notes"
-        subtitle={`${notes.length} total`}
+        subtitle={`${notesTotal} total`}
         action={
           <button
             type="button"
             id="dashboard-view-all-notes"
-            onClick={() => navigate('/notes')}
-            className="flex items-center gap-1 text-[11px] font-semibold text-primary opacity-80 transition-opacity hover:opacity-100"
+            onClick={() => {
+              void navigate('/notes');
+            }}
+            className="group flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-blue-400"
           >
-            All <ArrowRight className="h-3 w-3" />
+            All <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
           </button>
         }
       >
         {recentNotes.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
-            <NotebookPen className="h-8 w-8 text-muted-foreground/30" />
-            <p className="text-sm text-muted-foreground">No notes yet</p>
+          <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-white/5 border border-white/5 text-slate-600">
+              <NotebookPen className="h-8 w-8" />
+            </div>
+            <p className="text-sm font-medium text-slate-500">No notes yet</p>
             <button
               type="button"
               id="dashboard-add-first-note"
-              onClick={() => navigate('/notes')}
-              className="mt-1 rounded-xl border border-primary/30 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+              onClick={() => {
+                void navigate('/notes');
+              }}
+              className="rounded-2xl border border-blue-500/30 bg-blue-500/10 px-6 py-2.5 text-xs font-bold text-blue-400 transition-all hover:bg-blue-500/20"
             >
-              Create your first note
+              Create Note
             </button>
           </div>
         ) : (
-          <div className="space-y-0.5">
+          <div className="space-y-1">
             {recentNotes.map((note) => (
               <NoteRow
                 key={note.id}
                 note={note}
-                onClick={() => navigate('/notes')}
+                onClick={() => {
+                  void navigate('/notes');
+                }}
               />
             ))}
           </div>

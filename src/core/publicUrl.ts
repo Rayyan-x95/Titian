@@ -7,7 +7,7 @@ function normalizeBaseUrl(value: string) {
 }
 
 export function getPublicUrlBase(): string {
-  const envValue = (import.meta as unknown as { env?: Record<string, unknown> }).env?.VITE_PUBLIC_URL;
+  const envValue = (import.meta as unknown as { env?: Record<string, unknown> }).env
+    ?.VITE_PUBLIC_URL;
   return normalizeBaseUrl(typeof envValue === 'string' ? envValue : DEFAULT_PUBLIC_URL);
 }
-

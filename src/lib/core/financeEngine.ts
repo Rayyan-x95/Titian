@@ -63,26 +63,27 @@ export function revertExpenseFromBalance(
 
 export function shouldRebalanceForExpenseUpdate(updates: Partial<Expense>): boolean {
   return (
-    updates.amount !== undefined ||
-    updates.type !== undefined ||
-    updates.accountId !== undefined
+    updates.amount !== undefined || updates.type !== undefined || updates.accountId !== undefined
   );
 }
 
-export function normalizeExpenseRecurrenceRule(value: unknown): Expense['recurrenceRule'] | undefined {
+export function normalizeExpenseRecurrenceRule(
+  value: unknown,
+): Expense['recurrenceRule'] | undefined {
   // Max interval: 1 year (365 days) to prevent unreasonable recurrence rules
   const MAX_RECURRENCE_INTERVAL = 365;
-  
+
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
 
   const candidate = value as Record<string, unknown>;
   const validTypes = ['daily', 'weekly', 'monthly'] as const;
-  const type = typeof candidate.type === 'string' && (validTypes as readonly string[]).includes(candidate.type) 
-    ? (candidate.type as 'daily' | 'weekly' | 'monthly') 
-    : undefined;
-  
+  const type =
+    typeof candidate.type === 'string' && (validTypes as readonly string[]).includes(candidate.type)
+      ? (candidate.type as 'daily' | 'weekly' | 'monthly')
+      : undefined;
+
   if (!type) return undefined;
-  
+
   const interval =
     typeof candidate.interval === 'number' &&
     Number.isFinite(candidate.interval) &&
@@ -103,12 +104,12 @@ export function recalculateBalancesForExpenseUpdate(
   const previousAccount = map.get(previous.accountId);
   const nextAccount = map.get(next.accountId);
 
-    if (!previousAccount) {
-      throw new Error(`Account "${previous.accountId}" not found during balance recalculation`);
-    }
-    if (!nextAccount) {
-      throw new Error(`Account "${next.accountId}" not found during balance recalculation`);
-    }
+  if (!previousAccount) {
+    throw new Error(`Account "${previous.accountId}" not found during balance recalculation`);
+  }
+  if (!nextAccount) {
+    throw new Error(`Account "${next.accountId}" not found during balance recalculation`);
+  }
 
   const revertedPrevious = {
     ...previousAccount,
@@ -134,13 +135,13 @@ export function calculateTotalBalance(accounts: Account[]): number {
 
 export function calculateTotalSpent(expenses: Expense[]): number {
   return expenses
-    .filter(e => e.type === 'expense')
+    .filter((e) => e.type === 'expense')
     .reduce((sum, expense) => safeAddCents(sum, expense.amount), 0);
 }
 
 export function calculateTotalIncome(expenses: Expense[]): number {
   return expenses
-    .filter(e => e.type === 'income')
+    .filter((e) => e.type === 'income')
     .reduce((sum, expense) => safeAddCents(sum, expense.amount), 0);
 }
 
@@ -192,14 +193,20 @@ export function filterExpensesByRange(
   return expenses.filter((expense) => new Date(expense.createdAt) >= start);
 }
 
-export function calculateCategoryTotals(expenses: Expense[], filterDate?: Date): Record<string, number> {
+export function calculateCategoryTotals(
+  expenses: Expense[],
+  filterDate?: Date,
+): Record<string, number> {
   return expenses.reduce<Record<string, number>>((accumulator, expense) => {
     if (expense.type !== 'expense') return accumulator;
-    
+
     // Filter by date if provided
     if (filterDate) {
       const date = new Date(expense.createdAt);
-      if (date.getMonth() !== filterDate.getMonth() || date.getFullYear() !== filterDate.getFullYear()) {
+      if (
+        date.getMonth() !== filterDate.getMonth() ||
+        date.getFullYear() !== filterDate.getFullYear()
+      ) {
         return accumulator;
       }
     }
@@ -210,7 +217,11 @@ export function calculateCategoryTotals(expenses: Expense[], filterDate?: Date):
   }, {});
 }
 
-export function getTopCategories(expenses: Expense[], top = 3, filterDate?: Date): { category: string; amount: number }[] {
+export function getTopCategories(
+  expenses: Expense[],
+  top = 3,
+  filterDate?: Date,
+): { category: string; amount: number }[] {
   const totals = calculateCategoryTotals(expenses, filterDate);
   return Object.entries(totals)
     .map(([category, amount]) => ({ category, amount }))
@@ -218,14 +229,17 @@ export function getTopCategories(expenses: Expense[], top = 3, filterDate?: Date
     .slice(0, top);
 }
 
-export function getWeeklyTrend(expenses: Expense[], now = new Date()): { day: string; amount: number }[] {
+export function getWeeklyTrend(
+  expenses: Expense[],
+  now = new Date(),
+): { day: string; amount: number }[] {
   const result: { day: string; amount: number }[] = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date(now);
     d.setDate(now.getDate() - i);
     const key = toDateKey(d);
     const dayTotal = expenses
-      .filter(e => e.type === 'expense' && toDateKey(new Date(e.createdAt)) === key)
+      .filter((e) => e.type === 'expense' && toDateKey(new Date(e.createdAt)) === key)
       .reduce((sum, e) => safeAddCents(sum, e.amount), 0);
     result.push({ day: d.toLocaleDateString(undefined, { weekday: 'short' }), amount: dayTotal });
   }
@@ -256,7 +270,11 @@ export function validateBudget(budget: Partial<Budget>): string[] {
   return errors;
 }
 
-export function calculateBudgetUsage(budget: Budget, expenses: Expense[], now = new Date()): BudgetUsage {
+export function calculateBudgetUsage(
+  budget: Budget,
+  expenses: Expense[],
+  now = new Date(),
+): BudgetUsage {
   const range: FinanceRange = budget.period === 'weekly' ? 'week' : 'month';
   const filteredExpenses = filterExpensesByRange(expenses, range, now);
 
@@ -267,27 +285,32 @@ export function calculateBudgetUsage(budget: Budget, expenses: Expense[], now = 
   const limit = normalizePositiveCents(budget.limit);
   const remaining = safeSubCents(limit, spent);
   const overflow = remaining < 0 ? Math.abs(remaining) : 0;
-  
+
   // Guard against division by zero and handle 100%+ cases gracefully
   const percent = limit > 0 ? Math.min(1000, (spent / limit) * 100) : spent > 0 ? 100 : 0;
 
-  return { 
-    spent: normalizePositiveCents(spent), 
-    limit, 
-    remaining, 
-    overflow: normalizePositiveCents(overflow), 
-    percent: Number.isFinite(percent) ? percent : 0 
+  return {
+    spent: normalizePositiveCents(spent),
+    limit,
+    remaining,
+    overflow: normalizePositiveCents(overflow),
+    percent: Number.isFinite(percent) ? percent : 0,
   };
 }
 
-export function buildBudgetSuggestions(profile: OnboardingProfile, existingBudgets: Budget[]): Budget[] {
+export function buildBudgetSuggestions(
+  profile: OnboardingProfile,
+  existingBudgets: Budget[],
+): Budget[] {
   const baseMonthlyLimit = profile.avgExpense || Math.round(profile.income * 0.65);
   if (baseMonthlyLimit <= 0) return [];
 
   const shouldTightenBudget =
     profile.goals.includes('save-money') || profile.goals.includes('reduce-expenses');
   const targetMonthlyLimit = Math.round(baseMonthlyLimit * (shouldTightenBudget ? 0.9 : 1));
-  const existingCategories = new Set(existingBudgets.map((budget) => budget.category.toLowerCase()));
+  const existingCategories = new Set(
+    existingBudgets.map((budget) => budget.category.toLowerCase()),
+  );
 
   const splits = [
     ['Food', 0.3],
@@ -345,7 +368,10 @@ export function normalizeBudget(payload: unknown): Budget {
   };
 }
 
-function calculateExpenseNextOccurrence(baseDate: string, recurrence: { type: 'daily' | 'weekly' | 'monthly'; interval: number }): string {
+function calculateExpenseNextOccurrence(
+  baseDate: string,
+  recurrence: { type: 'daily' | 'weekly' | 'monthly'; interval: number },
+): string {
   const date = new Date(baseDate);
   if (!Number.isFinite(date.getTime())) return baseDate;
 
@@ -356,18 +382,29 @@ function calculateExpenseNextOccurrence(baseDate: string, recurrence: { type: 'd
   return date.toISOString();
 }
 
-export function generateNextRecurringTransactions(expenses: Expense[], accounts: Account[], now = new Date()): { newExpenses: Expense[], updatedExpenses: { id: string; lastProcessedAt: string }[], updatedAccounts: Account[] } {
-  const recurring = expenses.filter(e => e.isRecurring && e.recurrenceRule);
+export function generateNextRecurringTransactions(
+  expenses: Expense[],
+  accounts: Account[],
+  now = new Date(),
+): {
+  newExpenses: Expense[];
+  updatedExpenses: { id: string; lastProcessedAt: string }[];
+  updatedAccounts: Account[];
+} {
+  const recurring = expenses.filter((e) => e.isRecurring && e.recurrenceRule);
   const newExpenses: Expense[] = [];
   const updatedExpenses: { id: string; lastProcessedAt: string }[] = [];
   const nextAccounts = [...accounts];
-    const MAX_RECURRING_PER_TRANSACTION = 12;
-    let totalGenerated = 0;
+  const MAX_RECURRING_PER_TRANSACTION = 12;
+  let totalGenerated = 0;
 
   for (const item of recurring) {
     const baseDate = item.lastProcessedAt || item.createdAt;
     let cursorDate = new Date(baseDate);
-    const nextOccurrence = calculateExpenseNextOccurrence(cursorDate.toISOString(), item.recurrenceRule!);
+    const nextOccurrence = calculateExpenseNextOccurrence(
+      cursorDate.toISOString(),
+      item.recurrenceRule!,
+    );
     if (!nextOccurrence) continue;
 
     let nextDate = new Date(nextOccurrence);
@@ -386,16 +423,20 @@ export function generateNextRecurringTransactions(expenses: Expense[], accounts:
         isRecurring: false,
         createdAt: nextDate.toISOString(),
       };
-      
+
       newExpenses.push(newExpense);
       totalGenerated++;
-      
+
       // Update account balance
-      const accIndex = nextAccounts.findIndex(a => a.id === item.accountId);
+      const accIndex = nextAccounts.findIndex((a) => a.id === item.accountId);
       if (accIndex !== -1) {
         nextAccounts[accIndex] = {
           ...nextAccounts[accIndex],
-          balance: applyExpenseToBalance(nextAccounts[accIndex].balance, newExpense.amount, newExpense.type)
+          balance: applyExpenseToBalance(
+            nextAccounts[accIndex].balance,
+            newExpense.amount,
+            newExpense.type,
+          ),
         };
       }
 
@@ -404,7 +445,7 @@ export function generateNextRecurringTransactions(expenses: Expense[], accounts:
       if (!nextTime) break;
       nextDate = new Date(nextTime);
       createdCount++;
-      
+
       if (totalGenerated >= MAX_RECURRING_PER_TRANSACTION) {
         console.warn('[Recurring] Limit reached, next sync will process more');
         break;

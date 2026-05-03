@@ -35,7 +35,8 @@ export const PremiumInput = forwardRef<HTMLInputElement, PremiumInputProps>(func
         className={cn(
           'relative flex items-center rounded-2xl border bg-background/50 backdrop-blur-sm transition-all duration-200',
           'focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20',
-          error && 'border-destructive focus-within:border-destructive focus-within:ring-destructive/20',
+          error &&
+            'border-destructive focus-within:border-destructive focus-within:ring-destructive/20',
           isLarge ? 'h-16 px-5' : 'h-12 px-4',
           className,
         )}
@@ -63,7 +64,9 @@ export const PremiumInput = forwardRef<HTMLInputElement, PremiumInputProps>(func
         )}
       </div>
       {error && (
-        <p id={errorId} className="mt-2 text-sm text-destructive">{error}</p>
+        <p id={errorId} className="mt-2 text-sm text-destructive">
+          {error}
+        </p>
       )}
     </div>
   );

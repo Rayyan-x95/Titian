@@ -12,7 +12,10 @@ export interface OnboardingSlice {
   skipOnboarding: () => Promise<OnboardingProfile>;
 }
 
-export const createOnboardingSlice: StateCreator<CoreStoreState, [], [], OnboardingSlice> = (set, get) => ({
+export const createOnboardingSlice: StateCreator<CoreStoreState, [], [], OnboardingSlice> = (
+  set,
+  get,
+) => ({
   onboarding: createDefaultOnboardingProfile(),
 
   updateOnboarding: async (updates) => {

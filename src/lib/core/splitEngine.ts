@@ -111,7 +111,7 @@ export function computeSettlements(balances: BalanceEntry[]): Settlement[] {
   const totalDebt = debtors.reduce((sum, d) => safeAddCents(sum, d.balance), 0);
   const totalCredit = creditors.reduce((sum, c) => safeAddCents(sum, c.balance), 0);
 
-  // If there's a slight mismatch due to rounding in upstream logic, 
+  // If there's a slight mismatch due to rounding in upstream logic,
   // adjust the largest debtor/creditor to ensure the settlement can zero out.
   if (totalDebt !== totalCredit && totalDebt > 0 && totalCredit > 0) {
     const diff = totalDebt - totalCredit;
@@ -147,7 +147,7 @@ export function computeSettlements(balances: BalanceEntry[]): Settlement[] {
 export function applySettlement(balances: BalanceEntry[], settlement: Settlement): BalanceEntry[] {
   const amount = normalizeCents(settlement.amount);
   if (amount <= 0) return [...balances];
-  
+
   return balances.map((entry) => {
     if (entry.id === settlement.from) {
       return { ...entry, balance: normalizeCents(entry.balance) + amount };
@@ -171,7 +171,8 @@ export function calculateTotalOwed(sharedExpenses: SharedExpenseLike[], userId =
       total += normalizeCents(othersShare);
     } else {
       // Someone else paid, user might owe them
-      const userShare = expense.participants.find((participant) => participant.id === userId)?.amount ?? 0;
+      const userShare =
+        expense.participants.find((participant) => participant.id === userId)?.amount ?? 0;
       total -= normalizeCents(userShare);
     }
   });

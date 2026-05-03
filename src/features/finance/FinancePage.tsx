@@ -1,11 +1,12 @@
 import { useMemo, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Plus, Search, Users } from 'lucide-react';
-import { PageShell } from '@/shared/components';
-import { Button } from '@/shared/ui';
+import { PageShell } from '@/components';
 import { useStore } from '@/core/store';
 import { useSettings, formatMoney } from '@/core/settings';
 import type { Expense, ExpenseInput, ExpenseUpdate, SharedExpense } from '@/core/store/types';
-import { useSeo } from '@/seo';
+import { useSeo } from '@/hooks/useSeo';
 import { ExpenseForm } from './ExpenseForm';
 import { cn } from '@/utils/cn';
 import { parseQuickCapture } from '@/lib/core/parserEngine';
@@ -20,7 +21,10 @@ import {
 } from '@/core/store/selectors';
 import { warmupOCR } from '@/utils/parserEngine';
 
-type DisplayedExpense = Pick<Expense, 'id' | 'amount' | 'category' | 'createdAt' | 'linkedTaskId'> & {
+type DisplayedExpense = Pick<
+  Expense,
+  'id' | 'amount' | 'category' | 'createdAt' | 'linkedTaskId'
+> & {
   description?: string;
   shared?: boolean;
   settlementStatus?: SharedExpense['settlementStatus'];
@@ -36,7 +40,7 @@ const EXPENSE_CATEGORIES = [
   'Health',
   'Personal',
   'Study',
-  'Other'
+  'Other',
 ];
 
 const INCOME_CATEGORIES = [
@@ -48,13 +52,15 @@ const INCOME_CATEGORIES = [
   'Interest',
   'Dividend',
   'Rental',
-  'Reimbursement'
+  'Reimbursement',
 ];
 
 export function FinancePage() {
-  useSeo({ 
-    title: 'Money', 
-    description: 'Take control of your finances. Track expenses, manage budgets, and handle shared costs with ease in a professional personal finance system.' 
+  const navigate = useNavigate();
+  useSeo({
+    title: 'Money',
+    description:
+      'Take control of your finances. Track expenses, manage budgets, and handle shared costs with ease in a professional personal finance system.',
   });
 
   const currency = useSettings((s) => s.currency);
@@ -89,24 +95,28 @@ export function FinancePage() {
       return sharedItems
         .slice()
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-        .map((s): DisplayedExpense => ({
-          id: s.id,
-          amount: s.totalAmount,
-          category: 'Split',
-          createdAt: s.createdAt,
-          description: s.description,
-          shared: true,
-          settlementStatus: s.settlementStatus,
-        }));
+        .map(
+          (s): DisplayedExpense => ({
+            id: s.id,
+            amount: s.totalAmount,
+            category: 'Split',
+            createdAt: s.createdAt,
+            description: s.description,
+            shared: true,
+            settlementStatus: s.settlementStatus,
+          }),
+        );
     }
 
     return personalExpenses
       .slice()
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-      .map((e): DisplayedExpense => ({
-        ...e,
-        description: e.note,
-      }));
+      .map(
+        (e): DisplayedExpense => ({
+          ...e,
+          description: e.note,
+        }),
+      );
   }, [viewShared, personalExpenses, sharedItems]);
 
   function groupByRecency<T extends { createdAt: string }>(items: T[]) {
@@ -115,7 +125,11 @@ export function FinancePage() {
     yesterdayDate.setDate(yesterdayDate.getDate() - 1);
     const yesterday = yesterdayDate.toDateString();
 
-    const groups: { today: T[]; yesterday: T[]; earlier: T[] } = { today: [], yesterday: [], earlier: [] };
+    const groups: { today: T[]; yesterday: T[]; earlier: T[] } = {
+      today: [],
+      yesterday: [],
+      earlier: [],
+    };
     items.forEach((item) => {
       const d = new Date(item.createdAt).toDateString();
       if (d === today) groups.today.push(item);
@@ -130,22 +144,26 @@ export function FinancePage() {
   const handleQuickAdd = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!quickInput.trim()) return;
-    if (accounts.length === 0) {
-      window.alert('Please create an account first.');
-      return;
+    try {
+      if (accounts.length === 0) {
+        throw new Error('Please create an account first.');
+      }
+      const parsed = parseQuickCapture(quickInput);
+      await addExpense({
+        amount: parsed.amount,
+        category: parsed.category,
+        type: parsed.type,
+        accountId: accounts[0].id,
+        note: parsed.note,
+        tags: [],
+        isRecurring: false,
+        createdAt: new Date().toISOString(),
+      });
+      setQuickInput('');
+    } catch (err) {
+      console.error('[Finance] Quick add failed:', err);
+      alert(err instanceof Error ? err.message : 'Failed to add expense');
     }
-    const parsed = parseQuickCapture(quickInput);
-    await addExpense({
-      amount: parsed.amount,
-      category: parsed.category,
-      type: parsed.type,
-      accountId: accounts[0].id,
-      note: parsed.note,
-      tags: [],
-      isRecurring: false,
-      createdAt: new Date().toISOString(),
-    });
-    setQuickInput('');
   };
 
   return (
@@ -155,99 +173,173 @@ export function FinancePage() {
       description="Large balance first, fast actions second, and lightweight insight always in context."
     >
       <div className="space-y-6 pb-36 lg:pb-8">
-        <section className="relative overflow-hidden rounded-2xl border border-border/70 bg-card/55 p-8">
+        <section className="relative overflow-hidden titan-section glass-panel p-10 md:p-14 border-white/5 group">
           <div className="relative z-10 flex flex-col items-center">
-            <p className="text-[10px] font-bold uppercase tracking-[0.34em] text-muted-foreground">Available Liquidity</p>
-            <h1 className="titan-metric mt-4 text-gradient">{formatMoney(totalBalance, currency)}</h1>
-            <div className="mt-8 grid grid-cols-2 gap-8 w-full max-w-md">
-              <div className="flex flex-col items-center border-r border-border">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Income</p>
-                <p className="mt-1 text-lg font-bold text-emerald-500">{formatMoney(totalIncome, currency)}</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-blue-400/60">
+              Total Liquidity
+            </p>
+            <h1 className="titan-metric mt-6 text-white text-5xl md:text-8xl tracking-tight text-center">
+              {formatMoney(totalBalance, currency)}
+            </h1>
+            <div className="mt-10 grid grid-cols-2 gap-8 w-full max-w-md">
+              <div className="flex flex-col items-center border-r border-white/5">
+                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                  Monthly Income
+                </p>
+                <p className="mt-1 text-xl font-bold text-emerald-400/90">
+                  {formatMoney(totalIncome, currency)}
+                </p>
               </div>
               <div className="flex flex-col items-center">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Expenses</p>
-                <p className="mt-1 text-lg font-bold text-primary">{formatMoney(monthlySpend, currency)}</p>
+                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                  Monthly Spend
+                </p>
+                <p className="mt-1 text-xl font-bold text-blue-400/90">
+                  {formatMoney(monthlySpend, currency)}
+                </p>
               </div>
             </div>
           </div>
         </section>
 
         <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <Button className="h-12 w-full" onClick={() => { setEditingExpense(null); setNewTransactionType('expense'); setIsExpenseFormOpen(true); }}>
-            <Plus className="h-4 w-4 mr-2" /> Expense
-          </Button>
-          <Button className="h-12 w-full" onClick={() => { setEditingExpense(null); setNewTransactionType('income'); setIsExpenseFormOpen(true); }}>
-            <Plus className="h-4 w-4 mr-2" /> Income
-          </Button>
-          <Button className="h-12 w-full" variant="outline" onClick={() => { setEditingExpense(null); setIsScanningViaDashboard(true); setIsExpenseFormOpen(true); }}>
-            <Search className="h-4 w-4 mr-2" /> Scan
-          </Button>
-          <Button className="h-12 w-full" variant="outline" onClick={() => (window.location.href = '/splits')}>
-            <Users className="h-4 w-4 mr-2" /> Split
-          </Button>
+          <button
+            className="flex items-center justify-center gap-2 h-14 rounded-xl bg-blue-600 text-white font-bold active:scale-95 transition-all"
+            onClick={() => {
+              setEditingExpense(null);
+              setNewTransactionType('expense');
+              setIsExpenseFormOpen(true);
+            }}
+          >
+            <Plus className="h-5 w-5" strokeWidth={2.5} />
+            <span className="text-sm">Expense</span>
+          </button>
+          <button
+            className="flex items-center justify-center gap-2 h-14 rounded-xl bg-emerald-600/90 text-white font-bold active:scale-95 transition-all"
+            onClick={() => {
+              setEditingExpense(null);
+              setNewTransactionType('income');
+              setIsExpenseFormOpen(true);
+            }}
+          >
+            <Plus className="h-5 w-5" strokeWidth={2.5} />
+            <span className="text-sm">Income</span>
+          </button>
+          <button
+            className="flex items-center justify-center gap-2 h-14 rounded-xl glass-panel text-slate-300 font-bold hover:bg-white/5 active:scale-95 transition-all border-white/5"
+            onClick={() => {
+              setEditingExpense(null);
+              setIsScanningViaDashboard(true);
+              setIsExpenseFormOpen(true);
+            }}
+          >
+            <Search className="h-5 w-5" />
+            <span className="text-sm">Scan</span>
+          </button>
+          <button
+            className="flex items-center justify-center gap-2 h-14 rounded-xl glass-panel text-slate-300 font-bold hover:bg-white/5 active:scale-95 transition-all border-white/5"
+            onClick={() => {
+              void navigate('/split');
+            }}
+          >
+            <Users className="h-5 w-5" />
+            <span className="text-sm">Split</span>
+          </button>
         </section>
 
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="rounded-2xl border border-border bg-card p-5">
-            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Categories</p>
-            <ul className="mt-4 space-y-3">
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="rounded-[2rem] glass-panel p-7 border-white/5">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+              Top Categories
+            </p>
+            <ul className="mt-6 space-y-4">
               {topCategories.map((t) => (
                 <li key={t.category} className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-foreground/80">{t.category}</span>
-                  <span className="text-sm font-black">{formatMoney(t.amount, currency)}</span>
+                  <span className="text-sm font-bold text-slate-300">{t.category}</span>
+                  <span className="text-sm font-black text-white">
+                    {formatMoney(t.amount, currency)}
+                  </span>
                 </li>
               ))}
-              {topCategories.length === 0 && <li className="text-xs text-muted-foreground">No data yet</li>}
+              {topCategories.length === 0 && (
+                <li className="text-xs text-slate-600 font-bold uppercase tracking-widest text-center py-4">
+                  No data yet
+                </li>
+              )}
             </ul>
           </div>
 
-          <div className="rounded-2xl border border-border bg-card p-4">
-            <p className="text-[10px] font-black uppercase text-muted-foreground">Weekly Trend</p>
-            <div className="mt-3 flex items-end gap-2 h-16">
+          <div className="rounded-[2rem] glass-panel p-7 border-white/5">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+              Weekly Performance
+            </p>
+            <div className="mt-6 flex items-end gap-3 h-20">
               {weeklyTrend.map((d) => (
-                <div key={d.day} className="flex-1">
+                <div key={d.day} className="flex-1 group">
                   <div className="h-full flex items-end">
-                    <div style={{ height: `${Math.min(100, (d.amount / 1000) * 100)}%` }} className="w-full rounded-md bg-primary/60" />
+                    <div
+                      style={{ height: `${Math.max(10, Math.min(100, (d.amount / 1000) * 100))}%` }}
+                      className="w-full rounded-full bg-blue-500/20 group-hover:bg-blue-500/40 transition-all duration-300 border border-blue-500/10 shadow-glow"
+                    />
                   </div>
-                  <div className="text-[10px] text-center mt-1">{d.day.slice(0, 2)}</div>
+                  <div className="text-[9px] font-black uppercase tracking-tighter text-slate-600 text-center mt-2 group-hover:text-blue-400 transition-colors">
+                    {d.day.slice(0, 1)}
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-            <button 
-              onClick={() => setViewShared(false)} 
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-1">
+          <div className="inline-flex items-center p-1 rounded-full bg-white/5 border border-white/5 backdrop-blur-xl self-start sm:self-auto">
+            <button
+              onClick={() => setViewShared(false)}
               className={cn(
-                'flex-1 sm:flex-none px-4 py-2 rounded-xl font-bold text-xs uppercase tracking-wider transition-all', 
-                !viewShared ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
+                'relative z-10 px-6 py-2 rounded-full font-bold text-[10px] uppercase tracking-widest transition-all duration-500 min-h-[36px]',
+                !viewShared ? 'text-white' : 'text-slate-500 hover:text-slate-300',
               )}
             >
+              {!viewShared && (
+                <motion.div
+                  layoutId="finance-toggle"
+                  className="absolute inset-0 bg-blue-600 shadow-glow-blue rounded-full -z-10"
+                  transition={{ type: 'spring', bounce: 0.15, duration: 0.5 }}
+                />
+              )}
               Personal
             </button>
-            <button 
-              onClick={() => setViewShared(true)} 
+            <button
+              onClick={() => setViewShared(true)}
               className={cn(
-                'flex-1 sm:flex-none px-4 py-2 rounded-xl font-bold text-xs uppercase tracking-wider transition-all', 
-                viewShared ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
+                'relative z-10 px-6 py-2 rounded-full font-bold text-[10px] uppercase tracking-widest transition-all duration-500 min-h-[36px]',
+                viewShared ? 'text-white' : 'text-slate-500 hover:text-slate-300',
               )}
             >
+              {viewShared && (
+                <motion.div
+                  layoutId="finance-toggle"
+                  className="absolute inset-0 bg-blue-600 shadow-glow-blue rounded-full -z-10"
+                  transition={{ type: 'spring', bounce: 0.15, duration: 0.5 }}
+                />
+              )}
               Shared
             </button>
           </div>
 
-          <form onSubmit={(event) => { void handleQuickAdd(event); }} className="w-full sm:w-1/2 lg:w-1/3">
-            <div className="relative">
-              <input 
-                value={quickInput} 
-                onChange={(e) => setQuickInput(e.target.value)} 
-                placeholder="Quick add: 'Swiggy ₹250'" 
-                className="w-full rounded-xl border border-border bg-surface/50 px-4 py-2.5 text-sm focus:bg-surface focus:ring-2 focus:ring-primary/20 outline-none transition-all" 
-              />
-            </div>
-          </form>
+          <div className="relative w-full sm:w-64 group">
+            <input
+              value={quickInput}
+              onChange={(e) => setQuickInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  void handleQuickAdd();
+                }
+              }}
+              placeholder="Quick add: 'Swiggy ₹250'"
+              className="w-full rounded-2xl border border-white/5 bg-white/5 px-5 py-2.5 text-xs font-medium text-white placeholder:text-slate-600 focus:bg-white/10 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all shadow-inner"
+            />
+          </div>
         </div>
 
         <section className="space-y-6">
@@ -255,34 +347,71 @@ export function FinancePage() {
             const items = groups[sectionKey];
             return (
               <div key={sectionKey}>
-                <h4 className="text-[10px] font-black uppercase text-muted-foreground mb-2">{sectionKey.charAt(0).toUpperCase() + sectionKey.slice(1)}</h4>
-                 {items.length === 0 ? (
-                   <div className="flex flex-col items-center justify-center py-10 opacity-20">
-                     <img src="/icons/falcon.png" alt="Falcon" className="h-12 w-12 grayscale" />
-                     <p className="mt-3 text-[10px] font-black uppercase tracking-widest">No entries</p>
-                   </div>
-                 ) : (
-                   <div className="space-y-3">
-                     {items.map((it) => (
-                       <div key={it.id} className="flex items-center justify-between rounded-xl border border-border bg-surface p-4 transition-all hover:border-primary/40">
-                         <div className="min-w-0">
-                           <div className="flex items-center gap-2">
-                             <div className="text-sm font-bold truncate text-foreground">{it.description || it.category}</div>
-                             {it.shared && <span className="px-1.5 py-0.5 rounded bg-primary/10 text-[8px] uppercase text-primary font-bold">Split</span>}
-                           </div>
-                           <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                              {it.description ? it.category : ''}
-                              {it.linkedTaskId ? (it.description ? ' • linked' : 'linked') : ''}
-                           </div>
-                         </div>
-                         <div className="text-right">
-                           <div className="text-sm font-bold text-foreground">{formatMoney(it.amount, currency)}</div>
-                           <div className="text-[10px] font-medium text-muted-foreground/60">{new Date(it.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                         </div>
-                       </div>
-                     ))}
-                   </div>
-                 )}
+                <h4 className="text-[10px] font-black uppercase text-muted-foreground mb-2">
+                  {sectionKey.charAt(0).toUpperCase() + sectionKey.slice(1)}
+                </h4>
+                {items.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-10 opacity-20">
+                    <img src="/icons/falcon.png" alt="Falcon" className="h-12 w-12 grayscale" />
+                    <p className="mt-3 text-[10px] font-black uppercase tracking-widest">
+                      No entries
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-4">
+                    {items.map((it) => (
+                      <button
+                        key={it.id}
+                        onClick={() => {
+                          if (!it.shared) {
+                            const expense = personalExpenses.find((e) => e.id === it.id);
+                            if (expense) {
+                              setEditingExpense(expense);
+                              setIsExpenseFormOpen(true);
+                            }
+                          } else {
+                            void navigate(`/split/${it.id}`);
+                          }
+                        }}
+                        className="glass-panel group flex w-full items-center justify-between rounded-2xl p-5 transition-all hover:bg-white/5 border-white/5 active:scale-[0.99]"
+                      >
+                        <div className="min-w-0 text-left">
+                          <div className="flex items-center gap-3">
+                            <div className="text-lg font-bold text-white truncate tracking-tight">
+                              {it.description || it.category}
+                            </div>
+                            {it.shared && (
+                              <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-[8px] uppercase tracking-widest text-blue-400 font-bold border border-blue-500/10">
+                                SPLIT
+                              </span>
+                            )}
+                          </div>
+                          <div className="mt-1 text-[9px] font-bold text-slate-500 uppercase tracking-widest opacity-60">
+                            {it.description ? it.category : 'General'}
+                            {it.linkedTaskId ? ' • Linked to Task' : ''}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div
+                            className={cn(
+                              'text-xl font-bold tracking-tight',
+                              it.amount < 0 ? 'text-emerald-400' : 'text-blue-400',
+                            )}
+                          >
+                            {formatMoney(it.amount, currency)}
+                          </div>
+                          <div className="text-[9px] font-bold text-slate-600 uppercase tracking-widest mt-0.5 opacity-50">
+                            {new Date(it.createdAt).toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: true,
+                            })}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -308,26 +437,31 @@ export function FinancePage() {
             }
           }}
           onSubmit={async (values) => {
-            const payload: ExpenseInput & ExpenseUpdate = {
-              amount: Math.round(values.amountDollars * 100),
-              category: values.category,
-              type: values.type,
-              accountId: values.accountId,
-              tags: values.tags,
-              area: values.area,
-              note: values.note,
-              isRecurring: values.isRecurring,
-              recurrenceRule: values.recurrenceRule,
-              linkedTaskId: values.linkedTaskId,
-              linkedNoteId: values.linkedNoteId,
-              createdAt: new Date(`${values.date}T12:00:00`).toISOString(),
-            };
-            if (editingExpense) {
-              await updateExpense(editingExpense.id, payload);
-            } else {
-              await addExpense(payload);
+            try {
+              const payload: ExpenseInput & ExpenseUpdate = {
+                amount: Math.round(values.amountDollars * 100),
+                category: values.category,
+                type: values.type,
+                accountId: values.accountId,
+                tags: values.tags,
+                area: values.area,
+                note: values.note,
+                isRecurring: values.isRecurring,
+                recurrenceRule: values.recurrenceRule,
+                linkedTaskId: values.linkedTaskId,
+                linkedNoteId: values.linkedNoteId,
+                createdAt: new Date(`${values.date}T12:00:00`).toISOString(),
+              };
+              if (editingExpense) {
+                await updateExpense(editingExpense.id, payload);
+              } else {
+                await addExpense(payload);
+              }
+              setIsExpenseFormOpen(false);
+            } catch (err) {
+              console.error('[Finance] Transaction failed:', err);
+              alert(err instanceof Error ? err.message : 'Failed to save transaction');
             }
-            setIsExpenseFormOpen(false);
           }}
         />
       </div>

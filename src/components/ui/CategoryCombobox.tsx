@@ -1,4 +1,11 @@
-import { useEffect, useId, useRef, useState, type ChangeEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, ChevronDown, Tag } from 'lucide-react';
 import { cn } from '@/utils/cn';
@@ -37,12 +44,15 @@ export function CategoryCombobox({
   const filtered = trimmedQuery
     ? options.filter((option) => option.toLowerCase().includes(trimmedQuery.toLowerCase()))
     : options;
-  const canCreateNew = trimmedQuery.length > 0 && !options.some((option) => option.toLowerCase() === trimmedQuery.toLowerCase());
+  const canCreateNew =
+    trimmedQuery.length > 0 &&
+    !options.some((option) => option.toLowerCase() === trimmedQuery.toLowerCase());
   const maxIndex = canCreateNew ? filtered.length : filtered.length - 1;
   const showDropdown = open && (filtered.length > 0 || canCreateNew);
-  const activeDescendantId = open && activeIndex >= 0 && (activeIndex < filtered.length ? filtered[activeIndex] : true)
-    ? `${listboxId}-option-${activeIndex}`
-    : undefined;
+  const activeDescendantId =
+    open && activeIndex >= 0 && (activeIndex < filtered.length ? filtered[activeIndex] : true)
+      ? `${listboxId}-option-${activeIndex}`
+      : undefined;
 
   useEffect(() => {
     if (!open) {
@@ -150,7 +160,9 @@ export function CategoryCombobox({
         }}
         className="text-muted-foreground transition-transform duration-200"
       >
-        <ChevronDown className={cn('h-4 w-4 transition-transform duration-200', open && 'rotate-180')} />
+        <ChevronDown
+          className={cn('h-4 w-4 transition-transform duration-200', open && 'rotate-180')}
+        />
       </button>
     </>
   );
@@ -189,7 +201,12 @@ export function CategoryCombobox({
 
       <AnimatePresence>
         {showDropdown && (
-          <div id={listboxId} role="listbox" aria-label="Category suggestions" className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-50">
+          <div
+            id={listboxId}
+            role="listbox"
+            aria-label="Category suggestions"
+            className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-50"
+          >
             <motion.div
               ref={listRef}
               initial={{ opacity: 0, scale: 0.97, y: -6 }}

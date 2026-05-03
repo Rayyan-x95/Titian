@@ -8,7 +8,12 @@ interface OnboardingStepperProps {
   disabled?: boolean;
 }
 
-export function OnboardingStepper({ currentStep, totalSteps, onSkip, disabled }: OnboardingStepperProps) {
+export function OnboardingStepper({
+  currentStep,
+  totalSteps,
+  onSkip,
+  disabled,
+}: OnboardingStepperProps) {
   const progress = ((currentStep + 1) / totalSteps) * 100;
 
   return (
@@ -33,13 +38,20 @@ export function OnboardingStepper({ currentStep, totalSteps, onSkip, disabled }:
         </div>
       </div>
 
-      <div className="flex w-[4.5rem] justify-end gap-1.5" aria-label={`Step ${currentStep + 1} of ${totalSteps}`}>
+      <div
+        className="flex w-[4.5rem] justify-end gap-1.5"
+        aria-label={`Step ${currentStep + 1} of ${totalSteps}`}
+      >
         {Array.from({ length: totalSteps }, (_, index) => (
           <span
             key={index}
             className={cn(
               'h-1.5 rounded-full transition-all duration-300',
-              index === currentStep ? 'w-4 bg-foreground' : index < currentStep ? 'w-1.5 bg-primary' : 'w-1.5 bg-border',
+              index === currentStep
+                ? 'w-4 bg-foreground'
+                : index < currentStep
+                  ? 'w-1.5 bg-primary'
+                  : 'w-1.5 bg-border',
             )}
           />
         ))}

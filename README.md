@@ -1,155 +1,73 @@
-# Titan
+# Titan 🦅
 
-Titan is an offline-first productivity app for managing tasks, notes, and expenses in one place. It is built as a PWA with React, Vite, TypeScript, Tailwind CSS, Zustand, and Dexie, and it is designed to keep working when the network is unavailable.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Version](https://img.shields.io/badge/version-0.1.0--beta-orange.svg)](https://github.com/Rayyan-x95/Titan/releases)
+[![Build Status](https://github.com/Rayyan-x95/Titan/actions/workflows/ci.yml/badge.svg)](https://github.com/Rayyan-x95/Titan/actions)
 
-Current app version: 1.0.0
+**Titan** is a purely open-source, "Privacy-First" Personal Life Operating System. It unifies tasks, notes, and financial tracking into a high-performance, offline-first Progressive Web App (PWA).
 
-## What Titan Includes
+## 🎯 Our Mission
 
-- Task management with create, edit, due dates, and status tracking.
-- Notes with tagging and task linking.
-- Finance tracking with currency-aware formatting.
-- Offline support through a service worker and installable PWA flow.
-- Mobile-first navigation and responsive page shells.
-- Local persistence using IndexedDB so data stays on the device.
+To provide a professional-grade workspace that works everywhere, costs nothing, and respects your privacy by default. Titan stores **100% of your data locally** using IndexedDB—no cloud, no tracking, no silos.
 
-## Getting Started
+## ✨ Features
 
-### Install dependencies
+- **🦅 Unified Intelligence**: Contextual linking between Tasks, Notes, and Expenses.
+- **⚡ Offline Core**: Built for speed and reliability, even without a network.
+- **💰 Precision Finance**: Integer-based money math with native currency support.
+- **📝 Contextual Notes**: Markdown-ready notes with bidirectional task linking.
+- **📱 PWA Native**: Installable on iOS, Android, and Desktop with platform-specific optimizations.
 
+## 🏗️ Architecture
+
+Titan is built with a modern, modular stack designed for maintainability and performance:
+
+- **Frontend**: [React 19](https://react.dev/) + [Vite](https://vitejs.dev/)
+- **State**: [Zustand](https://docs.pmnd.rs/zustand) (Normalized state slices)
+- **Database**: [Dexie.js](https://dexie.org/) (Local-first IndexedDB storage)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/) + [Framer Motion](https://www.framer.com/motion/)
+- **Business Logic**: Pure logic engines located in `src/lib/core/`
+
+## 🛠️ Getting Started
+
+### 1. Prerequisites
+- Node.js 18+
+- npm 9+
+
+### 2. Installation
 ```bash
+git clone https://github.com/Rayyan-x95/Titan.git
+cd Titan
 npm install
 ```
 
-### Start the development server
-
+### 3. Development
 ```bash
 npm run dev
 ```
 
-### Build for production
-
+### 4. Testing & Quality
 ```bash
-npm run build
+npm test              # Run unit tests
+npm run typecheck     # Validate TypeScript
+npm run lint          # Run ESLint checks
 ```
 
-### Preview the production build
+## 🤝 Contributing
 
-```bash
-npm run preview
-```
+We love contributors! Whether you are fixing a bug, adding a feature, or improving documentation, your help is welcome.
 
-### Type-check the project
+1. Read our [Contributing Guide](CONTRIBUTING.md).
+2. Check out the [Roadmap](ROADMAP.md) (coming soon).
+3. Follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 
-```bash
-npm run typecheck
-```
+## 🛡️ Security
 
-### Run tests
+If you discover a security vulnerability, please refer to our [Security Policy](SECURITY.md).
 
-```bash
-npm test
-```
+## 📄 License
 
-## Feature Overview
+Titan is open-source software licensed under the **[MIT License](LICENSE)**.
 
-### Tasks
-
-- Create tasks with titles, status, and optional due dates.
-- Link tasks to notes where needed.
-- Track task progress from todo to done.
-
-### Notes
-
-- Capture ideas and reference them from tasks.
-- Organize content with tags.
-- Import shared content directly into a note.
-
-### Finance
-
-- Record expenses as integer cents.
-- Format values using the selected currency.
-- Track finance data locally without a server.
-
-### PWA Experience
-
-- Prompt users to install Titan as an app.
-- Keep the app usable offline.
-- Handle service worker updates with a reload prompt.
-
-## Architecture
-
-- `src/main.tsx` bootstraps the React tree, theme provider, and PWA registration.
-- `src/App.tsx` defines the route map and lazy-loaded pages.
-- `src/app/Layout.tsx` renders the global shell, header, and bottom navigation.
-- `src/core/store/` holds the Zustand store and task-note synchronization logic.
-- `src/core/db/` defines the Dexie IndexedDB schema.
-- `src/components/` contains shared layout and UI primitives.
-- `src/modules/` contains the dashboard, tasks, notes, finance, settings, and share flows.
-- `src/styles/` contains global styling, theme tokens, and animation utilities.
-
-## Data Model
-
-### Task
-
-- `id`
-- `title`
-- `status` (`todo`, `doing`, `done`)
-- `dueDate?`
-- `noteId?`
-- `createdAt`
-
-### Note
-
-- `id`
-- `content`
-- `tags[]`
-- `linkedTaskIds[]?`
-- `createdAt`
-
-### Expense
-
-- `id`
-- `amount` in cents
-- `category`
-- `linkedTaskId?`
-- `createdAt`
-
-## Deployment
-
-### Vercel
-
-1. Install the Vercel CLI.
-
-```bash
-npm i -g vercel
-```
-
-1. Deploy a preview build.
-
-```bash
-vercel
-```
-
-1. Deploy production.
-
-```bash
-vercel --prod
-```
-
-The repository includes `vercel.json` for SPA rewrites and PWA-friendly cache headers.
-
-### Netlify
-
-1. Connect the repository in the Netlify dashboard.
-1. Build command: `npm run build`
-1. Publish directory: `dist`
-
-The repository includes `netlify.toml` and `public/_redirects` for route handling.
-
-## App Notes
-
-- Dark mode is the default theme.
-- Navigation is mobile-first and bottom anchored.
-- Data stays on-device unless you export or import it manually.
-- The app version is surfaced in the header, the settings About section, and the startup fallback.
+---
+*Built with precision for the modern professional.*

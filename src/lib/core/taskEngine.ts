@@ -21,12 +21,15 @@ export function normalizeRecurrence(value: unknown): TaskRecurrence | undefined 
 
   const candidate = value as Record<string, unknown>;
   const validTypes = ['daily', 'weekly', 'monthly'] as const;
-  const type = typeof candidate.type === 'string' && (validTypes as readonly string[]).includes(candidate.type) 
-    ? (candidate.type as 'daily' | 'weekly' | 'monthly') 
-    : undefined;
+  const type =
+    typeof candidate.type === 'string' && (validTypes as readonly string[]).includes(candidate.type)
+      ? (candidate.type as 'daily' | 'weekly' | 'monthly')
+      : undefined;
 
   const interval =
-    typeof candidate.interval === 'number' && Number.isFinite(candidate.interval) && candidate.interval > 0
+    typeof candidate.interval === 'number' &&
+    Number.isFinite(candidate.interval) &&
+    candidate.interval > 0
       ? candidate.interval
       : undefined;
 
@@ -57,7 +60,7 @@ export function hasTaskParentCycle(taskId: string, parentTaskId: string, tasks: 
     if (visited.has(cursor)) return true;
     visited.add(cursor);
     cursor = byId.get(cursor)?.parentTaskId;
-    
+
     // Safety break for extremely deep nesting
     if (visited.size > 100) return true;
   }
@@ -108,26 +111,31 @@ export function normalizeTask(payload: unknown, _existingTasks: Task[] = []): Ta
     };
   }
   const p = payload as Record<string, unknown>;
-  const title = typeof p.title === 'string' ? sanitizeTitle(p.title) || 'Untitled Task' : 'Untitled Task';
-  
+  const title =
+    typeof p.title === 'string' ? sanitizeTitle(p.title) || 'Untitled Task' : 'Untitled Task';
+
   const validStatus = ['todo', 'doing', 'done'] as const;
-  const status = typeof p.status === 'string' && (validStatus as readonly string[]).includes(p.status) 
-    ? (p.status as typeof validStatus[number]) 
-    : 'todo';
-    
+  const status =
+    typeof p.status === 'string' && (validStatus as readonly string[]).includes(p.status)
+      ? (p.status as (typeof validStatus)[number])
+      : 'todo';
+
   const validLevels = ['low', 'medium', 'high'] as const;
-  const priority = typeof p.priority === 'string' && (validLevels as readonly string[]).includes(p.priority) 
-    ? (p.priority as typeof validLevels[number]) 
-    : 'medium';
-    
-  const energy = typeof p.energy === 'string' && (validLevels as readonly string[]).includes(p.energy) 
-    ? (p.energy as typeof validLevels[number]) 
-    : 'medium';
-    
+  const priority =
+    typeof p.priority === 'string' && (validLevels as readonly string[]).includes(p.priority)
+      ? (p.priority as (typeof validLevels)[number])
+      : 'medium';
+
+  const energy =
+    typeof p.energy === 'string' && (validLevels as readonly string[]).includes(p.energy)
+      ? (p.energy as (typeof validLevels)[number])
+      : 'medium';
+
   const validAreas = ['work', 'personal', 'health', 'finance', 'social'] as const;
-  const area = typeof p.area === 'string' && (validAreas as readonly string[]).includes(p.area) 
-    ? (p.area as typeof validAreas[number]) 
-    : 'personal';
+  const area =
+    typeof p.area === 'string' && (validAreas as readonly string[]).includes(p.area)
+      ? (p.area as (typeof validAreas)[number])
+      : 'personal';
 
   const task: Task = {
     id: typeof p.id === 'string' && p.id.length > 0 ? p.id : crypto.randomUUID(),
@@ -140,14 +148,19 @@ export function normalizeTask(payload: unknown, _existingTasks: Task[] = []): Ta
     noteId: typeof p.noteId === 'string' ? p.noteId : undefined,
     parentTaskId: typeof p.parentTaskId === 'string' ? p.parentTaskId : undefined,
     recurrence: normalizeRecurrence(p.recurrence),
-    tags: Array.isArray(p.tags) ? p.tags.filter((t): t is string => typeof t === 'string') : undefined,
+    tags: Array.isArray(p.tags)
+      ? p.tags.filter((t): t is string => typeof t === 'string')
+      : undefined,
     createdAt: sanitizeDateString(p.createdAt) || new Date().toISOString(),
   };
 
   return task;
 }
 
-export function generateNextRecurringTasks(tasks: Task[]): { newTasks: Task[], updatedTasks: Task[] } {
+export function generateNextRecurringTasks(tasks: Task[]): {
+  newTasks: Task[];
+  updatedTasks: Task[];
+} {
   const recurring = tasks.filter((t) => t.recurrence && t.status === 'done' && !t.lastProcessedAt);
   const newTasks: Task[] = [];
   const updatedTasks: Task[] = [];
@@ -159,7 +172,7 @@ export function generateNextRecurringTasks(tasks: Task[]): { newTasks: Task[], u
 
     const now = new Date().toISOString();
     updatedTasks.push({ ...item, lastProcessedAt: now });
-    
+
     newTasks.push({
       id: crypto.randomUUID(),
       title: item.title,

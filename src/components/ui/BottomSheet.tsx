@@ -57,7 +57,7 @@ export function BottomSheet({
             ref={contentRef}
             role="dialog"
             aria-modal="true"
-            aria-labelledby={title ? "bs-title" : undefined}
+            aria-labelledby={title ? 'bs-title' : undefined}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
@@ -72,7 +72,9 @@ export function BottomSheet({
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-border/40">
               {title ? (
-                <h2 id="bs-title" className="text-lg font-semibold text-foreground">{title}</h2>
+                <h2 id="bs-title" className="text-lg font-semibold text-foreground">
+                  {title}
+                </h2>
               ) : (
                 <div />
               )}
@@ -86,9 +88,7 @@ export function BottomSheet({
                 </button>
               )}
             </div>
-            <div className="flex-1 overflow-y-auto px-5 py-4">
-              {children}
-            </div>
+            <div className="flex-1 overflow-y-auto px-5 py-4">{children}</div>
           </motion.div>
         </>
       )}

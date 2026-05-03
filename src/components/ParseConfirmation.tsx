@@ -1,20 +1,34 @@
 import { useState, useRef } from 'react';
 import { Upload, Image as ImageIcon, FileText, Check, AlertCircle, Sparkles } from 'lucide-react';
-import { Button, BottomSheet, PremiumInput, CategoryCombobox, DatePicker } from '@/shared/ui';
-import { parseFile, parseText, type ParsedTransaction, type ParseResult } from '@/utils/parserEngine';
+import { Button, BottomSheet, PremiumInput, CategoryCombobox, DatePicker } from '@/components/ui';
+import {
+  parseFile,
+  parseText,
+  type ParsedTransaction,
+  type ParseResult,
+} from '@/utils/parserEngine';
 import { cn } from '@/utils/cn';
 import { toLocalDateString } from '@/utils/date';
 
 interface ParseConfirmationProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (transaction: Omit<ParsedTransaction, 'source' | 'confidence' | 'missingFields' | 'rawText'>) => Promise<void>;
+  onSave: (
+    transaction: Omit<ParsedTransaction, 'source' | 'confidence' | 'missingFields' | 'rawText'>,
+  ) => Promise<void>;
   initialData?: ParsedTransaction | null;
 }
 
 const defaultCategories = [
-  'Food', 'Transport', 'Shopping', 'Entertainment', 'Utilities',
-  'Healthcare', 'Groceries', 'Personal', 'Other',
+  'Food',
+  'Transport',
+  'Shopping',
+  'Entertainment',
+  'Utilities',
+  'Healthcare',
+  'Groceries',
+  'Personal',
+  'Other',
 ];
 
 export function ParseConfirmation({
@@ -37,8 +51,8 @@ export function ParseConfirmation({
     initialData?.confidence === 'high'
       ? 'text-emerald-400'
       : initialData?.confidence === 'medium'
-      ? 'text-amber-400'
-      : 'text-rose-400';
+        ? 'text-amber-400'
+        : 'text-rose-400';
 
   const handleSave = async () => {
     const amount = parseFloat(formData.amount);
@@ -66,13 +80,22 @@ export function ParseConfirmation({
     }
   };
 
-
   return (
-    <BottomSheet isOpen={isOpen} onClose={onClose} title="Review Transaction" className="max-h-[90vh]">
+    <BottomSheet
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Review Transaction"
+      className="max-h-[90vh]"
+    >
       <div className="space-y-6">
         {/* Confidence indicator */}
         {initialData && (
-          <div className={cn('flex items-center gap-2 rounded-xl bg-secondary/30 p-3 text-sm', confidenceColor)}>
+          <div
+            className={cn(
+              'flex items-center gap-2 rounded-xl bg-secondary/30 p-3 text-sm',
+              confidenceColor,
+            )}
+          >
             {initialData.confidence === 'high' ? (
               <Check className="h-4 w-4" />
             ) : initialData.confidence === 'medium' ? (
@@ -84,8 +107,8 @@ export function ParseConfirmation({
               {initialData.confidence === 'high'
                 ? 'High confidence - ready to save'
                 : initialData.confidence === 'medium'
-                ? 'Review suggested - some fields may need adjustment'
-                : 'Low confidence - please verify all fields'}
+                  ? 'Review suggested - some fields may need adjustment'
+                  : 'Low confidence - please verify all fields'}
             </span>
           </div>
         )}
@@ -173,7 +196,9 @@ export function ParseConfirmation({
           </Button>
           <Button
             type="button"
-            onClick={() => { void handleSave(); }}
+            onClick={() => {
+              void handleSave();
+            }}
             disabled={isSaving || !formData.amount}
             className="flex-1"
           >
@@ -322,7 +347,9 @@ export function FileUpload({ onParsed, onTextParsed }: FileUploadProps) {
 }
 
 interface SmartInputProps {
-  onSave: (transaction: Omit<ParsedTransaction, 'source' | 'confidence' | 'missingFields' | 'rawText'>) => Promise<void>;
+  onSave: (
+    transaction: Omit<ParsedTransaction, 'source' | 'confidence' | 'missingFields' | 'rawText'>,
+  ) => Promise<void>;
 }
 
 export function SmartInput({ onSave }: SmartInputProps) {
@@ -351,7 +378,9 @@ export function SmartInput({ onSave }: SmartInputProps) {
     }
   };
 
-  const handleSave = async (transaction: Omit<ParsedTransaction, 'source' | 'confidence' | 'missingFields' | 'rawText'>) => {
+  const handleSave = async (
+    transaction: Omit<ParsedTransaction, 'source' | 'confidence' | 'missingFields' | 'rawText'>,
+  ) => {
     await onSave(transaction);
     setShowUpload(false);
     setShowConfirmation(false);
@@ -379,7 +408,11 @@ export function SmartInput({ onSave }: SmartInputProps) {
         )}
       </div>
 
-      <BottomSheet isOpen={showUpload} onClose={() => setShowUpload(false)} title="Import Transaction">
+      <BottomSheet
+        isOpen={showUpload}
+        onClose={() => setShowUpload(false)}
+        title="Import Transaction"
+      >
         <FileUpload onParsed={handleParsed} />
       </BottomSheet>
 

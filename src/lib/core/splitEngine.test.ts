@@ -37,7 +37,10 @@ describe('splitEngine', () => {
     const settlements = computeSettlements(balances);
     expect(settlements.length).toBeGreaterThan(0);
 
-    const final = settlements.reduce((accumulator, settlement) => applySettlement(accumulator, settlement), balances);
+    const final = settlements.reduce(
+      (accumulator, settlement) => applySettlement(accumulator, settlement),
+      balances,
+    );
     expect(final.every((entry) => entry.balance === 0)).toBe(true);
   });
 });

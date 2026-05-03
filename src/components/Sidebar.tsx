@@ -1,5 +1,12 @@
-import { LayoutDashboard, SquareCheckBig, Landmark, NotebookPen, Search, Settings } from 'lucide-react';
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import {
+  LayoutDashboard,
+  SquareCheckBig,
+  Landmark,
+  NotebookPen,
+  Settings,
+} from 'lucide-react';
+import { NavLink, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { cn } from '@/utils/cn';
 import { APP_VERSION } from '@/core/version';
 
@@ -11,71 +18,84 @@ const items = [
 ] as const;
 
 export function Sidebar() {
-  const navigate = useNavigate();
-
   const location = useLocation();
 
   return (
-    <aside className="hidden lg:flex flex-col w-64 h-screen fixed left-0 top-0 border-r border-border bg-surface-solid z-50">
-      <div className="p-6 flex items-center gap-3">
-        <img src="/icons/titan-logo.png" alt="Titan" className="h-6 w-6" />
-        <span className="text-lg font-bold tracking-tight">Titan</span>
+    <aside className="hidden lg:flex flex-col w-72 h-[calc(100vh-2rem)] !fixed left-4 top-4 rounded-[2rem] border border-white/5 bg-black/40 backdrop-blur-2xl z-50 transition-all overflow-hidden">
+      <div className="p-10 flex items-center gap-4 relative z-10">
+        <div className="relative">
+          <img 
+            src="/icons/falcon.png" 
+            alt="Titan" 
+            className="h-10 w-10 rounded-xl object-contain shadow-glow-blue" 
+          />
+          <div className="absolute -inset-1 rounded-xl bg-blue-500/10 blur-md -z-10" />
+        </div>
+        <div>
+          <span className="text-xl font-bold tracking-tight text-white">Titan</span>
+          <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-slate-500">Workspace</p>
+        </div>
       </div>
 
-      <div className="px-4 mb-6">
-        <button 
-          onClick={() => { void navigate('/search'); }}
-          className="flex items-center gap-3 w-full px-3 py-2 rounded-lg bg-white/5 border border-white/5 text-muted-foreground hover:text-foreground transition-all text-sm"
-        >
-          <Search className="h-4 w-4" />
-          <span>Search...</span>
-          <kbd className="ml-auto text-[10px] opacity-40">⌘K</kbd>
-        </button>
-      </div>
-
-      <nav className="flex-1 px-3 space-y-1">
+      <nav className="flex-1 px-4 space-y-2 mt-4">
         {items.map((item) => {
           const Icon = item.icon;
           const isMoneyActive = item.to === '/finance' && location.pathname.startsWith('/split');
-          
+          const active = location.pathname === item.to || (item.to === '/' && location.pathname === '/') || isMoneyActive;
+
           return (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.to === '/'}
-              className={({ isActive }) => {
-                const active = isActive || isMoneyActive;
-                return cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all',
-                  active
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground hover:bg-white/5 hover:text-foreground'
-                );
-              }}
+              className={cn(
+                'group flex items-center gap-4 px-6 py-3.5 rounded-xl text-[11px] font-bold uppercase tracking-[0.15em] transition-all relative overflow-hidden',
+                active
+                  ? 'text-white'
+                  : 'text-slate-500 hover:text-slate-300 hover:bg-white/5',
+              )}
             >
-              <Icon className="h-4 w-4" strokeWidth={2} />
+              {active && (
+                <motion.div
+                  layoutId="sidebar-active"
+                  className="absolute inset-0 bg-white/5 border border-white/5 -z-10"
+                  transition={{ type: 'spring', bounce: 0.1, duration: 0.5 }}
+                />
+              )}
+              <Icon className={cn('h-5 w-5 transition-transform duration-300', active && 'text-blue-400')} strokeWidth={active ? 2.5 : 2} />
               <span>{item.label}</span>
+              {active && (
+                <motion.div 
+                  layoutId="active-dot"
+                  className="ml-auto h-1.5 w-1.5 rounded-full bg-blue-400 shadow-glow-blue" 
+                />
+              )}
             </NavLink>
           );
         })}
       </nav>
 
-      <div className="p-4 border-t border-border space-y-1">
+      <div className="p-8 border-t border-white/5 space-y-4 relative z-10">
         <NavLink
           to="/settings"
           className={({ isActive }) =>
             cn(
-              'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all',
-              isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-white/5 hover:text-foreground'
+              'flex items-center gap-4 px-6 py-4 rounded-xl text-[11px] font-bold uppercase tracking-[0.15em] transition-all',
+              isActive
+                ? 'bg-white/5 text-white border border-white/5'
+                : 'text-slate-500 hover:text-slate-300 hover:bg-white/5',
             )
           }
         >
-          <Settings className="h-4 w-4" />
+          <Settings className="h-5 w-5" />
           <span>Settings</span>
         </NavLink>
-        <div className="px-3 py-2 text-[10px] text-muted-foreground flex justify-between items-center opacity-60">
-          <span>Version {APP_VERSION}</span>
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+        <div className="px-6 py-2 text-[9px] font-bold uppercase tracking-widest text-slate-600 flex justify-between items-center opacity-60">
+          <span>v{APP_VERSION}</span>
+          <div className="flex items-center gap-1.5">
+            <div className="h-1 w-1 rounded-full bg-blue-400" />
+            <span>Ready</span>
+          </div>
         </div>
       </div>
     </aside>

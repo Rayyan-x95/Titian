@@ -16,30 +16,34 @@ const ROUTES = [
   '/personal-life-os',
   '/split-expenses-app',
   '/what-is-titan',
-  '/life-management-app'
+  '/life-management-app',
 ];
 
 // In a real scenario, you'd fetch blog slugs from your data source
 const BLOG_SLUGS = [
   'the-future-of-personal-operating-systems',
-  'why-offline-first-matters-for-productivity'
+  'why-offline-first-matters-for-productivity',
 ];
 
 function generateSitemap() {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  ${ROUTES.map(route => `
+  ${ROUTES.map(
+    (route) => `
   <url>
     <loc>${BASE_URL}${route}</loc>
     <changefreq>weekly</changefreq>
     <priority>${route === '/home' ? '1.0' : route === '/' ? '0.9' : '0.8'}</priority>
-  </url>`).join('')}
-  ${BLOG_SLUGS.map(slug => `
+  </url>`,
+  ).join('')}
+  ${BLOG_SLUGS.map(
+    (slug) => `
   <url>
     <loc>${BASE_URL}/blog/${slug}</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
-  </url>`).join('')}
+  </url>`,
+  ).join('')}
 </urlset>`;
 
   const publicDir = path.resolve(process.cwd(), 'public');

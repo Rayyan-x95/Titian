@@ -1,4 +1,9 @@
-import type { FinancialGoal, OnboardingPreferences, OnboardingProfile, OnboardingUpdate } from '@/core/store';
+import type {
+  FinancialGoal,
+  OnboardingPreferences,
+  OnboardingProfile,
+  OnboardingUpdate,
+} from '@/core/store';
 
 export interface OnboardingStepProps {
   profile: OnboardingProfile;

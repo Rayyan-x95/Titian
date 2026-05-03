@@ -1,9 +1,12 @@
 import type { FinancialGoal, OnboardingProfile } from './types';
+import type { CurrencyCode } from '../settings';
 import { sanitizeString, sanitizeDateString } from '@/utils/sanitizer';
 import { normalizePositiveCents } from '@/lib/core/financeEngine';
 
 export function createId() {
-  return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return (
+    globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`
+  );
 }
 
 export function createTimestamp(value?: string) {
@@ -14,15 +17,18 @@ export function upsertItem<T extends { id: string }>(items: T[], item: T): T[] {
   const index = items.findIndex((i) => i.id === item.id);
   if (index === -1) return [...items, item];
   // Use .map to avoid mutation and be more functional
-  return items.map((i) => i.id === item.id ? item : i);
+  return items.map((i) => (i.id === item.id ? item : i));
 }
 
-export function createDefaultOnboardingProfile(timestamp = new Date().toISOString()): OnboardingProfile {
+export function createDefaultOnboardingProfile(
+  timestamp = new Date().toISOString(),
+): OnboardingProfile {
   return {
     id: 'primary',
     name: '',
     income: 0,
     avgExpense: 0,
+    currency: 'INR',
     goals: [],
     preferences: {
       notifications: true,
@@ -43,20 +49,21 @@ export function readArray(payload: Record<string, unknown>, key: string): unknow
   return Array.isArray(value) ? (value as unknown[]) : [];
 }
 
-export function normalizeImportedOnboarding(value: unknown, fallback: OnboardingProfile): OnboardingProfile {
+export function normalizeImportedOnboarding(
+  value: unknown,
+  fallback: OnboardingProfile,
+): OnboardingProfile {
   if (!isRecord(value)) return fallback;
 
   const base = createDefaultOnboardingProfile();
   const preferences = isRecord(value.preferences) ? value.preferences : {};
   const goals = Array.isArray(value.goals)
-    ? (value.goals as unknown[]).filter((goal): goal is FinancialGoal =>
-        typeof goal === 'string' &&
-        [
-          'save-money',
-          'track-spending',
-          'improve-productivity',
-          'reduce-expenses',
-        ].includes(goal as FinancialGoal),
+    ? (value.goals as unknown[]).filter(
+        (goal): goal is FinancialGoal =>
+          typeof goal === 'string' &&
+          ['save-money', 'track-spending', 'improve-productivity', 'reduce-expenses'].includes(
+            goal as FinancialGoal,
+          ),
       )
     : [];
 
@@ -65,13 +72,23 @@ export function normalizeImportedOnboarding(value: unknown, fallback: Onboarding
     id: 'primary',
     name: sanitizeString(value.name, 100) || base.name,
     phoneNumber: sanitizeString(value.phoneNumber, 20),
+    currency: (sanitizeString(value.currency, 10) as CurrencyCode) || base.currency,
     dob: sanitizeDateString(value.dob),
     income: typeof value.income === 'number' ? normalizePositiveCents(value.income) : base.income,
-    avgExpense: typeof value.avgExpense === 'number' ? normalizePositiveCents(value.avgExpense) : base.avgExpense,
+    avgExpense:
+      typeof value.avgExpense === 'number'
+        ? normalizePositiveCents(value.avgExpense)
+        : base.avgExpense,
     goals,
     preferences: {
-      notifications: typeof preferences.notifications === 'boolean' ? preferences.notifications : base.preferences.notifications,
-      darkMode: typeof preferences.darkMode === 'boolean' ? preferences.darkMode : base.preferences.darkMode,
+      notifications:
+        typeof preferences.notifications === 'boolean'
+          ? preferences.notifications
+          : base.preferences.notifications,
+      darkMode:
+        typeof preferences.darkMode === 'boolean'
+          ? preferences.darkMode
+          : base.preferences.darkMode,
     },
     currentStep: typeof value.currentStep === 'number' ? value.currentStep : base.currentStep,
     completedAt: sanitizeDateString(value.completedAt),

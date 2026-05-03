@@ -1,9 +1,8 @@
+import { memo, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronRight, PencilLine, Trash2, Repeat, Calendar, Flag } from 'lucide-react';
-import { useMemo } from 'react';
-import { Button } from '@/shared/ui';
 import { cn } from '@/utils/cn';
-import type { Task, TaskStatus, TaskPriority } from '@/core/store/types';
+import type { Task, TaskStatus } from '@/core/store/types';
 
 interface TaskItemProps {
   task: Task;
@@ -20,19 +19,14 @@ const statusLabels: Record<TaskStatus, string> = {
   done: 'Done',
 };
 
-const statusStyles: Record<TaskStatus, string> = {
-  todo: 'bg-muted/50 text-muted-foreground',
-  doing: 'bg-amber-500/10 text-amber-500',
-  done: 'bg-emerald-500/10 text-emerald-500',
-};
-
-const priorityStyles: Record<TaskPriority, string> = {
-  low: 'bg-blue-500/10 text-blue-500',
-  medium: 'bg-amber-500/10 text-amber-500',
-  high: 'bg-rose-500/10 text-rose-500',
-};
-
-export function TaskItem({ task, subtasks, onEdit, onToggleStatus, onDelete, onAddSubtask }: TaskItemProps) {
+export const TaskItem = memo(function TaskItem({
+  task,
+  subtasks,
+  onEdit,
+  onToggleStatus,
+  onDelete,
+  onAddSubtask,
+}: TaskItemProps) {
   const formattedDueDate = useMemo(() => {
     if (!task.dueDate) return null;
     const date = new Date(task.dueDate);
@@ -47,7 +41,8 @@ export function TaskItem({ task, subtasks, onEdit, onToggleStatus, onDelete, onA
     return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(date);
   }, [task.createdAt]);
 
-  const nextStatusLabel = task.status === 'todo' ? 'Start' : task.status === 'doing' ? 'Complete' : 'Reset';
+  const nextStatusLabel =
+    task.status === 'todo' ? 'Start' : task.status === 'doing' ? 'Complete' : 'Reset';
 
   return (
     <motion.article
@@ -55,49 +50,65 @@ export function TaskItem({ task, subtasks, onEdit, onToggleStatus, onDelete, onA
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      className="group relative overflow-hidden rounded-xl border border-border bg-surface p-5 transition-all hover:border-primary/40"
+      className="glass-panel group relative overflow-hidden rounded-[2rem] p-7 transition-all hover:shadow-glow-blue"
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2 mb-3">
-             <span className={cn(
-               "flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider",
-               statusStyles[task.status]
-             )}>
-               <span className="h-1 w-1 rounded-full bg-current" />
-               {statusLabels[task.status]}
-             </span>
-             
-             <span className={cn(
-               "flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider",
-               priorityStyles[task.priority]
-             )}>
-               <Flag className="h-2.5 w-2.5" />
-               {task.priority}
-             </span>
-
-             {task.recurrence && (
-                <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-muted-foreground/60">
-                  <Repeat className="h-2.5 w-2.5" />
-                  {task.recurrence.type}
-                </span>
+          <div className="flex flex-wrap items-center gap-3 mb-4">
+            <span
+              className={cn(
+                'flex items-center gap-2 rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] border border-white/5 bg-white/5',
+                task.status === 'done'
+                  ? 'text-emerald-400'
+                  : task.status === 'doing'
+                    ? 'text-amber-400'
+                    : 'text-slate-400',
               )}
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-current shadow-[0_0_8px_currentColor]" />
+              {statusLabels[task.status]}
+            </span>
 
-             {formattedDueDate && (
-               <span className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-muted-foreground/60">
-                 <Calendar className="h-2.5 w-2.5" />
-                 {formattedDueDate}
-               </span>
-             )}
+            <span
+              className={cn(
+                'flex items-center gap-2 rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] border border-white/5 bg-white/5',
+                task.priority === 'high'
+                  ? 'text-red-400'
+                  : task.priority === 'medium'
+                    ? 'text-amber-400'
+                    : 'text-blue-400',
+              )}
+            >
+              <Flag className="h-2.5 w-2.5" />
+              {task.priority}
+            </span>
+
+            {task.recurrence && (
+              <span className="flex items-center gap-2 rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] border border-white/5 bg-white/5 text-slate-500">
+                <Repeat className="h-2.5 w-2.5" />
+                {task.recurrence.type}
+              </span>
+            )}
+
+            {formattedDueDate && (
+              <span className="flex items-center gap-2 rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] border border-white/5 bg-white/5 text-slate-500">
+                <Calendar className="h-2.5 w-2.5" />
+                {formattedDueDate}
+              </span>
+            )}
           </div>
 
-          <h3 className={cn(
-            "text-base font-bold tracking-tight leading-tight transition-all",
-            task.status === 'done' ? "text-muted-foreground line-through opacity-40" : "text-foreground"
-          )}>
+          <h3
+            className={cn(
+              'text-base font-bold tracking-tight leading-tight transition-all',
+              task.status === 'done'
+                ? 'text-muted-foreground line-through opacity-40'
+                : 'text-foreground',
+            )}
+          >
             {task.title}
           </h3>
-          
+
           <div className="mt-4 flex items-center justify-between">
             <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/40">
               {createdAtFormatted}
@@ -105,50 +116,54 @@ export function TaskItem({ task, subtasks, onEdit, onToggleStatus, onDelete, onA
           </div>
 
           {subtasks && subtasks.length > 0 && (
-            <div className="mt-4">
-              <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-primary transition-all duration-500" 
-                  style={{ width: `${(subtasks.filter(s => s.status === 'done').length / subtasks.length) * 100}%` }}
+            <div className="mt-5">
+              <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
+                <div
+                  className="h-full bg-blue-500 transition-all duration-700 ease-out shadow-[0_0_8px_rgba(37,99,235,0.4)]"
+                  style={{
+                    width: `${(subtasks.filter((s) => s.status === 'done').length / subtasks.length) * 100}%`,
+                  }}
                 />
               </div>
             </div>
           )}
         </div>
 
-        <div className="flex flex-col gap-2">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => onToggleStatus(task)} 
+        <div className="flex flex-col gap-3">
+          <button
+            onClick={() => onToggleStatus(task)}
             className={cn(
-              "h-8 px-3 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all",
-              task.status === 'done' ? "bg-emerald-500/10 text-emerald-500" : "bg-primary/10 text-primary"
+              'h-12 px-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 border',
+              task.status === 'done'
+                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-glow-green'
+                : 'bg-blue-600 text-white border-blue-500 shadow-glow-blue active:scale-95',
             )}
           >
             {nextStatusLabel}
-            <ChevronRight className="ml-1 h-3.5 w-3.5" />
-          </Button>
-          
-          <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <ChevronRight className="h-4 w-4" />
+          </button>
+
+          <div className="flex gap-2 transition-all opacity-100 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100">
+            <button
               aria-label={`Edit ${task.title}`}
-              onClick={(e) => { e.stopPropagation(); onEdit(task); }} 
-              className="h-7 w-7 p-0 rounded-md bg-white/5 hover:bg-white/10"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(task);
+              }}
+              className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/5 border border-white/5 text-slate-400 hover:bg-white/10 hover:text-white transition-all active:scale-90"
             >
-              <PencilLine className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
+              <PencilLine className="h-5 w-5" />
+            </button>
+            <button
               aria-label={`Delete ${task.title}`}
-              onClick={(e) => { e.stopPropagation(); onDelete(task); }}
-              className="h-7 w-7 p-0 rounded-md bg-destructive/5 hover:bg-destructive/10 text-destructive"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(task);
+              }}
+              className="flex h-11 w-11 items-center justify-center rounded-2xl bg-red-500/10 border border-red-500/10 text-red-400 hover:bg-red-500/20 transition-all active:scale-90"
             >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
+              <Trash2 className="h-5 w-5" />
+            </button>
           </div>
         </div>
       </div>
@@ -169,4 +184,4 @@ export function TaskItem({ task, subtasks, onEdit, onToggleStatus, onDelete, onA
       )}
     </motion.article>
   );
-}
+});

@@ -1,3 +1,4 @@
+import type { CurrencyCode } from '../settings';
 export type TaskStatus = 'todo' | 'doing' | 'done';
 export type TaskPriority = 'low' | 'medium' | 'high';
 export type EnergyLevel = 'low' | 'medium' | 'high';
@@ -126,7 +127,11 @@ export interface Budget {
   period: 'weekly' | 'monthly';
 }
 
-export type FinancialGoal = 'save-money' | 'track-spending' | 'improve-productivity' | 'reduce-expenses';
+export type FinancialGoal =
+  | 'save-money'
+  | 'track-spending'
+  | 'improve-productivity'
+  | 'reduce-expenses';
 
 export interface OnboardingPreferences {
   notifications: boolean;
@@ -144,6 +149,7 @@ export interface OnboardingProfile {
   name: string;
   phoneNumber?: string;
   upiId?: string;
+  currency: CurrencyCode;
   dob?: string;
   income: MoneyCents;
   avgExpense: MoneyCents;
@@ -158,8 +164,11 @@ export interface OnboardingProfile {
 
 export type TaskInput = Omit<Task, 'id' | 'createdAt' | 'priority'> &
   Partial<Pick<Task, 'id' | 'createdAt' | 'priority'>>;
-  
-export type NoteInput = Omit<Note, 'id' | 'createdAt' | 'linkedTaskIds' | 'linkedNoteIds' | 'pinned'> &
+
+export type NoteInput = Omit<
+  Note,
+  'id' | 'createdAt' | 'linkedTaskIds' | 'linkedNoteIds' | 'pinned'
+> &
   Partial<Pick<Note, 'id' | 'createdAt' | 'linkedTaskIds' | 'linkedNoteIds' | 'pinned'>>;
 
 export interface AccountInput {
@@ -193,12 +202,26 @@ export interface BudgetInput {
 }
 
 export type OnboardingUpdate = Partial<
-  Pick<OnboardingProfile, 'name' | 'phoneNumber' | 'upiId' | 'dob' | 'income' | 'avgExpense' | 'goals' | 'preferences' | 'currentStep'>
+  Pick<
+    OnboardingProfile,
+    | 'name'
+    | 'phoneNumber'
+    | 'upiId'
+    | 'currency'
+    | 'dob'
+    | 'income'
+    | 'avgExpense'
+    | 'goals'
+    | 'preferences'
+    | 'currentStep'
+  >
 >;
 
-export type FriendInput = Omit<Friend, 'id' | 'createdAt'> & Partial<Pick<Friend, 'id' | 'createdAt'>>;
+export type FriendInput = Omit<Friend, 'id' | 'createdAt'> &
+  Partial<Pick<Friend, 'id' | 'createdAt'>>;
 export type GroupInput = Omit<Group, 'id' | 'createdAt'> & Partial<Pick<Group, 'id' | 'createdAt'>>;
-export type SharedExpenseInput = Omit<SharedExpense, 'id' | 'createdAt'> & Partial<Pick<SharedExpense, 'id' | 'createdAt'>>;
+export type SharedExpenseInput = Omit<SharedExpense, 'id' | 'createdAt'> &
+  Partial<Pick<SharedExpense, 'id' | 'createdAt'>>;
 
 export type FriendUpdate = Partial<Omit<Friend, 'id' | 'createdAt'>>;
 export type GroupUpdate = Partial<Omit<Group, 'id' | 'createdAt'>>;

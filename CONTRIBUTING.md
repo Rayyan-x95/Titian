@@ -1,39 +1,47 @@
-# Contributing Guide
+# Contributing to Titan 🦅
 
-Developer setup
+First off, thank you for considering contributing to Titan! It's people like you that make open source such a great community.
 
-1. Install dependencies
+## 🚀 Quick Start
 
-```bash
-npm install
-```
+1. **Fork** the repository on GitHub.
+2. **Clone** your fork locally.
+3. **Install** dependencies: `npm install`.
+4. **Create** a feature branch: `git checkout -b feat/my-awesome-feature`.
+5. **Develop**: `npm run dev`.
+6. **Verify**: Ensure `npm run check:ci` passes.
+7. **Commit**: Use descriptive commit messages.
+8. **Push** to your fork and **Submit a PR**.
 
-2. Initialize husky hooks
+## 🛠️ Development Standards
 
-```bash
-npx husky install
-npx husky add .husky/pre-commit "npx lint-staged"
-```
+### 🛡️ Privacy First
+Titan is a privacy-first app. **Never** introduce third-party trackers, external fonts (unless self-hosted), or any logic that transmits personal user data to a remote server without explicit, transparent user consent.
 
-3. Run checks
+### 🧠 Logic Engines
+All business logic (math, validation, recurrence) should live in `src/lib/core/` as **pure functions**. This ensures the logic is easily testable and decoupled from the UI.
 
-```bash
-npm run typecheck
-npm run lint
-npm test
-npm run format
-```
+### 🎨 UI & Styling
+- Use **Tailwind CSS** for all styling.
+- Follow the existing **Dark Mode** design tokens.
+- Use **Lucide React** for icons.
+- Ensure components are accessible (ARIA labels, focus states).
 
-4. Running benchmarks
+### 🧪 Testing
+We use **Vitest** for unit testing. Every new engine function or core store action should have a corresponding `.test.ts` file.
 
-```bash
-npm run bench 2000
-```
+## 📋 Pull Request Guidelines
 
-5. Creating a PR
+- **Keep it focused**: One PR per feature or bug fix.
+- **Link issues**: Mention relevant issues in the description (e.g., `Fixes #123`).
+- **Tests**: PRs that improve or maintain test coverage are prioritized.
+- **Linting**: Ensure `npm run lint` and `npm run format` have been run.
 
-- Ensure `npm run typecheck` and `npm test` pass locally
-- Run `npm run lint:fix` and `npm run format` before committing
+## 🤝 Code of Conduct
+By participating in this project, you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md).
 
-Notes
-- CI will run on push/PR and validate typecheck, lint, tests, build, and smoke tests.
+## ❓ Need Help?
+Open an [Issue](https://github.com/Rayyan-x95/Titan/issues) with the `question` label.
+
+---
+*Happy coding!*

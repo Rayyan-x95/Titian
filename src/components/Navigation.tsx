@@ -1,6 +1,13 @@
-import { LayoutDashboard, SquareCheckBig, Landmark, NotebookPen, Plus, Settings } from 'lucide-react';
+import {
+  LayoutDashboard,
+  SquareCheckBig,
+  Landmark,
+  NotebookPen,
+  Plus,
+  Settings,
+} from 'lucide-react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/utils/cn';
 
 const items = [
@@ -18,55 +25,61 @@ export function Navigation() {
   return (
     <nav
       aria-label="Primary navigation"
-      className="pointer-events-none fixed inset-x-0 bottom-6 z-50 mx-auto flex max-w-[calc(100%-2rem)] flex-col items-center gap-4 px-4 lg:hidden"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-50 mx-auto flex max-w-fit flex-col items-center px-4 pb-[calc(1.5rem+var(--safe-area-bottom))] lg:hidden"
     >
-      <button
-        onClick={() => { void navigate('/tasks?new=1'); }}
-        className="pointer-events-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/20 bg-gradient-to-br from-primary to-accent shadow-[0_10px_24px_rgba(24,125,255,0.38)] transition-all active:scale-95"
-        aria-label="Add new item"
-      >
-        <Plus className="h-7 w-7 text-white" strokeWidth={2.5} />
-      </button>
-
-      <div className="compact-nav pointer-events-auto flex w-full items-center justify-around gap-1 rounded-[1.6rem] border border-border/70 bg-card/70 p-2 backdrop-blur-2xl">
+      <div className="pointer-events-auto flex items-center gap-1 rounded-full border border-white/10 bg-black/40 p-1.5 backdrop-blur-2xl shadow-2xl relative overflow-hidden ring-1 ring-white/5">
+        <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
+        
         {items.map((item) => {
           const Icon = item.icon;
           const isMoneyActive = item.to === '/finance' && location.pathname.startsWith('/split');
+          const active = location.pathname === item.to || (item.to === '/' && location.pathname === '/') || isMoneyActive;
 
           return (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.to === '/'}
-              aria-label={item.label}
-              className={({ isActive }) =>
+              className={() =>
                 cn(
-                  'relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1.5 rounded-xl px-2 py-2.5 text-[10px] font-semibold tracking-wide transition-all duration-200',
-                  (isActive || isMoneyActive)
-                    ? 'text-white'
-                    : 'text-muted-foreground hover:text-foreground',
+                  'relative flex h-12 w-12 items-center justify-center rounded-full transition-all duration-500',
+                  active ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300',
                 )
               }
             >
-              {({ isActive }) => {
-                const active = isActive || isMoneyActive;
-                return (
-                  <>
-                    {active && (
-                      <motion.div 
-                        layoutId="nav-active"
-                        className="absolute inset-0 -z-10 rounded-xl bg-gradient-to-br from-primary/90 to-accent/85"
-                        transition={{ type: 'spring', bounce: 0.16, duration: 0.44 }}
-                      />
-                    )}
-                    <Icon className={cn('h-5 w-5 transition-all duration-200', active ? 'scale-105' : 'opacity-80')} strokeWidth={1.7} />
-                    <span className="leading-none">{item.label}</span>
-                  </>
-                );
-              }}
+              <AnimatePresence mode="wait">
+                {active && (
+                  <motion.div
+                    layoutId="nav-pill"
+                    className="absolute inset-0 bg-white/10 shadow-inner rounded-full"
+                    transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+              </AnimatePresence>
+              <Icon className={cn('h-5 w-5 relative z-10 transition-transform duration-500', active && 'scale-110')} strokeWidth={active ? 2.5 : 2} />
+              
+              {active && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="absolute -bottom-1.5 h-1 w-1 rounded-full bg-blue-400 shadow-glow-blue"
+                />
+              )}
             </NavLink>
           );
         })}
+
+        <div className="h-6 w-[1px] bg-white/10 mx-1" />
+
+        <button
+          onClick={() => {
+            void navigate('/tasks?new=1');
+          }}
+          className="relative flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 text-white shadow-glow-blue active:scale-90 transition-all overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-gradient-to-tr from-black/20 to-transparent pointer-events-none" />
+          <Plus className="h-6 w-6 relative z-10" strokeWidth={3} />
+        </button>
       </div>
     </nav>
   );

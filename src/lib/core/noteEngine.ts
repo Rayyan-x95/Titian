@@ -17,13 +17,14 @@ export function normalizeNote(payload: unknown): Note {
   const p = payload as Record<string, unknown>;
   // Strip HTML and then sanitize to prevent XSS
   const content = sanitizeString(stripHtml(typeof p.content === 'string' ? p.content : ''));
-  
+
   const noteId = typeof p.id === 'string' && p.id.length > 0 ? p.id : crypto.randomUUID();
-  
+
   const validAreas = ['work', 'personal', 'health', 'finance', 'social'] as const;
-  const area = typeof p.area === 'string' && (validAreas as readonly string[]).includes(p.area) 
-    ? (p.area as typeof validAreas[number]) 
-    : 'personal';
+  const area =
+    typeof p.area === 'string' && (validAreas as readonly string[]).includes(p.area)
+      ? (p.area as (typeof validAreas)[number])
+      : 'personal';
 
   return {
     id: noteId,
@@ -31,12 +32,12 @@ export function normalizeNote(payload: unknown): Note {
     tags: sanitizeTags(p.tags),
     area,
     pinned: typeof p.pinned === 'boolean' ? p.pinned : false,
-    linkedTaskIds: Array.isArray(p.linkedTaskIds) 
-      ? p.linkedTaskIds.filter((id): id is string => typeof id === 'string') 
+    linkedTaskIds: Array.isArray(p.linkedTaskIds)
+      ? p.linkedTaskIds.filter((id): id is string => typeof id === 'string')
       : [],
     // Filter out self-references in note links
-    linkedNoteIds: Array.isArray(p.linkedNoteIds) 
-      ? p.linkedNoteIds.filter((id): id is string => typeof id === 'string' && id !== noteId) 
+    linkedNoteIds: Array.isArray(p.linkedNoteIds)
+      ? p.linkedNoteIds.filter((id): id is string => typeof id === 'string' && id !== noteId)
       : [],
     createdAt: sanitizeDateString(p.createdAt) || new Date().toISOString(),
   };
@@ -48,7 +49,10 @@ export function noteTitle(content: string): string {
 }
 
 export function notePreview(content: string): string {
-  const lines = content.split('\n').map((l) => l.trim()).filter(Boolean);
+  const lines = content
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
   const snippet = lines.slice(1).join(' ').slice(0, 80);
   return snippet ? `${snippet}…` : '';
 }

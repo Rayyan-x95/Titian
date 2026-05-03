@@ -51,7 +51,12 @@ export function Calendar({ value, onChange, markedDates = [], className }: Calen
   }
 
   return (
-    <div className={cn('w-[280px] select-none rounded-3xl border border-border bg-card p-4 shadow-glass', className)}>
+    <div
+      className={cn(
+        'w-[280px] select-none rounded-3xl border border-border bg-card p-4 shadow-glass',
+        className,
+      )}
+    >
       {/* Header */}
       <div className="mb-3 flex items-center justify-between gap-2">
         <button
@@ -83,7 +88,10 @@ export function Calendar({ value, onChange, markedDates = [], className }: Calen
       {/* Day labels */}
       <div className="mb-1 grid grid-cols-7 text-center">
         {DAYS_OF_WEEK.map((d) => (
-          <span key={d} className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+          <span
+            key={d}
+            className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground"
+          >
             {d}
           </span>
         ))}
@@ -92,7 +100,8 @@ export function Calendar({ value, onChange, markedDates = [], className }: Calen
       {/* Day grid */}
       <div className="grid grid-cols-7 gap-y-0.5">
         {cells.map((cell, idx) => {
-          const offsetMonth = idx < firstDay ? month - 1 : idx >= firstDay + daysInMonth ? month + 1 : month;
+          const offsetMonth =
+            idx < firstDay ? month - 1 : idx >= firstDay + daysInMonth ? month + 1 : month;
           const cellDate = new Date(year, offsetMonth, cell.day, 12);
           const dateStr = cell.current
             ? `${year}-${String(month + 1).padStart(2, '0')}-${String(cell.day).padStart(2, '0')}`
@@ -119,7 +128,8 @@ export function Calendar({ value, onChange, markedDates = [], className }: Calen
                   !cell.current && 'pointer-events-none text-muted-foreground/25',
                   cell.current && !isSelected && !isToday && 'text-foreground hover:bg-secondary',
                   isToday && !isSelected && 'font-bold text-primary ring-1 ring-primary/50',
-                  isSelected && 'bg-primary font-bold text-primary-foreground shadow-glow scale-110',
+                  isSelected &&
+                    'bg-primary font-bold text-primary-foreground shadow-glow scale-110',
                 )}
               >
                 {cell.day}

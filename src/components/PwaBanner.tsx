@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Download, RefreshCcw, WifiOff } from 'lucide-react';
-import { Button } from '@/shared/ui';
+import { Button } from '@/components/ui';
 import { promptInstall } from '@/pwa';
 import { createPwaUpdateController } from '@/pwaUpdates';
 import { usePwaStatus } from '@/hooks/usePwaStatus';
@@ -69,7 +69,9 @@ export function PwaBanner() {
             ) : (
               <>
                 <p className="text-sm font-semibold text-foreground">Install Titan</p>
-                <p className="text-xs text-muted-foreground">Add Titan to your home screen for faster access.</p>
+                <p className="text-xs text-muted-foreground">
+                  Add Titan to your home screen for faster access.
+                </p>
               </>
             )}
           </div>
@@ -113,4 +115,3 @@ export function PwaBanner() {
     </div>
   );
 }
-

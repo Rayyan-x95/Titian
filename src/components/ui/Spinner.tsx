@@ -20,7 +20,7 @@ export function Spinner({ className, size = 'md' }: SpinnerProps) {
       className={cn(
         'rounded-full border-primary/20 border-t-primary',
         sizeClasses[size],
-        className
+        className,
       )}
     />
   );

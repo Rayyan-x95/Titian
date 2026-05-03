@@ -63,10 +63,30 @@ vi.mock('@/core/db/db', () => ({
     budgets: tables.budgetsTable,
     accounts: tables.accountsTable,
     onboarding: tables.onboardingTable,
-    friends: { clear: () => Promise.resolve(), toArray: () => Promise.resolve([]), put: () => Promise.resolve(), bulkPut: () => Promise.resolve() },
-    groups: { clear: () => Promise.resolve(), toArray: () => Promise.resolve([]), put: () => Promise.resolve(), bulkPut: () => Promise.resolve() },
-    sharedExpenses: { clear: () => Promise.resolve(), toArray: () => Promise.resolve([]), put: () => Promise.resolve(), bulkPut: () => Promise.resolve() },
-    dailySnapshots: { clear: () => Promise.resolve(), toArray: () => Promise.resolve([]), put: () => Promise.resolve(), bulkPut: () => Promise.resolve() },
+    friends: {
+      clear: () => Promise.resolve(),
+      toArray: () => Promise.resolve([]),
+      put: () => Promise.resolve(),
+      bulkPut: () => Promise.resolve(),
+    },
+    groups: {
+      clear: () => Promise.resolve(),
+      toArray: () => Promise.resolve([]),
+      put: () => Promise.resolve(),
+      bulkPut: () => Promise.resolve(),
+    },
+    sharedExpenses: {
+      clear: () => Promise.resolve(),
+      toArray: () => Promise.resolve([]),
+      put: () => Promise.resolve(),
+      bulkPut: () => Promise.resolve(),
+    },
+    dailySnapshots: {
+      clear: () => Promise.resolve(),
+      toArray: () => Promise.resolve([]),
+      put: () => Promise.resolve(),
+      bulkPut: () => Promise.resolve(),
+    },
     tables: [
       tables.tasksTable,
       tables.notesTable,
@@ -157,11 +177,15 @@ describe('core store stabilization behavior', () => {
     });
     expect(invalidExpense.linkedTaskId).toBeUndefined();
 
-    const updated = await useStore.getState().updateExpense(validExpense.id, { linkedTaskId: 'missing-task' });
+    const updated = await useStore
+      .getState()
+      .updateExpense(validExpense.id, { linkedTaskId: 'missing-task' });
     expect(updated?.linkedTaskId).toBeUndefined();
 
     await useStore.getState().importBackup({
-      tasks: [{ id: 'task-1', title: 'Valid task', status: 'todo', createdAt: new Date().toISOString() }],
+      tasks: [
+        { id: 'task-1', title: 'Valid task', status: 'todo', createdAt: new Date().toISOString() },
+      ],
       notes: [],
       expenses: [
         {

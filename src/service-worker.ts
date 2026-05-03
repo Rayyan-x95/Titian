@@ -1,8 +1,8 @@
 /// <reference lib="webworker" />
 
 import { clientsClaim } from 'workbox-core';
-import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
-import { registerRoute, NavigationRoute } from 'workbox-routing';
+import { precacheAndRoute, cleanupOutdatedCaches, matchPrecache } from 'workbox-precaching';
+import { registerRoute, NavigationRoute, setCatchHandler } from 'workbox-routing';
 import { CacheFirst, NetworkFirst, StaleWhileRevalidate } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 
@@ -67,7 +67,10 @@ async function handleShareTargetPost(request: Request) {
 }
 
 registerRoute(
-  ({ request }) => request.destination === 'style' || request.destination === 'script' || request.destination === 'worker',
+  ({ request }) =>
+    request.destination === 'style' ||
+    request.destination === 'script' ||
+    request.destination === 'worker',
   new StaleWhileRevalidate({
     cacheName: 'titan-static-assets',
   }),
@@ -92,14 +95,22 @@ const appShellHandler = new NetworkFirst({
 });
 
 const navigationRoute = new NavigationRoute(appShellHandler, {
-  denylist: [
-    /^\/api\//,
-    /^\/sitemap\.xml$/,
-    /^\/robots\.txt$/,
-  ],
+  denylist: [/^\/api\//, /^\/sitemap\.xml$/, /^\/robots\.txt$/],
 });
 
 registerRoute(navigationRoute);
+
+// ─── Offline Fallback ─────────────────────────────────────────────────────────
+
+setCatchHandler(async ({ request }) => {
+  // Navigation fallback to offline.html
+  if (request.mode === 'navigate') {
+    return (await matchPrecache('/offline.html')) || Response.error();
+  }
+
+  // Fallback for other resource types if needed
+  return Response.error();
+});
 
 // ─── Notifications ────────────────────────────────────────────────────────────
 
@@ -123,16 +134,18 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const urlToOpen = String(event.notification.data || '/');
 
-  event.waitUntil((async () => {
-    const clientList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    for (const client of clientList) {
-      if (client.url === urlToOpen && 'focus' in client) {
-        await client.focus();
-        return;
+  event.waitUntil(
+    (async () => {
+      const clientList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      for (const client of clientList) {
+        if (client.url === urlToOpen && 'focus' in client) {
+          await client.focus();
+          return;
+        }
       }
-    }
-    if (self.clients.openWindow) {
-      await self.clients.openWindow(urlToOpen);
-    }
-  })());
+      if (self.clients.openWindow) {
+        await self.clients.openWindow(urlToOpen);
+      }
+    })(),
+  );
 });

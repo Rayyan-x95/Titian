@@ -1,90 +1,105 @@
 <!doctype html>
 <html lang="en" data-theme="dark" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://titanapp.qzz.io; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; worker-src 'self' blob:; object-src 'none';" />
+    <meta name="google-site-verification" content="uWhCQ7ngQkCcxxa2BxYeaVSTO04p5gilA_v3CqomofE" />
+    <meta name="robots" content="index, follow" />
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="google-site-verification" content="uWhCQ7ngQkCcxxa2BxYeaVSTO04p5gilA_v3CqomofE" />
-  <meta name="robots" content="index, follow" />
+    <!-- Primary SEO -->
+    <title>Titan — Professional Personal Life Operating System</title>
+    <meta
+      name="title"
+      content="Titan — Professional Personal Life Operating System | Tasks, Money & Thoughts"
+    />
+    <meta
+      name="description"
+      content="Titan is a premium, unified workspace for your tasks, finances, and thoughts. Experience absolute clarity with our offline-first Personal Life Operating System."
+    />
+    <meta
+      name="keywords"
+      content="personal life operating system, life os, ai task manager, expense tracker, note taking app, productivity system, offline-first pwa, unified workspace"
+    />
+    <meta name="author" content="Titan" />
+    <meta name="theme-color" content="#0A3DFF" />
 
-  <!-- Primary SEO -->
-  <title>Titan — Professional Personal Life Operating System</title>
-  <meta name="title" content="Titan — Professional Personal Life Operating System | Tasks, Money & Thoughts" />
-  <meta name="description"
-    content="Titan is a premium, unified workspace for your tasks, finances, and thoughts. Experience absolute clarity with our offline-first Personal Life Operating System." />
-  <meta name="keywords"
-    content="personal life operating system, life os, ai task manager, expense tracker, note taking app, productivity system, offline-first pwa, unified workspace" />
-  <meta name="author" content="Titan" />
-  <meta name="robots" content="index, follow" />
-  <meta name="theme-color" content="#0A3DFF" />
+    <!-- PWA / Mobile SEO -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Titan" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="msapplication-TileColor" content="#020617" />
+    <meta name="msapplication-tap-highlight" content="no" />
 
-  <!-- PWA / Mobile SEO -->
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Titan" />
+    <!-- Open Graph / Social Sharing -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Titan" />
+    <meta property="og:title" content="Titan — Personal Life Operating System" />
+    <meta
+      property="og:description"
+      content="Unify your tasks, money, and thoughts into one connected system. A professional, offline-first workspace designed for clarity."
+    />
+    <meta property="og:image" content="https://titanapp.qzz.io/Opengraph.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:url" content="https://titanapp.qzz.io/" />
 
-  <!-- Open Graph / Social Sharing -->
-  <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="Titan" />
-  <meta property="og:title" content="Titan — Personal Life Operating System" />
-  <meta property="og:description"
-    content="Unify your tasks, money, and thoughts into one connected system. A professional, offline-first workspace designed for clarity." />
-  <meta property="og:image" content="https://titanapp.qzz.io/Opengraph.png" />
-  <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
-  <meta property="og:url" content="https://titanapp.qzz.io/" />
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Titan — Personal Life Operating System" />
+    <meta
+      name="twitter:description"
+      content="A professional, high-quality personal life operating system with strong authority and clarity. Offline-first and privacy-focused."
+    />
+    <meta name="twitter:image" content="https://titanapp.qzz.io/Opengraph.png" />
 
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Titan — Personal Life Operating System" />
-  <meta name="twitter:description"
-    content="A professional, high-quality personal life operating system with strong authority and clarity. Offline-first and privacy-focused." />
-  <meta name="twitter:image" content="https://titanapp.qzz.io/Opengraph.png" />
+    <link rel="canonical" href="https://titanapp.qzz.io/" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/png" href="/icons/falcon.png" />
+    <link rel="apple-touch-icon" href="/icons/falcon.png" />
 
-  <link rel="canonical" href="https://titanapp.qzz.io/" />
-  <link rel="manifest" href="/manifest.json" />
-  <link rel="icon" type="image/png" href="/icons/icon-192.png" />
-  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <!-- Resource Hints -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
 
-  <!-- Resource Hints -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    <!-- Google Fonts: Inter & Inter Tight -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
 
-  <!-- Google Fonts: Inter & Inter Tight -->
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@600;700&display=swap"
-    rel="stylesheet">
+    <script>
+      (() => {
+        try {
+          const storedTheme = localStorage.getItem('titan-theme');
+          const theme = storedTheme === 'light' ? 'light' : 'dark';
+          const root = document.documentElement;
 
-  <script>
-    (() => {
-      try {
-        const storedTheme = localStorage.getItem('titan-theme');
-        const theme = storedTheme === 'light' ? 'light' : 'dark';
-        const root = document.documentElement;
+          root.dataset.theme = theme;
+          root.classList.toggle('dark', theme === 'dark');
+        } catch {
+          document.documentElement.dataset.theme = 'dark';
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
+  </head>
 
-        root.dataset.theme = theme;
-        root.classList.toggle('dark', theme === 'dark');
-      } catch {
-        document.documentElement.dataset.theme = 'dark';
-        document.documentElement.classList.add('dark');
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <!-- Google Analytics: Replace with real ID if available -->
+    <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-REPLACE_WITH_GA_ID"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
       }
-    })();
-  </script>
-</head>
-
-<body>
-  <div id="root"></div>
-  <script type="module" src="/src/main.tsx"></script>
-  <!-- Google Analytics -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-REPLACE_WITH_GA_ID"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag() { dataLayer.push(arguments); }
-    gtag('js', new Date());
-    gtag('config', 'G-REPLACE_WITH_GA_ID');
-  </script>
-</body>
-
+      gtag('js', new Date());
+      gtag('config', 'G-REPLACE_WITH_GA_ID');
+    </script> -->
+  </body>
 </html>

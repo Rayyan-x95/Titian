@@ -30,7 +30,9 @@ export function PreferenceToggle({
         </span>
         <span className="min-w-0">
           <span className="block text-sm font-bold text-foreground">{label}</span>
-          <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">{description}</span>
+          <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
+            {description}
+          </span>
         </span>
       </div>
       <span

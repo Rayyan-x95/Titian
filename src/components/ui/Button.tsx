@@ -5,7 +5,7 @@ import { cn } from '@/utils/cn';
 
 import { Spinner } from './Spinner';
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'default' | 'outline' | 'danger';
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'default' | 'outline' | 'danger' | 'glass';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface ButtonProps extends HTMLMotionProps<'button'> {
@@ -16,12 +16,16 @@ interface ButtonProps extends HTMLMotionProps<'button'> {
 }
 
 const variants: Record<ButtonVariant, string> = {
-  primary: 'ui-button-primary',
-  secondary: 'ui-button-secondary',
-  ghost: 'ui-button-ghost',
-  default: 'ui-button-primary',
-  outline: 'ui-button-outline',
-  danger: 'ui-button-danger',
+  primary:
+    'bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-glow-blue hover:shadow-glow-blue/80 border-none',
+  secondary: 'glass-panel bg-white/10 text-white border-white/20 hover:bg-white/20',
+  ghost: 'bg-transparent text-slate-400 hover:bg-white/5 hover:text-white border-none shadow-none',
+  default: 'glass-panel text-white border-white/10 hover:border-white/20',
+  outline:
+    'border-2 border-white/10 bg-transparent text-white hover:bg-white/5 hover:border-white/20',
+  danger:
+    'bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500/20 shadow-glow-rose',
+  glass: 'glass-panel hover:bg-white/10 text-slate-300 border-white/5 shadow-glow',
 };
 
 const sizes: Record<ButtonSize, string> = {

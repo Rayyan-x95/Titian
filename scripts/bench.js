@@ -1,6 +1,6 @@
-const { performance } = require('perf_hooks');
-const { parseQuickCapture } = require('../src/lib/core/parserEngine');
-const { calculateTotalOwed } = require('../src/lib/core/splitEngine');
+import { performance } from 'perf_hooks';
+import { parseQuickCapture } from '../src/lib/core/parserEngine.ts';
+import { calculateTotalOwed } from '../src/lib/core/splitEngine.ts';
 
 function benchParse(iterations = 10000) {
   const sample = 'Paid $12.50 to Starbucks on 2024-03-01 for coffee';
@@ -13,7 +13,11 @@ function benchParse(iterations = 10000) {
 }
 
 function benchSplit(iterations = 10000) {
-  const sample = Array.from({ length: 50 }, (_, i) => ({ id: String(i), amount: 100 + i }));
+  const sample = Array.from({ length: 50 }, (_, i) => ({ 
+    id: String(i), 
+    amount: 100 + i, 
+    participants: [{ id: 'user-1', amount: 100 + i }] 
+  }));
   const start = performance.now();
   for (let i = 0; i < iterations; i++) {
     calculateTotalOwed(sample);
